@@ -1,0 +1,142 @@
+{
+  "name": "runtime-waste-demo",
+  "resources": [
+    {
+      "id": "ram_texture_a",
+      "kind": "texture",
+      "memory": "ram",
+      "size_mb": 64,
+      "lifetime": "asset",
+      "aliases": ["texture_a"]
+    },
+    {
+      "id": "vram_texture_a",
+      "kind": "texture",
+      "memory": "vram",
+      "size_mb": 64,
+      "lifetime": "frame",
+      "aliases": ["texture_a_gpu"]
+    },
+    {
+      "id": "vram_texture_a_alias",
+      "kind": "texture",
+      "memory": "vram",
+      "size_mb": 64,
+      "lifetime": "frame",
+      "aliases": ["texture_a_gpu"]
+    },
+    {
+      "id": "staging_upload_64",
+      "kind": "buffer",
+      "memory": "staging",
+      "size_mb": 64,
+      "lifetime": "transient",
+      "aliases": ["upload64"]
+    },
+    {
+      "id": "scratch_buffer",
+      "kind": "buffer",
+      "memory": "vram",
+      "size_mb": 16,
+      "lifetime": "transient",
+      "aliases": ["scratch16"]
+    },
+    {
+      "id": "backbuffer",
+      "kind": "framebuffer",
+      "memory": "swapchain",
+      "size_mb": 32,
+      "lifetime": "frame",
+      "aliases": ["frame0"]
+    }
+  ],
+  "operations": [
+    {
+      "id": "alloc_scratch_1",
+      "type": "allocate",
+      "target": "scratch_buffer",
+      "queue": "cpu",
+      "reason": "transient scratch buffer",
+      "cost_ms": 0.08,
+      "size_mb": 16,
+      "frame": 0
+    },
+    {
+      "id": "alloc_scratch_2",
+      "type": "allocate",
+      "target": "scratch_buffer",
+      "queue": "cpu",
+      "reason": "transient scratch buffer",
+      "cost_ms": 0.08,
+      "size_mb": 16,
+      "frame": 0
+    },
+    {
+      "id": "upload_texture_a",
+      "type": "upload",
+      "source": "ram_texture_a",
+      "target": "vram_texture_a",
+      "queue": "copy",
+      "reason": "texture upload",
+      "cost_ms": 0.9,
+      "size_mb": 64,
+      "frame": 0
+    },
+    {
+      "id": "upload_texture_a_duplicate",
+      "type": "upload",
+      "source": "ram_texture_a",
+      "target": "vram_texture_a",
+      "queue": "copy",
+      "reason": "duplicate texture upload",
+      "cost_ms": 0.9,
+      "size_mb": 64,
+      "frame": 0
+    },
+    {
+      "id": "copy_alias_texture",
+      "type": "copy",
+      "source": "vram_texture_a",
+      "target": "vram_texture_a_alias",
+      "queue": "copy",
+      "reason": "copy to aliased texture view",
+      "cost_ms": 0.35,
+      "size_mb": 64,
+      "frame": 0
+    },
+    {
+      "id": "sync_duplicate_upload",
+      "type": "sync",
+      "queue": "graphics",
+      "reason": "wait for duplicate upload",
+      "cost_ms": 0.2,
+      "size_mb": 0,
+      "frame": 0,
+      "depends_on": ["upload_texture_a_duplicate"]
+    },
+    {
+      "id": "draw_scene",
+      "type": "draw",
+      "source": "vram_texture_a",
+      "target": "backbuffer",
+      "queue": "graphics",
+      "reason": "draw scene",
+      "cost_ms": 6.2,
+      "size_mb": 0,
+      "frame": 0,
+      "depends_on": ["upload_texture_a"]
+    },
+    {
+      "id": "present_frame",
+      "type": "present",
+      "source": "backbuffer",
+      "target": "backbuffer",
+      "queue": "present",
+      "reason": "present frame",
+      "cost_ms": 0.4,
+      "size_mb": 0,
+      "frame": 0,
+      "depends_on": ["draw_scene"]
+    }
+  ]
+}

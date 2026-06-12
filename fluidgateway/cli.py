@@ -8,6 +8,7 @@ from .analyzer import analyze_trace
 from .parser import parse_presentmon_csv
 from .report import write_report
 from .report import write_management_plan
+from .runtime import load_manifest, optimize_manifest, write_runtime_plan
 from .tracker import DEFAULT_REGISTRY, summarize_registry, track_trace
 
 
@@ -92,6 +93,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the trace registry JSON.",
     )
     history.set_defaults(func=run_history)
+
+    runtime = subparsers.add_parser(
+        "runtime",
+        help="Optimize an explicit CPU/GPU/RAM/VRAM pipeline manifest.",
+    )
+    runtime_subparsers = runtime.add_subparsers(dest="runtime_command", required=True)
+    optimize = runtime_subparsers.add_parser(
+        "optimize",
+        help="Generate an optimized runtime plan from a pipeline manifest.",
+    )
+    optimize.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to a FluidGateway runtime manifest JSON.",
+    )
+    optimize.add_argument(
+        "--out",
+        required=True,
+        help="Path to the runtime optimization JSON plan.",
+    )
+    optimize.set_defaults(func=run_runtime_optimize)
     return parser
 
 
@@ -153,6 +175,19 @@ def run_history(args: argparse.Namespace) -> int:
             f"{row['actions']:<8} "
             f"{row['label']}"
         )
+    return 0
+
+
+def run_runtime_optimize(args: argparse.Namespace) -> int:
+    manifest = load_manifest(args.manifest)
+    plan = optimize_manifest(manifest)
+    output_path = write_runtime_plan(plan, args.out)
+    print(f"FluidGateway runtime plan written: {output_path}")
+    print(f"Original operations: {plan.original_operations}")
+    print(f"Optimized operations: {plan.optimized_operations}")
+    print(f"Decisions: {len(plan.decisions)}")
+    print(f"Estimated saved ms: {plan.estimated_saved_ms:.4f}")
+    print(f"Estimated saved MB moved/allocated: {plan.estimated_saved_mb:.4f}")
     return 0
 
 

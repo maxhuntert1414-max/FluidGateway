@@ -11,6 +11,7 @@ from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
 from fluidgateway.parser import parse_number, parse_presentmon_csv
 from fluidgateway.report import write_report
+from fluidgateway.runtime import load_manifest, optimize_manifest, write_runtime_plan
 from fluidgateway.tracker import summarize_registry, track_trace
 
 
@@ -162,6 +163,47 @@ class FluidGatewayTests(unittest.TestCase):
             history_text = output.getvalue()
             self.assertIn("CopyGame.exe", history_text)
             self.assertIn("copy path trace", history_text)
+
+    def test_runtime_optimizer_removes_redundant_pipeline_work(self):
+        manifest = load_manifest(FIXTURES / "runtime_waste_manifest.json")
+        plan = optimize_manifest(manifest)
+        policies = {decision.policy for decision in plan.decisions}
+        self.assertEqual(plan.mode, "runtime-optimizer-v0.4-manifest")
+        self.assertLess(plan.optimized_operations, plan.original_operations)
+        self.assertGreater(plan.estimated_saved_ms, 0)
+        self.assertGreater(plan.estimated_saved_mb, 0)
+        self.assertIn("deduplicate-identical-transfer", policies)
+        self.assertIn("collapse-aliased-resource-copy", policies)
+        self.assertIn("remove-orphan-sync", policies)
+        self.assertIn("reuse-transient-buffer", policies)
+
+    def test_runtime_optimize_command_writes_plan_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "runtime-plan.json"
+            with redirect_stdout(StringIO()):
+                status = main(
+                    [
+                        "runtime",
+                        "optimize",
+                        "--manifest",
+                        str(FIXTURES / "runtime_waste_manifest.json"),
+                        "--out",
+                        str(output),
+                    ]
+                )
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["manifest_name"], "runtime-waste-demo")
+            self.assertLess(payload["optimized_operations"], payload["original_operations"])
+            self.assertTrue(payload["decisions"])
+
+    def test_write_runtime_plan_creates_json(self):
+        manifest = load_manifest(FIXTURES / "runtime_waste_manifest.json")
+        plan = optimize_manifest(manifest)
+        with tempfile.TemporaryDirectory() as tmp:
+            output = write_runtime_plan(plan, Path(tmp) / "plan")
+            self.assertEqual(output.suffix, ".json")
+            self.assertTrue(output.exists())
 
 
 if __name__ == "__main__":

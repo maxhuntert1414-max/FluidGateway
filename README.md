@@ -51,6 +51,7 @@ python -m fluidgateway analyze --presentmon trace.csv --out report.html
 python -m fluidgateway manage --presentmon trace.csv --out management.json
 python -m fluidgateway track --presentmon trace.csv --label "baseline"
 python -m fluidgateway history
+python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-plan.json
 ```
 
 The command writes:
@@ -74,6 +75,32 @@ This registry is the first dataset layer for the future intelligent gateway. It
 lets FluidGateway compare repeated runs, identify recurring waste patterns, and
 prepare for deeper telemetry sources such as RAM/VRAM residency, texture upload
 timing, staging buffer reuse, and API-level synchronization events.
+
+## Runtime Optimizer Prototype
+
+The `runtime optimize` command is the first prototype of the actual gateway
+behavior. Instead of only reporting symptoms from a trace, it accepts an
+explicit pipeline manifest and emits an optimized runtime plan.
+
+The manifest models:
+
+- resources in `ram`, `vram`, `shared`, `staging`, `swapchain`, and `display`;
+- `buffer`, `texture`, and `framebuffer` resources;
+- `copy`, `upload`, `sync`, `allocate`, `draw`, `compute`, and `present`
+  operations;
+- operation cost, size, queue, frame, and dependency information.
+
+The v0.4 optimizer can:
+
+- remove self-copies;
+- collapse copies between aliased resources in the same memory layer;
+- deduplicate repeated uploads/copies into the same target;
+- remove syncs that only wait on removed work;
+- reuse transient staging/scratch buffers.
+
+This is not driver interception yet. It is the first executable model of the
+target runtime: reduce redundant transport and late synchronization before
+moving toward API hooks, engine SDKs, or deeper OS/GPU telemetry.
 
 ## Supported Input
 
