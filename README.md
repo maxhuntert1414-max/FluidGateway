@@ -278,6 +278,22 @@ This is still advisory user-space output, but it is shaped like the contract a
 real engine plugin or API adapter would consume. The scheduler decides the
 better order; the enforcement contract says what an integration should do next.
 
+## Live Command Endpoint
+
+The v0.14 live command contract adds an immediate command to each streamed
+operation response. Instead of waiting for `session end`, an adapter can submit
+an operation intent and receive one of:
+
+- `execute_now`: run the operation on the current frame path;
+- `prefetch_now`: move a large copy/upload before frame-critical work;
+- `defer`: do not execute redundant or removed work now;
+- `reuse`: reuse an existing transient/buffer result.
+
+This is the first runtime-facing command loop in FluidGateway. It still runs in
+safe user space, but the protocol now answers the question a real integration
+needs to ask at operation time: "what should I do with this CPU/GPU/RAM/VRAM
+work right now?"
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

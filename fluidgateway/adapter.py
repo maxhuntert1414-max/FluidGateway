@@ -9,11 +9,12 @@ from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
+from .live import LiveCommand, build_live_command
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 from .scheduler import SchedulerPlan, simulate_scheduler
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.13"
+ADAPTER_MODE = "runtime-adapter-session-v0.14"
 
 
 @dataclass
@@ -67,6 +68,7 @@ class AdapterSessionResult:
     lifetime_plan: ResourceLifetimePlan
     schedule_plan: SchedulerPlan
     enforcement_plan: EnforcementPlan
+    live_commands: list[LiveCommand]
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -85,6 +87,8 @@ class AdapterSessionResult:
             "lifetime_plan": self.lifetime_plan.to_dict(),
             "schedule_plan": self.schedule_plan.to_dict(),
             "enforcement_plan": self.enforcement_plan.to_dict(),
+            "live_command_count": len(self.live_commands),
+            "live_commands": [command.to_dict() for command in self.live_commands],
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -105,6 +109,7 @@ class RuntimeAdapterSession:
         self.operation_events = 0
         self.released_resources: list[str] = []
         self.frames: dict[int, AdapterFrameStats] = {}
+        self.live_commands: list[LiveCommand] = []
         self.results: list[dict[str, Any]] = []
         self.closed = False
 
@@ -142,6 +147,7 @@ class RuntimeAdapterSession:
             lifetime_plan=lifetime_plan,
             schedule_plan=schedule_plan,
             enforcement_plan=enforcement_plan,
+            live_commands=list(self.live_commands),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -275,8 +281,16 @@ class RuntimeAdapterSession:
         result_payload = result.to_dict()
         if event_index is not None:
             result_payload = {"event_index": event_index, **result_payload}
-        self.results.append(result_payload)
         operation_frame = result.operation.frame
+        target_frame_ms = (
+            self._frame_stats(operation_frame).target_frame_ms
+            if operation_frame is not None
+            else self.policy_engine.target_frame_ms
+        )
+        live_command = build_live_command(result, target_frame_ms)
+        self.live_commands.append(live_command)
+        result_payload["live_command"] = live_command.to_dict()
+        self.results.append(result_payload)
         if operation_frame is not None:
             stats = self._frame_stats(operation_frame)
             stats.operation_count += 1
@@ -298,15 +312,14 @@ class RuntimeAdapterSession:
         policy_actions = self.policy_engine.record_operation(
             result,
             operation_frame,
-            self._frame_stats(operation_frame).target_frame_ms
-            if operation_frame is not None
-            else self.policy_engine.target_frame_ms,
+            target_frame_ms,
         )
         self._record_policy_actions(policy_actions, operation_frame)
         response = {
             "ok": True,
             "event": "operation",
             "result": result_payload,
+            "live_command": live_command.to_dict(),
             "policy_actions": [item.to_dict() for item in policy_actions],
         }
         return with_event_index(response, event_index)

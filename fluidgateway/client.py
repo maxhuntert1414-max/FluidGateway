@@ -8,7 +8,7 @@ from typing import Any, Iterable
 from .events import iter_jsonl
 
 
-CLIENT_MODE = "runtime-event-client-v0.13"
+CLIENT_MODE = "runtime-event-client-v0.14"
 
 
 class RuntimeEventClient:
@@ -161,6 +161,7 @@ def summarize_client_responses(
         (response.get("enforcement_plan") or {}).get("command_count", 0)
         for response in responses
     )
+    live_command_count = sum(1 for response in responses if response.get("live_command"))
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -174,6 +175,7 @@ def summarize_client_responses(
         "lifetime_plan_action_count": lifetime_plan_action_count,
         "schedule_step_count": schedule_step_count,
         "enforcement_command_count": enforcement_command_count,
+        "live_command_count": live_command_count,
         "failed_responses": len(failed),
         "responses": responses,
     }
