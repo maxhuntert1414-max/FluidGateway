@@ -1,0 +1,5 @@
+Application,PresentRuntime,PresentMode,SyncInterval,AllowsTearing,MsCPUBusy,MsCPUWait,MsGPULatency,MsGPUTime,MsGPUBusy,MsGPUWait,DisplayLatency,DisplayedTime,MsAnimationError,MsBetweenPresents,MsInPresentAPI,MsUntilDisplayed,MsRenderPresentLatency
+DropGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.0,2.0,7.0,6.8,0.5,12.0,NA,0.5,16.6,0.5,10.0,8.0
+DropGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.0,2.0,7.0,6.8,0.5,12.0,16.7,0.5,16.7,0.5,10.0,8.0
+DropGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.0,2.0,7.0,6.8,0.5,12.0,,0.5,16.6,0.5,10.0,8.0
+DropGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.0,2.0,7.0,6.8,0.5,12.0,16.8,0.5,16.8,0.5,10.0,8.0

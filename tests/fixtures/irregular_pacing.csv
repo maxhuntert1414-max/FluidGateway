@@ -1,0 +1,7 @@
+Application,PresentRuntime,PresentMode,SyncInterval,AllowsTearing,MsCPUBusy,MsCPUWait,MsGPULatency,MsGPUTime,MsGPUBusy,MsGPUWait,DisplayLatency,DisplayedTime,MsAnimationError,MsBetweenPresents,MsInPresentAPI,MsUntilDisplayed,MsRenderPresentLatency
+StutterGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.0,2.0,7.0,6.8,0.5,12.0,16.0,2.0,16.0,0.5,9.0,8.0
+StutterGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.0,2.0,7.0,6.8,0.5,12.0,33.0,9.0,33.0,0.5,9.0,8.0
+StutterGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.0,2.0,7.0,6.8,0.5,12.0,8.0,11.0,8.0,0.5,9.0,8.0
+StutterGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.0,2.0,7.0,6.8,0.5,12.0,42.0,16.0,42.0,0.5,9.0,8.0
+StutterGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.0,2.0,7.0,6.8,0.5,12.0,16.0,2.0,16.0,0.5,9.0,8.0
+StutterGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.0,2.0,7.0,6.8,0.5,12.0,50.0,18.0,50.0,0.5,9.0,8.0

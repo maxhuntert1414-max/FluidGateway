@@ -1,0 +1,9 @@
+Application,PresentRuntime,PresentMode,SyncInterval,AllowsTearing,MsCPUBusy,MsCPUWait,MsGPULatency,MsGPUTime,MsGPUBusy,MsGPUWait,DisplayLatency,DisplayedTime,MsAnimationError,MsBetweenPresents,MsInPresentAPI,MsUntilDisplayed,MsRenderPresentLatency
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.0,2.0,7.0,6.8,0.4,10.0,16.6,0.2,16.6,0.4,8.0,8.0
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.1,2.1,7.1,6.9,0.5,10.2,16.7,0.3,16.7,0.5,8.2,8.1
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,5.9,1.0,2.0,6.9,6.7,0.4,9.9,16.6,0.1,16.6,0.4,8.0,7.9
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,6.2,1.2,2.2,7.2,7.0,0.5,10.1,16.8,0.2,16.8,0.5,8.1,8.0
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,6.0,1.1,2.0,7.0,6.8,0.4,10.0,16.6,0.2,16.6,0.5,8.0,8.0
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,6.1,1.0,2.1,7.1,6.9,0.5,10.2,16.7,0.2,16.7,0.4,8.2,8.1
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,5.8,1.1,2.0,6.8,6.6,0.4,9.8,16.6,0.1,16.6,0.4,7.9,7.8
+CleanGame.exe,D3D12,Hardware: Independent Flip,0,1,6.2,1.2,2.2,7.2,7.0,0.5,10.1,16.8,0.3,16.8,0.5,8.1,8.0

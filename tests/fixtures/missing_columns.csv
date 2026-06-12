@@ -1,0 +1,4 @@
+Application,PresentRuntime,PresentMode,MsBetweenPresents,MsInPresentAPI
+TinyGame.exe,D3D12,Hardware: Independent Flip,16.6,0.5
+TinyGame.exe,D3D12,Hardware: Independent Flip,16.7,0.5
+TinyGame.exe,D3D12,Hardware: Independent Flip,16.6,0.4
