@@ -11,6 +11,7 @@ from pathlib import Path
 
 from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
+from fluidgateway.adapter import RuntimeAdapterSession, replay_adapter_event_stream
 from fluidgateway.client import RuntimeEventClient, summarize_client_responses
 from fluidgateway.control import FluidGatewayController
 from fluidgateway.events import replay_event_stream, write_event_replay
@@ -383,7 +384,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.8")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.9")
         self.assertEqual(summary["events_sent"], 12)
         self.assertEqual(summary["resource_responses"], 5)
         self.assertEqual(summary["operation_responses"], 7)
@@ -422,10 +423,90 @@ class FluidGatewayTests(unittest.TestCase):
 
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-event-client-v0.8")
+            self.assertEqual(payload["mode"], "runtime-event-client-v0.9")
             self.assertEqual(payload["events_sent"], 12)
             self.assertEqual(payload["decision_count"], 4)
             self.assertEqual(payload["failed_responses"], 0)
+
+    def test_adapter_session_replays_lifecycle_stream(self):
+        result = replay_adapter_event_stream(FIXTURES / "adapter_session_events.jsonl")
+        payload = result.to_dict()
+        frame = payload["frames"][0]
+        policies = {
+            item["decision"]["policy"]
+            for item in payload["results"]
+            if item["decision"] is not None
+        }
+
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.9")
+        self.assertEqual(payload["session_id"], "demo-adapter")
+        self.assertEqual(payload["events_processed"], 12)
+        self.assertEqual(payload["lifecycle_events"], 4)
+        self.assertEqual(payload["resource_events"], 4)
+        self.assertEqual(payload["operation_events"], 4)
+        self.assertEqual(payload["released_resources"], ["scratch"])
+        self.assertEqual(frame["frame"], 0)
+        self.assertEqual(frame["operation_count"], 4)
+        self.assertEqual(frame["decision_count"], 2)
+        self.assertEqual(frame["end_event_index"], 11)
+        self.assertIn("reuse-transient-buffer", policies)
+        self.assertIn("deduplicate-identical-transfer", policies)
+        self.assertTrue(
+            all(item["operation"]["frame"] == 0 for item in payload["results"])
+        )
+
+    def test_runtime_run_adapter_command_writes_session_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "adapter-session.json"
+            with redirect_stdout(StringIO()):
+                status = main(
+                    [
+                        "runtime",
+                        "run-adapter",
+                        "--events",
+                        str(FIXTURES / "adapter_session_events.jsonl"),
+                        "--out",
+                        str(output),
+                    ]
+                )
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.9")
+            self.assertEqual(payload["snapshot"]["estimated_saved_mb"], 40)
+
+    def test_runtime_event_server_accepts_adapter_lifecycle_events(self):
+        with create_runtime_event_server("127.0.0.1", 0) as server:
+            server.timeout = 5
+            host, port = server.server_address
+            thread = threading.Thread(target=server.handle_request)
+            thread.start()
+
+            with RuntimeEventClient(host, port, timeout=5) as client:
+                responses = client.send_jsonl(FIXTURES / "adapter_session_events.jsonl")
+
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
+        summary = summarize_client_responses(responses)
+        policies = {
+            response["result"]["decision"]["policy"]
+            for response in responses
+            if response.get("event") == "operation"
+            and response["result"]["decision"] is not None
+        }
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.9")
+        self.assertEqual(summary["session_responses"], 2)
+        self.assertEqual(summary["frame_responses"], 2)
+        self.assertEqual(summary["decision_count"], 2)
+        self.assertEqual(summary["failed_responses"], 0)
+        self.assertIn("reuse-transient-buffer", policies)
+        self.assertIn("deduplicate-identical-transfer", policies)
+
+    def test_adapter_session_rejects_mismatched_frame_end(self):
+        session = RuntimeAdapterSession()
+        session.process_event({"event": "frame", "action": "begin", "frame": 1})
+        with self.assertRaises(ValueError):
+            session.process_event({"event": "frame", "action": "end", "frame": 2})
 
 
 if __name__ == "__main__":

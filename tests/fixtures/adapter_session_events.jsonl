@@ -1,0 +1,12 @@
+{"event":"session","action":"begin","id":"demo-adapter"}
+{"event":"frame","action":"begin","frame":0}
+{"event":"resource","id":"ram_texture","kind":"texture","memory":"ram","size_mb":32,"lifetime":"asset","aliases":["tex"]}
+{"event":"resource","id":"vram_texture","kind":"texture","memory":"vram","size_mb":32,"lifetime":"frame","aliases":["tex_gpu"]}
+{"event":"resource","id":"scratch","kind":"buffer","memory":"vram","size_mb":8,"lifetime":"transient","aliases":["scratch8"]}
+{"event":"operation","id":"alloc_scratch_1","operation_type":"allocate","target":"scratch","queue":"cpu","reason":"transient scratch","cost_ms":0.05,"size_mb":8}
+{"event":"operation","id":"alloc_scratch_2","operation_type":"allocate","target":"scratch","queue":"cpu","reason":"transient scratch","cost_ms":0.05,"size_mb":8}
+{"event":"operation","id":"upload_tex","operation_type":"upload","source":"ram_texture","target":"vram_texture","queue":"copy","reason":"texture upload","cost_ms":0.4,"size_mb":32}
+{"event":"operation","id":"upload_tex_duplicate","operation_type":"upload","source":"ram_texture","target":"vram_texture","queue":"copy","reason":"duplicate texture upload","cost_ms":0.4,"size_mb":32}
+{"event":"resource","action":"release","id":"scratch"}
+{"event":"frame","action":"end","frame":0}
+{"event":"session","action":"end"}

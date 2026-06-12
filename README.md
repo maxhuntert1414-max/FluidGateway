@@ -12,8 +12,9 @@ Silicon: less redundant movement, fewer late sync points, more useful work per
 watt.
 
 The current release does not inject code, hook games, change drivers, or
-optimize anything automatically. It ingests PresentMon 2.x CSV data and
-produces a ranked report of likely waste patterns with evidence.
+optimize anything automatically. It ingests PresentMon 2.x CSV data, produces a
+ranked report of likely waste patterns with evidence, and includes user-space
+runtime prototypes for modeling early CPU/GPU/RAM/VRAM decisions.
 
 > The initial promise is to find probable waste in the frame path, not to
 > automatically increase FPS.
@@ -56,6 +57,7 @@ python -m fluidgateway runtime simulate-control --manifest pipeline.json --out c
 python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out event-replay.json
 python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
 python -m fluidgateway runtime send-events --events runtime-events.jsonl --host 127.0.0.1 --port 8765 --out server-responses.json
+python -m fluidgateway runtime run-adapter --events adapter-events.jsonl --out adapter-session.json
 ```
 
 The command writes:
@@ -157,9 +159,9 @@ movement or synchronization.
 
 ## Runtime Client SDK
 
-The v0.8 client SDK is the first client-side integration surface for the local
-decision server. Python adapters can connect to the server, register resources,
-submit operations, and receive one decision per event:
+The runtime client SDK is the first client-side integration surface for the
+local decision server. Python adapters can connect to the server, register
+resources, submit operations, and receive one decision per event:
 
 ```python
 from fluidgateway.client import RuntimeEventClient
@@ -182,6 +184,28 @@ The CLI command `runtime send-events` uses the same SDK to send a JSONL stream
 to a running server and writes every server response to JSON. This keeps replay
 and live local-server testing separate: `replay-events` is offline, while
 `send-events` exercises the TCP protocol another process would use.
+
+## Runtime Adapter Session
+
+The v0.9 adapter session adds lifecycle structure around the decision loop. An
+engine plugin, telemetry collector, or future interceptor can describe a
+session, frame boundaries, resources, operations, and resource releases:
+
+```jsonl
+{"event":"session","action":"begin","id":"demo-adapter"}
+{"event":"frame","action":"begin","frame":0}
+{"event":"resource","id":"ram_texture","kind":"texture","memory":"ram","size_mb":32}
+{"event":"resource","id":"vram_texture","kind":"texture","memory":"vram","size_mb":32}
+{"event":"operation","id":"upload_tex","operation_type":"upload","source":"ram_texture","target":"vram_texture","queue":"copy","cost_ms":0.4,"size_mb":32}
+{"event":"frame","action":"end","frame":0}
+{"event":"session","action":"end"}
+```
+
+`runtime run-adapter` runs this lifecycle stream locally and writes a session
+report with per-frame operation counts, per-frame decisions, released resources,
+and the underlying control-plane snapshot. The local TCP server also accepts the
+same lifecycle events, so the same JSONL shape can be tested offline or over the
+runtime socket.
 
 ## Supported Input
 

@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from . import __version__
+from .adapter import replay_adapter_event_stream, write_adapter_session
 from .analyzer import analyze_trace
 from .client import RuntimeEventClient, write_client_responses
 from .control import FluidGatewayController
@@ -180,6 +181,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the server response JSON output.",
     )
     send.set_defaults(func=run_runtime_send_events)
+    adapter = runtime_subparsers.add_parser(
+        "run-adapter",
+        help="Run a lifecycle-aware adapter JSONL session locally.",
+    )
+    adapter.add_argument(
+        "--events",
+        required=True,
+        help="Path to a FluidGateway adapter lifecycle JSONL stream.",
+    )
+    adapter.add_argument(
+        "--out",
+        required=True,
+        help="Path to the adapter session JSON output.",
+    )
+    adapter.set_defaults(func=run_runtime_run_adapter)
     serve = runtime_subparsers.add_parser(
         "serve-events",
         help="Serve a local TCP JSONL runtime decision endpoint.",
@@ -323,6 +339,21 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
+
+
+def run_runtime_run_adapter(args: argparse.Namespace) -> int:
+    result = replay_adapter_event_stream(args.events)
+    output_path = write_adapter_session(result, args.out)
+    snapshot = result.snapshot
+    print(f"FluidGateway adapter session written: {output_path}")
+    print(f"Events processed: {result.events_processed}")
+    print(f"Frames observed: {len(result.frames)}")
+    print(f"Operation events: {result.operation_events}")
+    print(f"Decisions: {len(snapshot['decisions'])}")
+    print(f"Released resources: {len(result.released_resources)}")
+    print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
+    print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
+    return 0
 
 
 def run_runtime_serve_events(args: argparse.Namespace) -> int:

@@ -4,14 +4,13 @@ import json
 import socketserver
 from typing import Any
 
-from .control import FluidGatewayController
-from .events import process_event_payload
+from .adapter import RuntimeAdapterSession, process_adapter_event_payload
 
 
 class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
     def setup(self) -> None:
         super().setup()
-        self.controller = FluidGatewayController()
+        self.session = RuntimeAdapterSession()
 
     def handle(self) -> None:
         for raw_line in self.rfile:
@@ -28,7 +27,7 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
             payload = json.loads(line)
             if not isinstance(payload, dict):
                 raise ValueError("Runtime event must be a JSON object.")
-            return process_event_payload(self.controller, payload)
+            return process_adapter_event_payload(self.session, payload)
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
