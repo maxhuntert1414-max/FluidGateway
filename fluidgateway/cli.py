@@ -351,6 +351,7 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(f"Operation events: {result.operation_events}")
     print(f"Decisions: {len(snapshot['decisions'])}")
     print(f"Policy actions: {len(result.policy_actions)}")
+    print(f"Lifetime plan actions: {result.lifetime_plan.plan_action_count}")
     print(f"Released resources: {len(result.released_resources)}")
     print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
     print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")

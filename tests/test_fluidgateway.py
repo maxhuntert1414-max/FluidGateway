@@ -384,7 +384,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.10")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.11")
         self.assertEqual(summary["events_sent"], 12)
         self.assertEqual(summary["resource_responses"], 5)
         self.assertEqual(summary["operation_responses"], 7)
@@ -423,7 +423,7 @@ class FluidGatewayTests(unittest.TestCase):
 
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-event-client-v0.10")
+            self.assertEqual(payload["mode"], "runtime-event-client-v0.11")
             self.assertEqual(payload["events_sent"], 12)
             self.assertEqual(payload["decision_count"], 4)
             self.assertEqual(payload["failed_responses"], 0)
@@ -438,7 +438,7 @@ class FluidGatewayTests(unittest.TestCase):
             if item["decision"] is not None
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.10")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.11")
         self.assertEqual(payload["session_id"], "demo-adapter")
         self.assertEqual(payload["events_processed"], 12)
         self.assertEqual(payload["lifecycle_events"], 4)
@@ -471,7 +471,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.10")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.11")
             self.assertEqual(payload["snapshot"]["estimated_saved_mb"], 40)
 
     def test_runtime_event_server_accepts_adapter_lifecycle_events(self):
@@ -494,7 +494,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.10")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.11")
         self.assertEqual(summary["session_responses"], 2)
         self.assertEqual(summary["frame_responses"], 2)
         self.assertEqual(summary["decision_count"], 2)
@@ -516,7 +516,7 @@ class FluidGatewayTests(unittest.TestCase):
         frame = payload["frames"][0]
         action_ids = {action["id"] for action in payload["policy_actions"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.10")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.11")
         self.assertEqual(payload["session_id"], "policy-pressure")
         self.assertEqual(payload["policy_action_count"], 3)
         self.assertEqual(frame["frame"], 0)
@@ -544,7 +544,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.10")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.11")
             self.assertEqual(payload["policy_action_count"], 3)
 
     def test_runtime_event_server_reports_policy_actions(self):
@@ -563,8 +563,69 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.10")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.11")
         self.assertEqual(summary["policy_action_count"], 3)
+        self.assertEqual(summary["failed_responses"], 0)
+
+    def test_adapter_lifetime_planner_outputs_resource_plan(self):
+        result = replay_adapter_event_stream(
+            FIXTURES / "adapter_lifetime_plan_events.jsonl"
+        )
+        payload = result.to_dict()
+        plan = payload["lifetime_plan"]
+        actions = {item["action"]: item for item in plan["actions"]}
+        resource_actions = {
+            (item["resource_id"], item["action"]) for item in plan["actions"]
+        }
+
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.11")
+        self.assertEqual(plan["mode"], "resource-lifetime-plan-v0.11")
+        self.assertEqual(plan["plan_action_count"], 4)
+        self.assertEqual(plan["estimated_reduced_transfer_mb"], 64)
+        self.assertEqual(plan["estimated_release_mb"], 32)
+        self.assertIn(("vram_texture", "keep-resident"), resource_actions)
+        self.assertIn(("scratch_upload", "release-after-frame"), resource_actions)
+        self.assertIn(("upload_hero", "prefetch-before-frame"), resource_actions)
+        self.assertIn(("upload_hero", "defer-upload"), resource_actions)
+        self.assertEqual(actions["prefetch-before-frame"]["target_frame"], 0)
+
+    def test_runtime_run_adapter_command_writes_lifetime_plan(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "adapter-lifetime-session.json"
+            with redirect_stdout(StringIO()):
+                status = main(
+                    [
+                        "runtime",
+                        "run-adapter",
+                        "--events",
+                        str(FIXTURES / "adapter_lifetime_plan_events.jsonl"),
+                        "--out",
+                        str(output),
+                    ]
+                )
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.11")
+            self.assertEqual(payload["lifetime_plan"]["plan_action_count"], 4)
+
+    def test_runtime_event_server_reports_lifetime_plan_delta(self):
+        with create_runtime_event_server("127.0.0.1", 0) as server:
+            server.timeout = 5
+            host, port = server.server_address
+            thread = threading.Thread(target=server.handle_request)
+            thread.start()
+
+            with RuntimeEventClient(host, port, timeout=5) as client:
+                responses = client.send_jsonl(
+                    FIXTURES / "adapter_lifetime_plan_events.jsonl"
+                )
+
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
+        summary = summarize_client_responses(responses)
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.11")
+        self.assertEqual(summary["lifetime_plan_action_count"], 4)
         self.assertEqual(summary["failed_responses"], 0)
 
 

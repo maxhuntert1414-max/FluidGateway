@@ -7,10 +7,11 @@ from typing import Any
 
 from .control import FluidGatewayController
 from .events import iter_jsonl, register_resource_event, submit_operation_event
+from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.10"
+ADAPTER_MODE = "runtime-adapter-session-v0.11"
 
 
 @dataclass
@@ -61,6 +62,7 @@ class AdapterSessionResult:
     released_resources: list[str]
     frames: list[AdapterFrameStats]
     policy_actions: list[RuntimePolicyAction]
+    lifetime_plan: ResourceLifetimePlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -76,6 +78,7 @@ class AdapterSessionResult:
             "frames": [frame.to_dict() for frame in self.frames],
             "policy_action_count": len(self.policy_actions),
             "policy_actions": [action.to_dict() for action in self.policy_actions],
+            "lifetime_plan": self.lifetime_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -88,6 +91,7 @@ class RuntimeAdapterSession:
         self.session_id = session_id
         self.controller = FluidGatewayController()
         self.policy_engine = RuntimePolicyEngine()
+        self.lifetime_planner = ResourceLifetimePlanner()
         self.current_frame: int | None = None
         self.events_processed = 0
         self.lifecycle_events = 0
@@ -126,6 +130,7 @@ class RuntimeAdapterSession:
             released_resources=list(self.released_resources),
             frames=[self.frames[key] for key in sorted(self.frames)],
             policy_actions=list(self.policy_engine.actions),
+            lifetime_plan=self.lifetime_planner.finalize(),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -154,6 +159,9 @@ class RuntimeAdapterSession:
             "session_id": self.session_id,
             "closed": self.closed,
             "policy_actions": [],
+            "lifetime_plan": self.lifetime_planner.finalize().to_dict()
+            if self.closed
+            else None,
         }
         return with_event_index(response, event_index)
 
@@ -214,6 +222,9 @@ class RuntimeAdapterSession:
             if released:
                 self.released_resources.append(resource_id)
                 self.policy_engine.release_resource(resource_id)
+                self.lifetime_planner.release_resource(
+                    released_resource, resource_id
+                )
             response = {
                 "ok": True,
                 "event": "resource",
@@ -225,6 +236,7 @@ class RuntimeAdapterSession:
             return with_event_index(response, event_index)
 
         resource = register_resource_event(self.controller, payload)
+        self.lifetime_planner.register_resource(resource, self.current_frame)
         policy_actions = self.policy_engine.register_resource(
             resource, self.current_frame
         )
@@ -268,6 +280,7 @@ class RuntimeAdapterSession:
                 stats.decision_count += 1
                 stats.estimated_saved_ms += result.decision.estimated_saved_ms
                 stats.estimated_saved_mb += result.decision.estimated_saved_mb
+        self.lifetime_planner.record_operation(result.operation, result.executed)
         policy_actions = self.policy_engine.record_operation(
             result,
             operation_frame,

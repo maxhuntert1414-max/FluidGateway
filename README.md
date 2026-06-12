@@ -232,6 +232,23 @@ layer above individual copy/sync/buffer decisions. This is the path toward a
 software scheduler that reduces late work, redundant memory traffic, and wasted
 CPU/GPU/RAM/VRAM movement before it becomes stutter.
 
+## Resource Lifetime Planner
+
+The v0.11 lifetime planner converts adapter activity into an advisory
+RAM/VRAM residency plan. It observes registered resources, copy/upload
+operations, frame use, and release events, then emits concrete plan actions:
+
+- `keep-resident`: keep frame-critical VRAM textures/buffers resident instead of re-uploading them late;
+- `release-after-frame`: release transient staging/scratch buffers after their last observed frame use;
+- `prefetch-before-frame`: schedule large uploads before frame-critical draw/compute work;
+- `defer-upload`: delay transfers that are not proven necessary for the active frame.
+
+The plan reports estimated transfer volume that could move out of the critical
+frame path and memory that can be released earlier. In v0.11 this is still an
+advisory planner, not a driver-level allocator. Its purpose is to turn detected
+pressure into a concrete set of residency, release, and prefetch intents that a
+future engine plugin, API hook, or scheduler can enforce.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
