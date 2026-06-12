@@ -11,6 +11,7 @@ from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
 from fluidgateway.parser import parse_number, parse_presentmon_csv
 from fluidgateway.report import write_report
+from fluidgateway.tracker import summarize_registry, track_trace
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -98,6 +99,69 @@ class FluidGatewayTests(unittest.TestCase):
                 "ram-vram-residency-manager",
                 {action["id"] for action in payload["actions"]},
             )
+
+    def test_track_trace_writes_registry_record(self):
+        trace = parse_presentmon_csv(FIXTURES / "gpu_wait.csv")
+        with tempfile.TemporaryDirectory() as tmp:
+            registry = Path(tmp) / "traces.json"
+            result = track_trace(
+                trace,
+                registry_path=registry,
+                label="gpu wait baseline",
+                tags=["baseline", "gpu"],
+                notes="first tracked trace",
+            )
+            self.assertTrue(registry.exists())
+            self.assertFalse(result.duplicate)
+            payload = json.loads(registry.read_text(encoding="utf-8"))
+            self.assertEqual(payload["version"], 1)
+            self.assertEqual(len(payload["records"]), 1)
+            record = payload["records"][0]
+            self.assertEqual(record["label"], "gpu wait baseline")
+            self.assertEqual(record["tags"], ["baseline", "gpu"])
+            self.assertIn("gpu-bubbles", record["finding_ids"])
+            self.assertIn(
+                "ram-vram-residency-manager",
+                record["management_action_ids"],
+            )
+            self.assertEqual(len(record["sha256"]), 64)
+
+    def test_track_trace_marks_duplicate_hash(self):
+        trace = parse_presentmon_csv(FIXTURES / "gpu_wait.csv")
+        with tempfile.TemporaryDirectory() as tmp:
+            registry = Path(tmp) / "traces.json"
+            first = track_trace(trace, registry_path=registry)
+            second = track_trace(trace, registry_path=registry)
+            self.assertFalse(first.duplicate)
+            self.assertTrue(second.duplicate)
+            self.assertEqual(len(summarize_registry(registry)), 2)
+
+    def test_track_and_history_commands_use_registry_option(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            registry = Path(tmp) / "traces.json"
+            with redirect_stdout(StringIO()):
+                track_status = main(
+                    [
+                        "track",
+                        "--presentmon",
+                        str(FIXTURES / "copy_present.csv"),
+                        "--registry",
+                        str(registry),
+                        "--label",
+                        "copy path trace",
+                        "--tag",
+                        "presentation",
+                    ]
+                )
+            self.assertEqual(track_status, 0)
+
+            output = StringIO()
+            with redirect_stdout(output):
+                history_status = main(["history", "--registry", str(registry)])
+            self.assertEqual(history_status, 0)
+            history_text = output.getvalue()
+            self.assertIn("CopyGame.exe", history_text)
+            self.assertIn("copy path trace", history_text)
 
 
 if __name__ == "__main__":

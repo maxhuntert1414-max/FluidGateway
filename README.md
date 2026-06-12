@@ -49,6 +49,8 @@ The v0.2 management plan can activate policies such as:
 ```powershell
 python -m fluidgateway analyze --presentmon trace.csv --out report.html
 python -m fluidgateway manage --presentmon trace.csv --out management.json
+python -m fluidgateway track --presentmon trace.csv --label "baseline"
+python -m fluidgateway history
 ```
 
 The command writes:
@@ -56,6 +58,22 @@ The command writes:
 - `report.html`: human-readable diagnostic report.
 - `report.json`: structured report data next to the HTML file.
 - `management.json`: advisory management plan when using `manage`.
+- `.fluidgateway/traces.json`: local trace registry when using `track`.
+
+## Trace Tracking
+
+The `track` command turns each analyzed trace into a historical record:
+
+- file SHA-256 fingerprint;
+- application/runtime/frame summary;
+- finding IDs and max finding score;
+- management action IDs and max priority;
+- labels, tags, and notes.
+
+This registry is the first dataset layer for the future intelligent gateway. It
+lets FluidGateway compare repeated runs, identify recurring waste patterns, and
+prepare for deeper telemetry sources such as RAM/VRAM residency, texture upload
+timing, staging buffer reuse, and API-level synchronization events.
 
 ## Supported Input
 

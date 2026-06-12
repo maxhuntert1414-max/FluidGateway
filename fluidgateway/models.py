@@ -248,3 +248,35 @@ class AnalysisReport:
             "management_plan": self.management_plan.to_dict(),
             "disclaimer": self.disclaimer,
         }
+
+
+@dataclass(frozen=True)
+class TraceRecord:
+    id: str
+    added_at: str
+    label: str
+    source: str
+    sha256: str
+    summary: TraceSummary
+    finding_ids: list[str]
+    management_action_ids: list[str]
+    max_finding_score: int
+    max_management_priority: int
+    tags: list[str]
+    notes: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "added_at": self.added_at,
+            "label": self.label,
+            "source": self.source,
+            "sha256": self.sha256,
+            "summary": self.summary.to_dict(),
+            "finding_ids": self.finding_ids,
+            "management_action_ids": self.management_action_ids,
+            "max_finding_score": self.max_finding_score,
+            "max_management_priority": self.max_management_priority,
+            "tags": self.tags,
+            "notes": self.notes,
+        }

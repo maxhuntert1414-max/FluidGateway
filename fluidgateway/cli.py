@@ -8,6 +8,7 @@ from .analyzer import analyze_trace
 from .parser import parse_presentmon_csv
 from .report import write_report
 from .report import write_management_plan
+from .tracker import DEFAULT_REGISTRY, summarize_registry, track_trace
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,6 +50,48 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the management JSON plan.",
     )
     manage.set_defaults(func=run_manage)
+
+    track = subparsers.add_parser(
+        "track",
+        help="Analyze a trace and append it to the local FluidGateway registry.",
+    )
+    track.add_argument(
+        "--presentmon",
+        required=True,
+        help="Path to a PresentMon 2.x CSV trace.",
+    )
+    track.add_argument(
+        "--registry",
+        default=str(DEFAULT_REGISTRY),
+        help="Path to the trace registry JSON.",
+    )
+    track.add_argument(
+        "--label",
+        help="Human-readable trace label. Defaults to the detected application.",
+    )
+    track.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Tag to attach to the trace record. Can be repeated.",
+    )
+    track.add_argument(
+        "--notes",
+        default="",
+        help="Free-form notes for this trace.",
+    )
+    track.set_defaults(func=run_track)
+
+    history = subparsers.add_parser(
+        "history",
+        help="List traces stored in the local FluidGateway registry.",
+    )
+    history.add_argument(
+        "--registry",
+        default=str(DEFAULT_REGISTRY),
+        help="Path to the trace registry JSON.",
+    )
+    history.set_defaults(func=run_history)
     return parser
 
 
@@ -69,6 +112,47 @@ def run_manage(args: argparse.Namespace) -> int:
     output_path = write_management_plan(report.management_plan, args.out)
     print(f"FluidGateway management plan written: {output_path}")
     print(f"Management actions: {len(report.management_plan.actions)}")
+    return 0
+
+
+def run_track(args: argparse.Namespace) -> int:
+    trace = parse_presentmon_csv(args.presentmon)
+    result = track_trace(
+        trace=trace,
+        registry_path=args.registry,
+        label=args.label,
+        tags=args.tag,
+        notes=args.notes,
+    )
+    print(f"FluidGateway trace tracked: {result.record.id}")
+    print(f"Registry: {result.registry_path}")
+    print(f"Label: {result.record.label}")
+    print(f"Findings: {len(result.record.finding_ids)}")
+    print(f"Management actions: {len(result.record.management_action_ids)}")
+    if result.duplicate:
+        print("Duplicate source hash detected: this trace was already present.")
+    return 0
+
+
+def run_history(args: argparse.Namespace) -> int:
+    rows = summarize_registry(args.registry)
+    if not rows:
+        print("No FluidGateway traces tracked yet.")
+        return 0
+    print("ID           Added At                  App                    Frames  FPS     Findings  Actions  Label")
+    print("-" * 104)
+    for row in rows:
+        fps = "n/a" if row["fps"] is None else f"{row['fps']:.1f}"
+        print(
+            f"{row['id']:<12} "
+            f"{row['added_at'][:19]:<25} "
+            f"{row['application'][:22]:<22} "
+            f"{row['frames']:<7} "
+            f"{fps:<7} "
+            f"{row['findings']:<9} "
+            f"{row['actions']:<8} "
+            f"{row['label']}"
+        )
     return 0
 
 
