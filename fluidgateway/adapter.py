@@ -9,9 +9,10 @@ from .control import FluidGatewayController
 from .events import iter_jsonl, register_resource_event, submit_operation_event
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
+from .scheduler import SchedulerPlan, simulate_scheduler
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.11"
+ADAPTER_MODE = "runtime-adapter-session-v0.12"
 
 
 @dataclass
@@ -63,6 +64,7 @@ class AdapterSessionResult:
     frames: list[AdapterFrameStats]
     policy_actions: list[RuntimePolicyAction]
     lifetime_plan: ResourceLifetimePlan
+    schedule_plan: SchedulerPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -79,6 +81,7 @@ class AdapterSessionResult:
             "policy_action_count": len(self.policy_actions),
             "policy_actions": [action.to_dict() for action in self.policy_actions],
             "lifetime_plan": self.lifetime_plan.to_dict(),
+            "schedule_plan": self.schedule_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -120,6 +123,8 @@ class RuntimeAdapterSession:
         raise ValueError(f"Unsupported adapter event type: {event_type or 'missing'}")
 
     def to_result(self) -> AdapterSessionResult:
+        lifetime_plan = self.lifetime_planner.finalize()
+        schedule_plan = self._build_schedule_plan(lifetime_plan)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -130,7 +135,8 @@ class RuntimeAdapterSession:
             released_resources=list(self.released_resources),
             frames=[self.frames[key] for key in sorted(self.frames)],
             policy_actions=list(self.policy_engine.actions),
-            lifetime_plan=self.lifetime_planner.finalize(),
+            lifetime_plan=lifetime_plan,
+            schedule_plan=schedule_plan,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -152,6 +158,8 @@ class RuntimeAdapterSession:
                     f"Cannot end session while frame {self.current_frame} is open."
                 )
             self.closed = True
+        lifetime_plan = self.lifetime_planner.finalize() if self.closed else None
+        schedule_plan = self._build_schedule_plan(lifetime_plan) if lifetime_plan else None
         response = {
             "ok": True,
             "event": "session",
@@ -159,9 +167,8 @@ class RuntimeAdapterSession:
             "session_id": self.session_id,
             "closed": self.closed,
             "policy_actions": [],
-            "lifetime_plan": self.lifetime_planner.finalize().to_dict()
-            if self.closed
-            else None,
+            "lifetime_plan": lifetime_plan.to_dict() if lifetime_plan else None,
+            "schedule_plan": schedule_plan.to_dict() if schedule_plan else None,
         }
         return with_event_index(response, event_index)
 
@@ -313,6 +320,19 @@ class RuntimeAdapterSession:
             stats.policy_action_count += 1
             action_ids.append(action.id)
         stats.policy_action_ids = action_ids
+
+    def _build_schedule_plan(self, lifetime_plan: ResourceLifetimePlan) -> SchedulerPlan:
+        return simulate_scheduler(
+            operations=list(self.controller.executed_operations),
+            frame_targets_ms={
+                frame.frame: frame.target_frame_ms for frame in self.frames.values()
+            },
+            frame_costs_ms={
+                frame.frame: frame.estimated_total_cost_ms
+                for frame in self.frames.values()
+            },
+            lifetime_plan=lifetime_plan,
+        )
 
 
 def replay_adapter_event_stream(path: str | Path) -> AdapterSessionResult:

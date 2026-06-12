@@ -249,6 +249,22 @@ advisory planner, not a driver-level allocator. Its purpose is to turn detected
 pressure into a concrete set of residency, release, and prefetch intents that a
 future engine plugin, API hook, or scheduler can enforce.
 
+## Scheduler Simulator
+
+The v0.12 scheduler simulator turns the lifetime plan into an ordered frame
+schedule. It groups work into phases:
+
+- `prefetch`: large uploads/copies moved before frame-critical work;
+- `prepare`: frame-local setup that still has to happen before rendering;
+- `critical`: draw, compute, and present work on the active frame path;
+- `cleanup`: release-after-frame memory actions.
+
+The simulator reports critical-path cost before and after scheduling, moved
+transfer volume, budget status per frame, and the ordered steps. This does not
+execute graphics API calls yet, but it lets FluidGateway test whether a planned
+RAM/VRAM residency and prefetch strategy would shorten the frame's hot path
+before building a real scheduler or engine adapter.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
