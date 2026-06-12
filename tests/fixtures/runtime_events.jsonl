@@ -1,0 +1,12 @@
+{"event":"resource","id":"ram_texture_a","kind":"texture","memory":"ram","size_mb":64,"lifetime":"asset","aliases":["texture_a"]}
+{"event":"resource","id":"vram_texture_a","kind":"texture","memory":"vram","size_mb":64,"lifetime":"frame","aliases":["texture_a_gpu"]}
+{"event":"resource","id":"vram_texture_a_alias","kind":"texture","memory":"vram","size_mb":64,"lifetime":"frame","aliases":["texture_a_gpu"]}
+{"event":"resource","id":"scratch_buffer","kind":"buffer","memory":"vram","size_mb":16,"lifetime":"transient","aliases":["scratch16"]}
+{"event":"resource","id":"backbuffer","kind":"framebuffer","memory":"swapchain","size_mb":32,"lifetime":"frame","aliases":["frame0"]}
+{"event":"operation","id":"alloc_scratch_1","operation_type":"allocate","target":"scratch_buffer","queue":"cpu","reason":"transient scratch buffer","cost_ms":0.08,"size_mb":16,"frame":0}
+{"event":"operation","id":"alloc_scratch_2","operation_type":"allocate","target":"scratch_buffer","queue":"cpu","reason":"transient scratch buffer","cost_ms":0.08,"size_mb":16,"frame":0}
+{"event":"operation","id":"upload_texture_a","operation_type":"upload","source":"ram_texture_a","target":"vram_texture_a","queue":"copy","reason":"texture upload","cost_ms":0.9,"size_mb":64,"frame":0}
+{"event":"operation","id":"upload_texture_a_duplicate","operation_type":"upload","source":"ram_texture_a","target":"vram_texture_a","queue":"copy","reason":"duplicate texture upload","cost_ms":0.9,"size_mb":64,"frame":0}
+{"event":"operation","id":"copy_alias_texture","operation_type":"copy","source":"vram_texture_a","target":"vram_texture_a_alias","queue":"copy","reason":"copy to aliased texture view","cost_ms":0.35,"size_mb":64,"frame":0}
+{"event":"operation","id":"sync_duplicate_upload","operation_type":"sync","queue":"graphics","reason":"wait for duplicate upload","cost_ms":0.2,"size_mb":0,"frame":0,"depends_on":["upload_texture_a_duplicate"]}
+{"event":"operation","id":"draw_scene","operation_type":"draw","source":"vram_texture_a","target":"backbuffer","queue":"graphics","reason":"draw scene","cost_ms":6.2,"size_mb":0,"frame":0,"depends_on":["upload_texture_a"]}

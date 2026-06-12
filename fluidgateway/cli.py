@@ -6,6 +6,7 @@ import sys
 from . import __version__
 from .analyzer import analyze_trace
 from .control import FluidGatewayController
+from .events import replay_event_stream, write_event_replay
 from .parser import parse_presentmon_csv
 from .report import write_report
 from .report import write_management_plan
@@ -130,6 +131,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the control-plane snapshot JSON.",
     )
     simulate.set_defaults(func=run_runtime_simulate_control)
+    replay = runtime_subparsers.add_parser(
+        "replay-events",
+        help="Replay a JSONL runtime event stream through the control plane.",
+    )
+    replay.add_argument(
+        "--events",
+        required=True,
+        help="Path to a FluidGateway runtime JSONL event stream.",
+    )
+    replay.add_argument(
+        "--out",
+        required=True,
+        help="Path to the event replay JSON output.",
+    )
+    replay.set_defaults(func=run_runtime_replay_events)
     return parser
 
 
@@ -214,6 +230,19 @@ def run_runtime_simulate_control(args: argparse.Namespace) -> int:
     snapshot = controller.snapshot()
     print(f"FluidGateway control snapshot written: {output_path}")
     print(f"Executed operations: {len(snapshot['executed_operations'])}")
+    print(f"Decisions: {len(snapshot['decisions'])}")
+    print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
+    print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
+    return 0
+
+
+def run_runtime_replay_events(args: argparse.Namespace) -> int:
+    result = replay_event_stream(args.events)
+    output_path = write_event_replay(result, args.out)
+    snapshot = result.snapshot
+    print(f"FluidGateway event replay written: {output_path}")
+    print(f"Events processed: {result.events_processed}")
+    print(f"Operation events: {result.operation_events}")
     print(f"Decisions: {len(snapshot['decisions'])}")
     print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
     print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")

@@ -10,6 +10,7 @@ from pathlib import Path
 from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
 from fluidgateway.control import FluidGatewayController
+from fluidgateway.events import replay_event_stream, write_event_replay
 from fluidgateway.parser import parse_number, parse_presentmon_csv
 from fluidgateway.report import write_report
 from fluidgateway.runtime import load_manifest, optimize_manifest, write_runtime_plan
@@ -273,6 +274,51 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertEqual(len(payload["executed_operations"]), 4)
             self.assertEqual(len(payload["decisions"]), 4)
             self.assertGreater(payload["estimated_saved_ms"], 0)
+
+    def test_runtime_event_stream_replays_incremental_decisions(self):
+        result = replay_event_stream(FIXTURES / "runtime_events.jsonl")
+        payload = result.to_dict()
+        policies = {
+            item["decision"]["policy"]
+            for item in payload["results"]
+            if item["decision"] is not None
+        }
+        self.assertEqual(payload["mode"], "runtime-event-stream-v0.6")
+        self.assertEqual(payload["resource_events"], 5)
+        self.assertEqual(payload["operation_events"], 7)
+        self.assertEqual(len(payload["snapshot"]["executed_operations"]), 3)
+        self.assertEqual(len(payload["snapshot"]["decisions"]), 4)
+        self.assertIn("reuse-transient-buffer", policies)
+        self.assertIn("deduplicate-identical-transfer", policies)
+        self.assertIn("collapse-aliased-resource-copy", policies)
+        self.assertIn("remove-orphan-sync", policies)
+
+    def test_runtime_replay_events_command_writes_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "event-replay.json"
+            with redirect_stdout(StringIO()):
+                status = main(
+                    [
+                        "runtime",
+                        "replay-events",
+                        "--events",
+                        str(FIXTURES / "runtime_events.jsonl"),
+                        "--out",
+                        str(output),
+                    ]
+                )
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["mode"], "runtime-event-stream-v0.6")
+            self.assertEqual(payload["operation_events"], 7)
+            self.assertGreater(payload["snapshot"]["estimated_saved_mb"], 0)
+
+    def test_write_event_replay_creates_json(self):
+        result = replay_event_stream(FIXTURES / "runtime_events.jsonl")
+        with tempfile.TemporaryDirectory() as tmp:
+            output = write_event_replay(result, Path(tmp) / "events")
+            self.assertEqual(output.suffix, ".json")
+            self.assertTrue(output.exists())
 
 
 if __name__ == "__main__":

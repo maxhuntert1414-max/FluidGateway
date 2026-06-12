@@ -53,6 +53,7 @@ python -m fluidgateway track --presentmon trace.csv --label "baseline"
 python -m fluidgateway history
 python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-plan.json
 python -m fluidgateway runtime simulate-control --manifest pipeline.json --out control-snapshot.json
+python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out event-replay.json
 ```
 
 The command writes:
@@ -117,6 +118,22 @@ The CLI command `runtime simulate-control` runs this loop against a manifest and
 emits a control snapshot. This is the first shape of the real runtime contract:
 observe operation intent, decide early, then prevent useless movement or waiting
 before it happens.
+
+## Runtime Event Stream
+
+The v0.6 event stream is the first integration-facing protocol. Instead of
+requiring a whole manifest up front, an engine, SDK, hook, or telemetry adapter
+can emit JSONL events as work is discovered:
+
+```jsonl
+{"event":"resource","id":"vram_texture","kind":"texture","memory":"vram","size_mb":64}
+{"event":"operation","id":"upload_1","operation_type":"upload","source":"ram_texture","target":"vram_texture","cost_ms":0.9,"size_mb":64}
+```
+
+`runtime replay-events` replays the stream through the same control plane and
+records per-operation decisions. This is the bridge from offline analysis toward
+a runtime that can reject redundant copies, syncs, and transient allocations
+before they execute.
 
 ## Supported Input
 
