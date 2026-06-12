@@ -207,6 +207,31 @@ and the underlying control-plane snapshot. The local TCP server also accepts the
 same lifecycle events, so the same JSONL shape can be tested offline or over the
 runtime socket.
 
+## Frame Policy Engine
+
+The v0.10 policy engine starts turning the adapter stream into management
+decisions at frame scope. A session can declare a target frame budget and
+RAM/VRAM budgets:
+
+```jsonl
+{"event":"session","action":"begin","id":"policy-demo","budgets":{"frame_ms":8,"ram_mb":64,"vram_mb":72}}
+{"event":"frame","action":"begin","frame":0}
+```
+
+While the frame runs, FluidGateway tracks active resource residency, transfer
+volume, queue cost, and estimated frame work. It can emit policy actions such
+as:
+
+- `late-upload-pressure`: a copy/upload consumes too much of the active frame budget;
+- `vram-budget-pressure` or `ram-budget-pressure`: active residency exceeds the declared budget;
+- `frame-budget-pressure`: submitted work exceeds the target frame budget;
+- `queue-imbalance-pressure`: one queue dominates frame time while other queues also carry work.
+
+These actions are advisory in v0.10, but they are the first runtime-management
+layer above individual copy/sync/buffer decisions. This is the path toward a
+software scheduler that reduces late work, redundant memory traffic, and wasted
+CPU/GPU/RAM/VRAM movement before it becomes stutter.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

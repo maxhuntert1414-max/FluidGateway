@@ -1,0 +1,10 @@
+{"event":"session","action":"begin","id":"policy-pressure","budgets":{"frame_ms":8,"ram_mb":64,"vram_mb":72}}
+{"event":"frame","action":"begin","frame":0}
+{"event":"resource","id":"ram_texture","kind":"texture","memory":"ram","size_mb":64,"lifetime":"asset","aliases":["tex"]}
+{"event":"resource","id":"vram_texture","kind":"texture","memory":"vram","size_mb":64,"lifetime":"frame","aliases":["tex_gpu"]}
+{"event":"resource","id":"scratch","kind":"buffer","memory":"vram","size_mb":24,"lifetime":"transient","aliases":["scratch24"]}
+{"event":"operation","id":"upload_tex","operation_type":"upload","source":"ram_texture","target":"vram_texture","queue":"copy","reason":"late texture upload","cost_ms":5.2,"size_mb":64}
+{"event":"operation","id":"draw_scene","operation_type":"draw","source":"vram_texture","target":"vram_texture","queue":"graphics","reason":"draw scene","cost_ms":4.5,"size_mb":0}
+{"event":"operation","id":"compute_post","operation_type":"compute","source":"vram_texture","target":"vram_texture","queue":"compute","reason":"post effect","cost_ms":1.2,"size_mb":0}
+{"event":"frame","action":"end","frame":0}
+{"event":"session","action":"end"}

@@ -7,30 +7,46 @@ from typing import Any
 
 from .control import FluidGatewayController
 from .events import iter_jsonl, register_resource_event, submit_operation_event
+from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.9"
+ADAPTER_MODE = "runtime-adapter-session-v0.10"
 
 
 @dataclass
 class AdapterFrameStats:
     frame: int
+    target_frame_ms: float = DEFAULT_FRAME_BUDGET_MS
     begin_event_index: int | None = None
     end_event_index: int | None = None
     operation_count: int = 0
     decision_count: int = 0
+    policy_action_count: int = 0
+    policy_action_ids: list[str] | None = None
+    estimated_total_cost_ms: float = 0.0
     estimated_saved_ms: float = 0.0
     estimated_saved_mb: float = 0.0
+    transfer_mb: float = 0.0
+    queue_costs: dict[str, float] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "frame": self.frame,
+            "target_frame_ms": round(self.target_frame_ms, 4),
             "begin_event_index": self.begin_event_index,
             "end_event_index": self.end_event_index,
             "operation_count": self.operation_count,
             "decision_count": self.decision_count,
+            "policy_action_count": self.policy_action_count,
+            "policy_action_ids": self.policy_action_ids or [],
+            "estimated_total_cost_ms": round(self.estimated_total_cost_ms, 4),
             "estimated_saved_ms": round(self.estimated_saved_ms, 4),
             "estimated_saved_mb": round(self.estimated_saved_mb, 4),
+            "transfer_mb": round(self.transfer_mb, 4),
+            "queue_costs": {
+                queue: round(cost, 4)
+                for queue, cost in sorted((self.queue_costs or {}).items())
+            },
         }
 
 
@@ -44,6 +60,7 @@ class AdapterSessionResult:
     operation_events: int
     released_resources: list[str]
     frames: list[AdapterFrameStats]
+    policy_actions: list[RuntimePolicyAction]
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -57,6 +74,8 @@ class AdapterSessionResult:
             "operation_events": self.operation_events,
             "released_resources": self.released_resources,
             "frames": [frame.to_dict() for frame in self.frames],
+            "policy_action_count": len(self.policy_actions),
+            "policy_actions": [action.to_dict() for action in self.policy_actions],
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -68,6 +87,7 @@ class RuntimeAdapterSession:
     def __init__(self, session_id: str = "default") -> None:
         self.session_id = session_id
         self.controller = FluidGatewayController()
+        self.policy_engine = RuntimePolicyEngine()
         self.current_frame: int | None = None
         self.events_processed = 0
         self.lifecycle_events = 0
@@ -105,6 +125,7 @@ class RuntimeAdapterSession:
             operation_events=self.operation_events,
             released_resources=list(self.released_resources),
             frames=[self.frames[key] for key in sorted(self.frames)],
+            policy_actions=list(self.policy_engine.actions),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -118,6 +139,7 @@ class RuntimeAdapterSession:
             self.session_id = str(
                 payload.get("id") or payload.get("session_id") or self.session_id
             )
+            self.policy_engine.configure(payload)
             self.closed = False
         else:
             if self.current_frame is not None:
@@ -131,6 +153,7 @@ class RuntimeAdapterSession:
             "action": action,
             "session_id": self.session_id,
             "closed": self.closed,
+            "policy_actions": [],
         }
         return with_event_index(response, event_index)
 
@@ -148,19 +171,30 @@ class RuntimeAdapterSession:
                 raise ValueError(f"Frame {frame} is already open.")
             self.current_frame = frame
             stats.begin_event_index = event_index
+            stats.target_frame_ms = self.policy_engine.frame_budget_from(payload)
         else:
             if self.current_frame != frame:
                 raise ValueError(
                     f"Cannot end frame {frame}; current open frame is {self.current_frame}."
                 )
+            policy_actions = self.policy_engine.finish_frame(
+                frame=frame,
+                target_frame_ms=stats.target_frame_ms,
+                estimated_total_cost_ms=stats.estimated_total_cost_ms,
+                queue_costs=stats.queue_costs or {},
+            )
+            self._record_policy_actions(policy_actions, frame)
             stats.end_event_index = event_index
             self.current_frame = None
+        if action == "begin":
+            policy_actions = []
         response = {
             "ok": True,
             "event": "frame",
             "action": action,
             "frame": frame,
             "frame_state": stats.to_dict(),
+            "policy_actions": [item.to_dict() for item in policy_actions],
         }
         return with_event_index(response, event_index)
 
@@ -175,24 +209,32 @@ class RuntimeAdapterSession:
             resource_id = str(payload.get("id") or payload.get("resource_id") or "").strip()
             if not resource_id:
                 raise ValueError("Resource release event requires 'id' or 'resource_id'.")
-            released = self.controller.resources.pop(resource_id, None) is not None
+            released_resource = self.controller.resources.pop(resource_id, None)
+            released = released_resource is not None
             if released:
                 self.released_resources.append(resource_id)
+                self.policy_engine.release_resource(resource_id)
             response = {
                 "ok": True,
                 "event": "resource",
                 "action": "release",
                 "resource_id": resource_id,
                 "released": released,
+                "policy_actions": [],
             }
             return with_event_index(response, event_index)
 
         resource = register_resource_event(self.controller, payload)
+        policy_actions = self.policy_engine.register_resource(
+            resource, self.current_frame
+        )
+        self._record_policy_actions(policy_actions, self.current_frame)
         response = {
             "ok": True,
             "event": "resource",
             "action": "register",
             "resource": resource.to_dict(),
+            "policy_actions": [item.to_dict() for item in policy_actions],
         }
         return with_event_index(response, event_index)
 
@@ -212,14 +254,33 @@ class RuntimeAdapterSession:
         if operation_frame is not None:
             stats = self._frame_stats(operation_frame)
             stats.operation_count += 1
+            if result.executed:
+                stats.estimated_total_cost_ms += result.operation.cost_ms
+                if stats.queue_costs is None:
+                    stats.queue_costs = {}
+                stats.queue_costs[result.operation.queue] = (
+                    stats.queue_costs.get(result.operation.queue, 0.0)
+                    + result.operation.cost_ms
+                )
+                if result.operation.type in {"copy", "upload"}:
+                    stats.transfer_mb += result.operation.size_mb
             if result.decision is not None:
                 stats.decision_count += 1
                 stats.estimated_saved_ms += result.decision.estimated_saved_ms
                 stats.estimated_saved_mb += result.decision.estimated_saved_mb
+        policy_actions = self.policy_engine.record_operation(
+            result,
+            operation_frame,
+            self._frame_stats(operation_frame).target_frame_ms
+            if operation_frame is not None
+            else self.policy_engine.target_frame_ms,
+        )
+        self._record_policy_actions(policy_actions, operation_frame)
         response = {
             "ok": True,
             "event": "operation",
             "result": result_payload,
+            "policy_actions": [item.to_dict() for item in policy_actions],
         }
         return with_event_index(response, event_index)
 
@@ -227,6 +288,18 @@ class RuntimeAdapterSession:
         if frame not in self.frames:
             self.frames[frame] = AdapterFrameStats(frame=frame)
         return self.frames[frame]
+
+    def _record_policy_actions(
+        self, actions: list[RuntimePolicyAction], frame: int | None
+    ) -> None:
+        if frame is None:
+            return
+        stats = self._frame_stats(frame)
+        action_ids = list(stats.policy_action_ids or [])
+        for action in actions:
+            stats.policy_action_count += 1
+            action_ids.append(action.id)
+        stats.policy_action_ids = action_ids
 
 
 def replay_adapter_event_stream(path: str | Path) -> AdapterSessionResult:
