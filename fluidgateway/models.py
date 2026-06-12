@@ -157,6 +157,56 @@ class Finding:
 
 
 @dataclass(frozen=True)
+class ManagementAction:
+    id: str
+    title: str
+    layer: str
+    objective: str
+    policy: str
+    trigger: str
+    expected_effect: str
+    risk: str
+    priority: int
+    confidence: str
+    source_findings: list[str]
+    evidence: list[Evidence]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "layer": self.layer,
+            "objective": self.objective,
+            "policy": self.policy,
+            "trigger": self.trigger,
+            "expected_effect": self.expected_effect,
+            "risk": self.risk,
+            "priority": self.priority,
+            "confidence": self.confidence,
+            "source_findings": self.source_findings,
+            "evidence": [item.to_dict() for item in self.evidence],
+        }
+
+
+@dataclass(frozen=True)
+class ManagementPlan:
+    mode: str
+    target: str
+    summary: str
+    actions: list[ManagementAction]
+    constraints: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "mode": self.mode,
+            "target": self.target,
+            "summary": self.summary,
+            "actions": [action.to_dict() for action in self.actions],
+            "constraints": self.constraints,
+        }
+
+
+@dataclass(frozen=True)
 class TraceSummary:
     source: str
     application: str
@@ -188,11 +238,13 @@ class TraceSummary:
 class AnalysisReport:
     summary: TraceSummary
     findings: list[Finding]
+    management_plan: ManagementPlan
     disclaimer: str
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "summary": self.summary.to_dict(),
             "findings": [finding.to_dict() for finding in self.findings],
+            "management_plan": self.management_plan.to_dict(),
             "disclaimer": self.disclaimer,
         }

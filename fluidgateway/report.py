@@ -4,7 +4,7 @@ import html
 import json
 from pathlib import Path
 
-from .models import AnalysisReport, Finding, MetricSummary
+from .models import AnalysisReport, Finding, ManagementAction, ManagementPlan, MetricSummary
 from .stats import fmt_ms
 
 
@@ -21,6 +21,18 @@ def write_report(report: AnalysisReport, html_path: str | Path) -> tuple[Path, P
         encoding="utf-8",
     )
     return output_path, json_path
+
+
+def write_management_plan(plan: ManagementPlan, json_path: str | Path) -> Path:
+    output_path = Path(json_path)
+    if output_path.suffix.lower() != ".json":
+        output_path = output_path.with_suffix(".json")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(plan.to_dict(), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return output_path
 
 
 def render_html(report: AnalysisReport) -> str:
@@ -226,6 +238,11 @@ def render_html(report: AnalysisReport) -> str:
     </section>
 
     <section>
+      <h2>Management inteligente</h2>
+      {render_management_plan(report.management_plan)}
+    </section>
+
+    <section>
       <h2>Resumo de metricas</h2>
       {render_metrics_table(report)}
     </section>
@@ -278,6 +295,58 @@ def render_finding(finding: Finding) -> str:
       </div>
       <div class="evidence">{evidence}</div>
       <p class="recommendation"><strong>Recomendacao:</strong> {escape(finding.recommendation)}</p>
+    </article>"""
+
+
+def render_management_plan(plan: ManagementPlan) -> str:
+    if not plan.actions:
+        return f"""<div class="notice">
+        <p>{escape(plan.summary)}</p>
+        <p class="small">{escape('; '.join(plan.constraints))}</p>
+      </div>"""
+
+    actions = "\n".join(render_management_action(action) for action in plan.actions)
+    constraints = "".join(
+        f"<li>{escape(constraint)}</li>" for constraint in plan.constraints
+    )
+    return f"""<div class="notice">
+        <p><strong>Modo:</strong> {escape(plan.mode)}</p>
+        <p>{escape(plan.summary)}</p>
+        <p class="small">Estas politicas sao advisory: descrevem como o futuro gateway/scheduler deve agir, sem alterar jogo, driver ou sistema nesta versao.</p>
+      </div>
+      {actions}
+      <div class="notice">
+        <p><strong>Restricoes v0.2</strong></p>
+        <ul>{constraints}</ul>
+      </div>"""
+
+
+def render_management_action(action: ManagementAction) -> str:
+    evidence = "\n".join(
+        f"""<div class="evidence-item">
+          <span>{escape(item.label)}</span>
+          <strong>{escape(item.value)}</strong>
+          <span>{escape(item.detail)}</span>
+        </div>"""
+        for item in action.evidence
+    )
+    return f"""<article class="finding">
+      <div class="finding-top">
+        <div>
+          <h3>{escape(action.title)}</h3>
+          <p>{escape(action.objective)}</p>
+        </div>
+        <div class="badges">
+          <span class="badge">priority {action.priority}</span>
+          <span class="badge">confidence {escape(action.confidence)}</span>
+          <span class="badge">{escape(action.layer)}</span>
+        </div>
+      </div>
+      <p><strong>Policy:</strong> {escape(action.policy)}</p>
+      <p><strong>Trigger:</strong> {escape(action.trigger)}</p>
+      <p><strong>Expected effect:</strong> {escape(action.expected_effect)}</p>
+      <p class="recommendation"><strong>Risk:</strong> {escape(action.risk)}</p>
+      <div class="evidence">{evidence}</div>
     </article>"""
 
 

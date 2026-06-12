@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 
 from .heuristics import run_heuristics
+from .management import build_management_plan
 from .models import (
     SUMMARY_METRICS,
     AnalysisReport,
@@ -22,7 +23,13 @@ DISCLAIMER = (
 def analyze_trace(trace: TraceData) -> AnalysisReport:
     summary = build_summary(trace)
     findings = run_heuristics(trace.frames, summary)
-    return AnalysisReport(summary=summary, findings=findings, disclaimer=DISCLAIMER)
+    management_plan = build_management_plan(summary, findings)
+    return AnalysisReport(
+        summary=summary,
+        findings=findings,
+        management_plan=management_plan,
+        disclaimer=DISCLAIMER,
+    )
 
 
 def build_summary(trace: TraceData) -> TraceSummary:

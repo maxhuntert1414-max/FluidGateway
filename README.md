@@ -11,23 +11,51 @@ borrow the efficiency philosophy of tightly integrated systems such as Apple
 Silicon: less redundant movement, fewer late sync points, more useful work per
 watt.
 
-The v0 release does not inject code, hook games, change drivers, or optimize
-anything automatically. It ingests PresentMon 2.x CSV data and produces a
-ranked report of likely waste patterns with evidence.
+The current release does not inject code, hook games, change drivers, or
+optimize anything automatically. It ingests PresentMon 2.x CSV data and
+produces a ranked report of likely waste patterns with evidence.
 
 > The initial promise is to find probable waste in the frame path, not to
 > automatically increase FPS.
+
+## Intelligent Management Layer
+
+FluidGateway's management layer treats the diagnostic report as the sensor
+input for a future runtime controller. The goal is to eventually coordinate:
+
+- CPU/GPU work handoff;
+- RAM/VRAM/resource residency;
+- texture and buffer upload timing;
+- staging buffer reuse;
+- present queue depth;
+- frame pacing stability;
+- zero-copy or lower-copy presentation routes.
+
+In v0.2 this is still advisory. The tool generates a management plan that says
+which policies a future gateway/scheduler should apply and why. Direct RAM/VRAM
+control requires additional telemetry beyond PresentMon.
+
+The v0.2 management plan can activate policies such as:
+
+- adaptive frame queue depth;
+- early CPU/GPU handoff scheduling;
+- GPU work prefetch budgeting;
+- frame pacing stability control;
+- RAM/VRAM residency management;
+- zero-copy presentation route preference.
 
 ## Quick Start
 
 ```powershell
 python -m fluidgateway analyze --presentmon trace.csv --out report.html
+python -m fluidgateway manage --presentmon trace.csv --out management.json
 ```
 
 The command writes:
 
 - `report.html`: human-readable diagnostic report.
 - `report.json`: structured report data next to the HTML file.
+- `management.json`: advisory management plan when using `manage`.
 
 ## Supported Input
 

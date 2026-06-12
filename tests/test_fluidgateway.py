@@ -3,8 +3,11 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 
+from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
 from fluidgateway.parser import parse_number, parse_presentmon_csv
 from fluidgateway.report import write_report
@@ -44,6 +47,11 @@ class FluidGatewayTests(unittest.TestCase):
         report = self.analyze_fixture("gpu_wait.csv")
         self.assert_has_finding(report, "gpu-bubbles")
 
+    def test_gpu_wait_triggers_ram_vram_management_action(self):
+        report = self.analyze_fixture("gpu_wait.csv")
+        action_ids = {action.id for action in report.management_plan.actions}
+        self.assertIn("ram-vram-residency-manager", action_ids)
+
     def test_irregular_pacing_triggers_pacing_finding(self):
         report = self.analyze_fixture("irregular_pacing.csv")
         self.assert_has_finding(report, "unstable-frame-pacing")
@@ -66,7 +74,30 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertTrue(json_path.exists())
             payload = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertIn("findings", payload)
+            self.assertIn("management_plan", payload)
+            self.assertGreater(len(payload["management_plan"]["actions"]), 0)
             self.assertIn("diagnostico inferido", payload["disclaimer"].lower())
+
+    def test_manage_command_writes_management_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "management.json"
+            with redirect_stdout(StringIO()):
+                status = main(
+                    [
+                        "manage",
+                        "--presentmon",
+                        str(FIXTURES / "gpu_wait.csv"),
+                        "--out",
+                        str(output),
+                    ]
+                )
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["mode"], "advisory-management-v0.2")
+            self.assertIn(
+                "ram-vram-residency-manager",
+                {action["id"] for action in payload["actions"]},
+            )
 
 
 if __name__ == "__main__":
