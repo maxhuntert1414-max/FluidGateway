@@ -6,13 +6,14 @@ from pathlib import Path
 from typing import Any
 
 from .control import FluidGatewayController
+from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 from .scheduler import SchedulerPlan, simulate_scheduler
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.12"
+ADAPTER_MODE = "runtime-adapter-session-v0.13"
 
 
 @dataclass
@@ -65,6 +66,7 @@ class AdapterSessionResult:
     policy_actions: list[RuntimePolicyAction]
     lifetime_plan: ResourceLifetimePlan
     schedule_plan: SchedulerPlan
+    enforcement_plan: EnforcementPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -82,6 +84,7 @@ class AdapterSessionResult:
             "policy_actions": [action.to_dict() for action in self.policy_actions],
             "lifetime_plan": self.lifetime_plan.to_dict(),
             "schedule_plan": self.schedule_plan.to_dict(),
+            "enforcement_plan": self.enforcement_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -125,6 +128,7 @@ class RuntimeAdapterSession:
     def to_result(self) -> AdapterSessionResult:
         lifetime_plan = self.lifetime_planner.finalize()
         schedule_plan = self._build_schedule_plan(lifetime_plan)
+        enforcement_plan = build_enforcement_plan(schedule_plan)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -137,6 +141,7 @@ class RuntimeAdapterSession:
             policy_actions=list(self.policy_engine.actions),
             lifetime_plan=lifetime_plan,
             schedule_plan=schedule_plan,
+            enforcement_plan=enforcement_plan,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -160,6 +165,7 @@ class RuntimeAdapterSession:
             self.closed = True
         lifetime_plan = self.lifetime_planner.finalize() if self.closed else None
         schedule_plan = self._build_schedule_plan(lifetime_plan) if lifetime_plan else None
+        enforcement_plan = build_enforcement_plan(schedule_plan) if schedule_plan else None
         response = {
             "ok": True,
             "event": "session",
@@ -169,6 +175,7 @@ class RuntimeAdapterSession:
             "policy_actions": [],
             "lifetime_plan": lifetime_plan.to_dict() if lifetime_plan else None,
             "schedule_plan": schedule_plan.to_dict() if schedule_plan else None,
+            "enforcement_plan": enforcement_plan.to_dict() if enforcement_plan else None,
         }
         return with_event_index(response, event_index)
 

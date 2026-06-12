@@ -353,6 +353,7 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(f"Policy actions: {len(result.policy_actions)}")
     print(f"Lifetime plan actions: {result.lifetime_plan.plan_action_count}")
     print(f"Scheduled steps: {result.schedule_plan.scheduled_step_count}")
+    print(f"Enforcement commands: {result.enforcement_plan.command_count}")
     print(
         "Estimated critical-path reduction ms: "
         f"{result.schedule_plan.estimated_latency_reduction_ms:.4f}"

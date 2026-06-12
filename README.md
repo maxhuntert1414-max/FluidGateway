@@ -265,6 +265,19 @@ execute graphics API calls yet, but it lets FluidGateway test whether a planned
 RAM/VRAM residency and prefetch strategy would shorten the frame's hot path
 before building a real scheduler or engine adapter.
 
+## Enforcement Contract
+
+The v0.13 enforcement contract translates the simulated schedule into adapter
+commands:
+
+- `prefetch_now`: execute this transfer before frame-critical work;
+- `execute_now`: keep this operation on the active frame path;
+- `release_after_frame`: release transient memory after the frame consumes it.
+
+This is still advisory user-space output, but it is shaped like the contract a
+real engine plugin or API adapter would consume. The scheduler decides the
+better order; the enforcement contract says what an integration should do next.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
