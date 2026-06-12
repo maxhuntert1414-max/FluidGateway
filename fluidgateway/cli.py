@@ -5,6 +5,7 @@ import sys
 
 from . import __version__
 from .analyzer import analyze_trace
+from .client import RuntimeEventClient, write_client_responses
 from .control import FluidGatewayController
 from .events import replay_event_stream, write_event_replay
 from .parser import parse_presentmon_csv
@@ -147,6 +148,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the event replay JSON output.",
     )
     replay.set_defaults(func=run_runtime_replay_events)
+    send = runtime_subparsers.add_parser(
+        "send-events",
+        help="Send a JSONL runtime event stream to a running decision server.",
+    )
+    send.add_argument(
+        "--events",
+        required=True,
+        help="Path to a FluidGateway runtime JSONL event stream.",
+    )
+    send.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Runtime server host. Defaults to 127.0.0.1.",
+    )
+    send.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="Runtime server TCP port. Defaults to 8765.",
+    )
+    send.add_argument(
+        "--timeout",
+        type=float,
+        default=5.0,
+        help="Socket timeout in seconds. Defaults to 5.",
+    )
+    send.add_argument(
+        "--out",
+        required=True,
+        help="Path to the server response JSON output.",
+    )
+    send.set_defaults(func=run_runtime_send_events)
     serve = runtime_subparsers.add_parser(
         "serve-events",
         help="Serve a local TCP JSONL runtime decision endpoint.",
@@ -269,6 +302,27 @@ def run_runtime_replay_events(args: argparse.Namespace) -> int:
     print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
     print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
     return 0
+
+
+def run_runtime_send_events(args: argparse.Namespace) -> int:
+    with RuntimeEventClient(args.host, args.port, args.timeout) as client:
+        responses = client.send_jsonl(args.events)
+    output_path = write_client_responses(responses, args.out)
+    operation_responses = [
+        response for response in responses if response.get("event") == "operation"
+    ]
+    decision_count = sum(
+        1
+        for response in operation_responses
+        if response.get("result", {}).get("decision") is not None
+    )
+    failed_responses = sum(1 for response in responses if not response.get("ok"))
+    print(f"FluidGateway server responses written: {output_path}")
+    print(f"Events sent: {len(responses)}")
+    print(f"Operation responses: {len(operation_responses)}")
+    print(f"Decisions: {decision_count}")
+    print(f"Failed responses: {failed_responses}")
+    return 1 if failed_responses else 0
 
 
 def run_runtime_serve_events(args: argparse.Namespace) -> int:

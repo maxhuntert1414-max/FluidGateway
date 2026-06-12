@@ -11,6 +11,7 @@ from pathlib import Path
 
 from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
+from fluidgateway.client import RuntimeEventClient, summarize_client_responses
 from fluidgateway.control import FluidGatewayController
 from fluidgateway.events import replay_event_stream, write_event_replay
 from fluidgateway.parser import parse_number, parse_presentmon_csv
@@ -361,6 +362,70 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertTrue(all(response["ok"] for response in responses))
         self.assertIn("deduplicate-identical-transfer", policies)
         self.assertIn("remove-orphan-sync", policies)
+
+    def test_runtime_event_client_sends_jsonl_to_server(self):
+        with create_runtime_event_server("127.0.0.1", 0) as server:
+            server.timeout = 5
+            host, port = server.server_address
+            thread = threading.Thread(target=server.handle_request)
+            thread.start()
+
+            with RuntimeEventClient(host, port, timeout=5) as client:
+                responses = client.send_jsonl(FIXTURES / "runtime_events.jsonl")
+
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
+        summary = summarize_client_responses(responses)
+        policies = {
+            response["result"]["decision"]["policy"]
+            for response in responses
+            if response.get("event") == "operation"
+            and response["result"]["decision"] is not None
+        }
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.8")
+        self.assertEqual(summary["events_sent"], 12)
+        self.assertEqual(summary["resource_responses"], 5)
+        self.assertEqual(summary["operation_responses"], 7)
+        self.assertEqual(summary["decision_count"], 4)
+        self.assertEqual(summary["failed_responses"], 0)
+        self.assertIn("deduplicate-identical-transfer", policies)
+        self.assertIn("remove-orphan-sync", policies)
+
+    def test_runtime_send_events_command_writes_server_responses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "server-responses.json"
+            with create_runtime_event_server("127.0.0.1", 0) as server:
+                server.timeout = 5
+                host, port = server.server_address
+                thread = threading.Thread(target=server.handle_request)
+                thread.start()
+
+                with redirect_stdout(StringIO()):
+                    status = main(
+                        [
+                            "runtime",
+                            "send-events",
+                            "--events",
+                            str(FIXTURES / "runtime_events.jsonl"),
+                            "--host",
+                            host,
+                            "--port",
+                            str(port),
+                            "--out",
+                            str(output),
+                        ]
+                    )
+
+                thread.join(timeout=5)
+                self.assertFalse(thread.is_alive())
+
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["mode"], "runtime-event-client-v0.8")
+            self.assertEqual(payload["events_sent"], 12)
+            self.assertEqual(payload["decision_count"], 4)
+            self.assertEqual(payload["failed_responses"], 0)
 
 
 if __name__ == "__main__":

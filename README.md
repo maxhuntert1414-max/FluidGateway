@@ -55,6 +55,7 @@ python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-p
 python -m fluidgateway runtime simulate-control --manifest pipeline.json --out control-snapshot.json
 python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out event-replay.json
 python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
+python -m fluidgateway runtime send-events --events runtime-events.jsonl --host 127.0.0.1 --port 8765 --out server-responses.json
 ```
 
 The command writes:
@@ -153,6 +154,34 @@ This is still a user-space prototype, not a driver or graphics API hook. It is,
 however, a concrete integration surface for an engine plugin, telemetry adapter,
 or future interceptor to ask for decisions before performing CPU/GPU/RAM/VRAM
 movement or synchronization.
+
+## Runtime Client SDK
+
+The v0.8 client SDK is the first client-side integration surface for the local
+decision server. Python adapters can connect to the server, register resources,
+submit operations, and receive one decision per event:
+
+```python
+from fluidgateway.client import RuntimeEventClient
+
+with RuntimeEventClient("127.0.0.1", 8765) as client:
+    client.register_resource("ram_texture", kind="texture", memory="ram", size_mb=64)
+    client.register_resource("vram_texture", kind="texture", memory="vram", size_mb=64)
+    response = client.submit_operation(
+        "upload_texture",
+        "upload",
+        source="ram_texture",
+        target="vram_texture",
+        queue="copy",
+        cost_ms=0.9,
+        size_mb=64,
+    )
+```
+
+The CLI command `runtime send-events` uses the same SDK to send a JSONL stream
+to a running server and writes every server response to JSON. This keeps replay
+and live local-server testing separate: `replay-events` is offline, while
+`send-events` exercises the TCP protocol another process would use.
 
 ## Supported Input
 
