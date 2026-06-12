@@ -52,6 +52,7 @@ python -m fluidgateway manage --presentmon trace.csv --out management.json
 python -m fluidgateway track --presentmon trace.csv --label "baseline"
 python -m fluidgateway history
 python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-plan.json
+python -m fluidgateway runtime simulate-control --manifest pipeline.json --out control-snapshot.json
 ```
 
 The command writes:
@@ -101,6 +102,21 @@ The v0.4 optimizer can:
 This is not driver interception yet. It is the first executable model of the
 target runtime: reduce redundant transport and late synchronization before
 moving toward API hooks, engine SDKs, or deeper OS/GPU telemetry.
+
+## Runtime Control Plane
+
+The v0.5 control plane exposes the optimizer as an incremental SDK prototype.
+An app or engine can register resources, submit operations before executing
+them, and receive a decision:
+
+- execute the operation;
+- remove redundant work;
+- reuse an existing transient resource.
+
+The CLI command `runtime simulate-control` runs this loop against a manifest and
+emits a control snapshot. This is the first shape of the real runtime contract:
+observe operation intent, decide early, then prevent useless movement or waiting
+before it happens.
 
 ## Supported Input
 

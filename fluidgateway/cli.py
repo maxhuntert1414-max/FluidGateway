@@ -5,10 +5,11 @@ import sys
 
 from . import __version__
 from .analyzer import analyze_trace
+from .control import FluidGatewayController
 from .parser import parse_presentmon_csv
 from .report import write_report
 from .report import write_management_plan
-from .runtime import load_manifest, optimize_manifest, write_runtime_plan
+from .runtime import RuntimeManifest, load_manifest, optimize_manifest, write_runtime_plan
 from .tracker import DEFAULT_REGISTRY, summarize_registry, track_trace
 
 
@@ -114,6 +115,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the runtime optimization JSON plan.",
     )
     optimize.set_defaults(func=run_runtime_optimize)
+    simulate = runtime_subparsers.add_parser(
+        "simulate-control",
+        help="Run a manifest through the incremental FluidGateway control plane.",
+    )
+    simulate.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to a FluidGateway runtime manifest JSON.",
+    )
+    simulate.add_argument(
+        "--out",
+        required=True,
+        help="Path to the control-plane snapshot JSON.",
+    )
+    simulate.set_defaults(func=run_runtime_simulate_control)
     return parser
 
 
@@ -189,6 +205,46 @@ def run_runtime_optimize(args: argparse.Namespace) -> int:
     print(f"Estimated saved ms: {plan.estimated_saved_ms:.4f}")
     print(f"Estimated saved MB moved/allocated: {plan.estimated_saved_mb:.4f}")
     return 0
+
+
+def run_runtime_simulate_control(args: argparse.Namespace) -> int:
+    manifest = load_manifest(args.manifest)
+    controller = controller_from_manifest(manifest)
+    output_path = controller.write_snapshot(args.out)
+    snapshot = controller.snapshot()
+    print(f"FluidGateway control snapshot written: {output_path}")
+    print(f"Executed operations: {len(snapshot['executed_operations'])}")
+    print(f"Decisions: {len(snapshot['decisions'])}")
+    print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
+    print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
+    return 0
+
+
+def controller_from_manifest(manifest: RuntimeManifest) -> FluidGatewayController:
+    controller = FluidGatewayController()
+    for resource in manifest.resources.values():
+        controller.register_resource(
+            resource_id=resource.id,
+            kind=resource.kind,
+            memory=resource.memory,
+            size_mb=resource.size_mb,
+            lifetime=resource.lifetime,
+            aliases=resource.aliases,
+        )
+    for operation in manifest.operations:
+        controller.submit_operation(
+            operation_id=operation.id,
+            operation_type=operation.type,
+            source=operation.source,
+            target=operation.target,
+            queue=operation.queue,
+            reason=operation.reason,
+            cost_ms=operation.cost_ms,
+            size_mb=operation.size_mb,
+            frame=operation.frame,
+            depends_on=operation.depends_on,
+        )
+    return controller
 
 
 def main(argv: list[str] | None = None) -> int:

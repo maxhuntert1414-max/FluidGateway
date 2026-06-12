@@ -9,6 +9,7 @@ from pathlib import Path
 
 from fluidgateway.cli import main
 from fluidgateway.analyzer import analyze_trace
+from fluidgateway.control import FluidGatewayController
 from fluidgateway.parser import parse_number, parse_presentmon_csv
 from fluidgateway.report import write_report
 from fluidgateway.runtime import load_manifest, optimize_manifest, write_runtime_plan
@@ -204,6 +205,74 @@ class FluidGatewayTests(unittest.TestCase):
             output = write_runtime_plan(plan, Path(tmp) / "plan")
             self.assertEqual(output.suffix, ".json")
             self.assertTrue(output.exists())
+
+    def test_control_plane_decides_before_redundant_operation_executes(self):
+        controller = FluidGatewayController()
+        controller.register_resource(
+            "ram_texture",
+            kind="texture",
+            memory="ram",
+            size_mb=32,
+            aliases=["tex"],
+        )
+        controller.register_resource(
+            "vram_texture",
+            kind="texture",
+            memory="vram",
+            size_mb=32,
+            aliases=["tex_gpu"],
+        )
+
+        first = controller.submit_operation(
+            "upload_1",
+            "upload",
+            source="ram_texture",
+            target="vram_texture",
+            queue="copy",
+            reason="initial upload",
+            cost_ms=0.5,
+            size_mb=32,
+        )
+        duplicate = controller.submit_operation(
+            "upload_2",
+            "upload",
+            source="ram_texture",
+            target="vram_texture",
+            queue="copy",
+            reason="duplicate upload",
+            cost_ms=0.5,
+            size_mb=32,
+        )
+
+        self.assertTrue(first.executed)
+        self.assertFalse(duplicate.executed)
+        self.assertEqual(duplicate.decision.policy, "deduplicate-identical-transfer")
+        snapshot = controller.snapshot()
+        self.assertEqual(snapshot["mode"], "runtime-control-plane-v0.5")
+        self.assertEqual(len(snapshot["executed_operations"]), 1)
+        self.assertEqual(len(snapshot["decisions"]), 1)
+        self.assertEqual(snapshot["estimated_saved_mb"], 32)
+
+    def test_runtime_simulate_control_command_writes_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "control-snapshot.json"
+            with redirect_stdout(StringIO()):
+                status = main(
+                    [
+                        "runtime",
+                        "simulate-control",
+                        "--manifest",
+                        str(FIXTURES / "runtime_waste_manifest.json"),
+                        "--out",
+                        str(output),
+                    ]
+                )
+            self.assertEqual(status, 0)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["mode"], "runtime-control-plane-v0.5")
+            self.assertEqual(len(payload["executed_operations"]), 4)
+            self.assertEqual(len(payload["decisions"]), 4)
+            self.assertGreater(payload["estimated_saved_ms"], 0)
 
 
 if __name__ == "__main__":
