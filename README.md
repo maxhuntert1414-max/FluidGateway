@@ -54,6 +54,7 @@ python -m fluidgateway history
 python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-plan.json
 python -m fluidgateway runtime simulate-control --manifest pipeline.json --out control-snapshot.json
 python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out event-replay.json
+python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
 ```
 
 The command writes:
@@ -134,6 +135,24 @@ can emit JSONL events as work is discovered:
 records per-operation decisions. This is the bridge from offline analysis toward
 a runtime that can reject redundant copies, syncs, and transient allocations
 before they execute.
+
+## Local Runtime Decision Server
+
+The v0.7 server exposes the event protocol over a local TCP JSONL endpoint:
+
+```powershell
+python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
+```
+
+Each client connection owns an independent control-plane session. A client sends
+one JSON event per line and receives one JSON response per line. Resource events
+return an acknowledgement; operation events return whether the operation should
+execute or whether FluidGateway removed/reused it.
+
+This is still a user-space prototype, not a driver or graphics API hook. It is,
+however, a concrete integration surface for an engine plugin, telemetry adapter,
+or future interceptor to ask for decisions before performing CPU/GPU/RAM/VRAM
+movement or synchronization.
 
 ## Supported Input
 

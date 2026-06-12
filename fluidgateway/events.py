@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .control import ControllerResult, FluidGatewayController
+from .runtime import RuntimeResource
 
 
 @dataclass(frozen=True)
@@ -37,16 +38,13 @@ def replay_event_stream(path: str | Path) -> EventReplayResult:
 
     for index, payload in iter_jsonl(path):
         events_processed += 1
-        event_type = str(payload.get("event") or payload.get("type") or "").strip().lower()
+        response = process_event_payload(controller, payload, event_index=index)
+        event_type = response["event"]
         if event_type == "resource":
-            register_resource_event(controller, payload)
             resource_events += 1
         elif event_type == "operation":
-            result = submit_operation_event(controller, payload)
             operation_events += 1
-            results.append({"event_index": index, **result.to_dict()})
-        else:
-            raise ValueError(f"Unsupported event type on line {index}: {event_type or 'missing'}")
+            results.append(response["result"])
 
     return EventReplayResult(
         mode="runtime-event-stream-v0.6",
@@ -86,11 +84,44 @@ def iter_jsonl(path: str | Path):
             yield index, payload
 
 
-def register_resource_event(controller: FluidGatewayController, payload: dict[str, Any]) -> None:
+def process_event_payload(
+    controller: FluidGatewayController,
+    payload: dict[str, Any],
+    event_index: int | None = None,
+) -> dict[str, Any]:
+    event_type = str(payload.get("event") or payload.get("type") or "").strip().lower()
+    if event_type == "resource":
+        resource = register_resource_event(controller, payload)
+        response = {
+            "ok": True,
+            "event": "resource",
+            "resource": resource.to_dict(),
+        }
+    elif event_type == "operation":
+        result = submit_operation_event(controller, payload)
+        response = {
+            "ok": True,
+            "event": "operation",
+            "result": result.to_dict(),
+        }
+    else:
+        raise ValueError(
+            f"Unsupported event type: {event_type or 'missing'}"
+        )
+    if event_index is not None:
+        response["event_index"] = event_index
+        if response["event"] == "operation":
+            response["result"] = {"event_index": event_index, **response["result"]}
+    return response
+
+
+def register_resource_event(
+    controller: FluidGatewayController, payload: dict[str, Any]
+) -> RuntimeResource:
     resource_id = payload.get("id") or payload.get("resource_id")
     if not resource_id:
         raise ValueError("Resource event requires 'id' or 'resource_id'.")
-    controller.register_resource(
+    return controller.register_resource(
         resource_id=str(resource_id),
         kind=str(payload.get("kind") or "unknown"),
         memory=str(payload.get("memory") or "ram"),

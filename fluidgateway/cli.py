@@ -11,6 +11,7 @@ from .parser import parse_presentmon_csv
 from .report import write_report
 from .report import write_management_plan
 from .runtime import RuntimeManifest, load_manifest, optimize_manifest, write_runtime_plan
+from .server import serve_runtime_events
 from .tracker import DEFAULT_REGISTRY, summarize_registry, track_trace
 
 
@@ -146,6 +147,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the event replay JSON output.",
     )
     replay.set_defaults(func=run_runtime_replay_events)
+    serve = runtime_subparsers.add_parser(
+        "serve-events",
+        help="Serve a local TCP JSONL runtime decision endpoint.",
+    )
+    serve.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host interface to bind. Defaults to 127.0.0.1.",
+    )
+    serve.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="TCP port to bind. Defaults to 8765.",
+    )
+    serve.add_argument(
+        "--once",
+        action="store_true",
+        help="Accept one connection and exit. Useful for tests and scripted runs.",
+    )
+    serve.set_defaults(func=run_runtime_serve_events)
     return parser
 
 
@@ -246,6 +268,14 @@ def run_runtime_replay_events(args: argparse.Namespace) -> int:
     print(f"Decisions: {len(snapshot['decisions'])}")
     print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
     print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
+    return 0
+
+
+def run_runtime_serve_events(args: argparse.Namespace) -> int:
+    print(f"FluidGateway runtime event server listening on {args.host}:{args.port}")
+    if args.once:
+        print("Mode: one connection then exit")
+    serve_runtime_events(args.host, args.port, once=args.once)
     return 0
 
 

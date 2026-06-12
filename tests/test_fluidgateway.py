@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import socket
 import tempfile
+import threading
 import unittest
 from contextlib import redirect_stdout
 from io import StringIO
@@ -14,6 +16,7 @@ from fluidgateway.events import replay_event_stream, write_event_replay
 from fluidgateway.parser import parse_number, parse_presentmon_csv
 from fluidgateway.report import write_report
 from fluidgateway.runtime import load_manifest, optimize_manifest, write_runtime_plan
+from fluidgateway.server import create_runtime_event_server
 from fluidgateway.tracker import summarize_registry, track_trace
 
 
@@ -319,6 +322,45 @@ class FluidGatewayTests(unittest.TestCase):
             output = write_event_replay(result, Path(tmp) / "events")
             self.assertEqual(output.suffix, ".json")
             self.assertTrue(output.exists())
+
+    def test_runtime_event_server_returns_decisions_over_tcp(self):
+        with create_runtime_event_server("127.0.0.1", 0) as server:
+            host, port = server.server_address
+            thread = threading.Thread(target=server.handle_request)
+            thread.start()
+
+            lines = (FIXTURES / "runtime_events.jsonl").read_text(
+                encoding="utf-8"
+            ).splitlines()
+            payload = ("\n".join(lines) + "\n").encode("utf-8")
+            with socket.create_connection((host, port), timeout=5) as client:
+                client.sendall(payload)
+                client.shutdown(socket.SHUT_WR)
+                received = b""
+                while True:
+                    chunk = client.recv(4096)
+                    if not chunk:
+                        break
+                    received += chunk
+
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
+        responses = [
+            json.loads(line)
+            for line in received.decode("utf-8").splitlines()
+            if line.strip()
+        ]
+        policies = {
+            response["result"]["decision"]["policy"]
+            for response in responses
+            if response.get("event") == "operation"
+            and response["result"]["decision"] is not None
+        }
+        self.assertEqual(len(responses), 12)
+        self.assertTrue(all(response["ok"] for response in responses))
+        self.assertIn("deduplicate-identical-transfer", policies)
+        self.assertIn("remove-orphan-sync", policies)
 
 
 if __name__ == "__main__":
