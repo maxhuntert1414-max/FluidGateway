@@ -12,9 +12,10 @@ from .events import iter_jsonl
 from .feedback import build_feedback_plan
 from .routing import build_memory_route_plan
 from .transit import build_memory_transit_map
+from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.23"
+CLIENT_MODE = "runtime-event-client-v0.24"
 
 
 class RuntimeEventClient:
@@ -202,6 +203,7 @@ def summarize_client_responses(
         resources_from_responses(resource_responses),
     )
     memory_route_plan = build_memory_route_plan(memory_transit_map)
+    frame_window_plan = build_frame_window_plan(memory_route_plan)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -228,6 +230,7 @@ def summarize_client_responses(
         "actuation_plan": actuation_plan.to_dict(),
         "memory_transit_map": memory_transit_map.to_dict(),
         "memory_route_plan": memory_route_plan.to_dict(),
+        "frame_window_plan": frame_window_plan.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

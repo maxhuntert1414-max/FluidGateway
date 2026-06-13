@@ -25,9 +25,10 @@ from .routing import MemoryRoutePlan, build_memory_route_plan
 from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 from .transit import MemoryTransitMap, build_memory_transit_map
+from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.23"
+ADAPTER_MODE = "runtime-adapter-session-v0.24"
 
 
 @dataclass
@@ -91,6 +92,7 @@ class AdapterSessionResult:
     actuation_plan: ActuationPlan
     memory_transit_map: MemoryTransitMap
     memory_route_plan: MemoryRoutePlan
+    frame_window_plan: FrameWindowPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -124,6 +126,7 @@ class AdapterSessionResult:
             "actuation_plan": self.actuation_plan.to_dict(),
             "memory_transit_map": self.memory_transit_map.to_dict(),
             "memory_route_plan": self.memory_route_plan.to_dict(),
+            "frame_window_plan": self.frame_window_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -184,6 +187,7 @@ class RuntimeAdapterSession:
             self.results,
             self.lifetime_planner.resources,
         )
+        memory_route_plan = build_memory_route_plan(memory_transit_map)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -206,7 +210,8 @@ class RuntimeAdapterSession:
             feedback_plan=feedback_plan,
             actuation_plan=build_actuation_plan(feedback_plan),
             memory_transit_map=memory_transit_map,
-            memory_route_plan=build_memory_route_plan(memory_transit_map),
+            memory_route_plan=memory_route_plan,
+            frame_window_plan=build_frame_window_plan(memory_route_plan),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

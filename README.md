@@ -450,6 +450,25 @@ This is still an advisory software contract, but it is closer to the intended
 gateway: telemetry becomes a map, the map becomes route decisions, and those
 decisions become something a scheduler or engine adapter can apply.
 
+## Frame Window Plan
+
+The v0.24 frame window plan places route directives into execution windows. The
+`frame_window_plan` answers the next scheduler question: when should each route
+decision happen relative to the frame?
+
+Current windows are:
+
+- `never`: suppress redundant transfers, reuse duplicate allocations, or remove
+  useless sync waits;
+- `pre-frame`: prestage large cross-memory movement before draw-critical work;
+- `setup`: prepare reusable pools before the hot path;
+- `hot-path`: protect final presentation-facing operations;
+- `post-present`: reserved for cleanup after the frame is presented.
+
+This is the first explicit timing contract in the runtime prototype. It does not
+execute work yet, but it gives an engine adapter a stable schedule-shaped packet
+instead of loose recommendations.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

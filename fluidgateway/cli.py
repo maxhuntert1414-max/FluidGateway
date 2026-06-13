@@ -369,6 +369,7 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     print(f"Actuation commands: {summary['actuation_plan']['command_count']}")
     print(f"Memory transit hops: {summary['memory_transit_map']['hop_count']}")
     print(f"Memory route directives: {summary['memory_route_plan']['directive_count']}")
+    print(f"Frame window slots: {summary['frame_window_plan']['slot_count']}")
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -428,6 +429,8 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
         "Memory route saved MB: "
         f"{result.memory_route_plan.estimated_saved_mb:.4f}"
     )
+    print(f"Frame window slots: {result.frame_window_plan.slot_count}")
+    print(f"Frame pre-frame slots: {result.frame_window_plan.pre_frame_count}")
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
     print(
