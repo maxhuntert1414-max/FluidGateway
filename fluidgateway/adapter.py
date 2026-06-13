@@ -10,6 +10,7 @@ from .admission import AdmissionPlan, build_admission_decision, build_admission_
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
+from .executor import ExecutionSimulation, simulate_execution
 from .efficiency import (
     EfficiencyLedger,
     build_efficiency_impact,
@@ -29,7 +30,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.25"
+ADAPTER_MODE = "runtime-adapter-session-v0.26"
 
 
 @dataclass
@@ -95,6 +96,7 @@ class AdapterSessionResult:
     memory_route_plan: MemoryRoutePlan
     frame_window_plan: FrameWindowPlan
     execution_packet: ExecutionPacket
+    execution_simulation: ExecutionSimulation
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -130,6 +132,7 @@ class AdapterSessionResult:
             "memory_route_plan": self.memory_route_plan.to_dict(),
             "frame_window_plan": self.frame_window_plan.to_dict(),
             "execution_packet": self.execution_packet.to_dict(),
+            "execution_simulation": self.execution_simulation.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -192,6 +195,7 @@ class RuntimeAdapterSession:
         )
         memory_route_plan = build_memory_route_plan(memory_transit_map)
         frame_window_plan = build_frame_window_plan(memory_route_plan)
+        execution_packet = build_execution_packet(frame_window_plan)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -216,7 +220,8 @@ class RuntimeAdapterSession:
             memory_transit_map=memory_transit_map,
             memory_route_plan=memory_route_plan,
             frame_window_plan=frame_window_plan,
-            execution_packet=build_execution_packet(frame_window_plan),
+            execution_packet=execution_packet,
+            execution_simulation=simulate_execution(execution_packet),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

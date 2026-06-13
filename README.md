@@ -486,6 +486,23 @@ This packet is still advisory, but it is the closest v0 shape to a real runtime
 contract: a consuming engine adapter can read ordered commands, apply the
 `never` and `pre-frame` choices first, then let protected hot-path work proceed.
 
+## Execution Simulation
+
+The v0.26 execution simulation consumes the `execution_packet` and estimates the
+frame effect of applying it. The `execution_simulation` reports:
+
+- commands applied versus ignored;
+- removed cost from skipped transfers, reused allocations, and dropped sync waits;
+- prestaged cost moved before the frame;
+- setup cost moved out of the hot path;
+- protected hot-path cost that still has to run;
+- hot-path before/after estimates per frame.
+
+This does not execute game or driver work yet. It is a deterministic software
+simulation that proves the runtime packet can be evaluated as a scheduler would:
+what disappeared, what moved earlier, what stayed hot, and how much useful work
+remains on the frame path.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

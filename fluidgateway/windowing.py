@@ -29,6 +29,7 @@ class FrameWindowSlot:
     path: str
     target_resource_id: str | None
     value_mb: float
+    cost_ms: float
     expected_saved_ms: float
     expected_saved_mb: float
     rationale: str
@@ -45,6 +46,7 @@ class FrameWindowSlot:
             "path": self.path,
             "target_resource_id": self.target_resource_id,
             "value_mb": round(self.value_mb, 4),
+            "cost_ms": round(self.cost_ms, 4),
             "expected_saved_ms": round(self.expected_saved_ms, 4),
             "expected_saved_mb": round(self.expected_saved_mb, 4),
             "rationale": self.rationale,
@@ -156,6 +158,7 @@ def slot_from_directive(
         path=directive.path,
         target_resource_id=directive.target_resource_id,
         value_mb=directive.value_mb,
+        cost_ms=directive.cost_ms,
         expected_saved_ms=directive.expected_saved_ms,
         expected_saved_mb=directive.expected_saved_mb,
         rationale=directive.rationale,

@@ -20,6 +20,7 @@ class ExecutionCommand:
     path: str
     target_resource_id: str | None
     value_mb: float
+    cost_ms: float
     expected_saved_ms: float
     expected_saved_mb: float
     source_directive: str
@@ -36,6 +37,7 @@ class ExecutionCommand:
             "path": self.path,
             "target_resource_id": self.target_resource_id,
             "value_mb": round(self.value_mb, 4),
+            "cost_ms": round(self.cost_ms, 4),
             "expected_saved_ms": round(self.expected_saved_ms, 4),
             "expected_saved_mb": round(self.expected_saved_mb, 4),
             "source_directive": self.source_directive,
@@ -139,6 +141,7 @@ def command_from_slot(sequence: int, slot: FrameWindowSlot) -> ExecutionCommand:
         path=slot.path,
         target_resource_id=slot.target_resource_id,
         value_mb=slot.value_mb,
+        cost_ms=slot.cost_ms,
         expected_saved_ms=slot.expected_saved_ms,
         expected_saved_mb=slot.expected_saved_mb,
         source_directive=slot.directive,

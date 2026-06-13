@@ -371,6 +371,10 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     print(f"Memory route directives: {summary['memory_route_plan']['directive_count']}")
     print(f"Frame window slots: {summary['frame_window_plan']['slot_count']}")
     print(f"Execution packet commands: {summary['execution_packet']['command_count']}")
+    print(
+        "Execution simulated hot-path after ms: "
+        f"{summary['execution_simulation']['hot_path_after_ms']:.4f}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -436,6 +440,14 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Execution packet saved MB: "
         f"{result.execution_packet.estimated_saved_mb:.4f}"
+    )
+    print(
+        "Execution simulated hot-path before ms: "
+        f"{result.execution_simulation.hot_path_before_ms:.4f}"
+    )
+    print(
+        "Execution simulated hot-path after ms: "
+        f"{result.execution_simulation.hot_path_after_ms:.4f}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

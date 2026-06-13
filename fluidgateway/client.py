@@ -9,6 +9,7 @@ from .actuation import build_actuation_plan
 from .admission import build_admission_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
+from .executor import simulate_execution
 from .feedback import build_feedback_plan
 from .packet import build_execution_packet
 from .routing import build_memory_route_plan
@@ -16,7 +17,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.25"
+CLIENT_MODE = "runtime-event-client-v0.26"
 
 
 class RuntimeEventClient:
@@ -206,6 +207,7 @@ def summarize_client_responses(
     memory_route_plan = build_memory_route_plan(memory_transit_map)
     frame_window_plan = build_frame_window_plan(memory_route_plan)
     execution_packet = build_execution_packet(frame_window_plan)
+    execution_simulation = simulate_execution(execution_packet)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -234,6 +236,7 @@ def summarize_client_responses(
         "memory_route_plan": memory_route_plan.to_dict(),
         "frame_window_plan": frame_window_plan.to_dict(),
         "execution_packet": execution_packet.to_dict(),
+        "execution_simulation": execution_simulation.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

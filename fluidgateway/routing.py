@@ -20,6 +20,7 @@ class MemoryRouteDirective:
     target_memory: str
     target_resource_id: str | None
     value_mb: float
+    cost_ms: float
     expected_saved_ms: float
     expected_saved_mb: float
     source_classification: str
@@ -37,6 +38,7 @@ class MemoryRouteDirective:
             "target_memory": self.target_memory,
             "target_resource_id": self.target_resource_id,
             "value_mb": round(self.value_mb, 4),
+            "cost_ms": round(self.cost_ms, 4),
             "expected_saved_ms": round(self.expected_saved_ms, 4),
             "expected_saved_mb": round(self.expected_saved_mb, 4),
             "source_classification": self.source_classification,
@@ -189,6 +191,7 @@ def route_directive(
         target_memory=hop.target_memory,
         target_resource_id=hop.target_resource_id,
         value_mb=hop.size_mb,
+        cost_ms=hop.cost_ms,
         expected_saved_ms=expected_saved_ms,
         expected_saved_mb=expected_saved_mb,
         source_classification=hop.classification,
