@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .actuation import build_actuation_plan
+from .adaptive import build_adaptive_executor_loop
 from .admission import build_admission_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
@@ -17,7 +18,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.26"
+CLIENT_MODE = "runtime-event-client-v0.27"
 
 
 class RuntimeEventClient:
@@ -208,6 +209,10 @@ def summarize_client_responses(
     frame_window_plan = build_frame_window_plan(memory_route_plan)
     execution_packet = build_execution_packet(frame_window_plan)
     execution_simulation = simulate_execution(execution_packet)
+    adaptive_executor_loop = build_adaptive_executor_loop(
+        execution_simulation,
+        frame_targets,
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -237,6 +242,7 @@ def summarize_client_responses(
         "frame_window_plan": frame_window_plan.to_dict(),
         "execution_packet": execution_packet.to_dict(),
         "execution_simulation": execution_simulation.to_dict(),
+        "adaptive_executor_loop": adaptive_executor_loop.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

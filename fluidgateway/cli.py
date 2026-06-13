@@ -375,6 +375,7 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Execution simulated hot-path after ms: "
         f"{summary['execution_simulation']['hot_path_after_ms']:.4f}"
     )
+    print(f"Adaptive executor profile: {summary['adaptive_executor_loop']['profile']}")
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -448,6 +449,11 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Execution simulated hot-path after ms: "
         f"{result.execution_simulation.hot_path_after_ms:.4f}"
+    )
+    print(f"Adaptive executor profile: {result.adaptive_executor_loop.profile}")
+    print(
+        "Adaptive executor over-budget frames: "
+        f"{result.adaptive_executor_loop.over_budget_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

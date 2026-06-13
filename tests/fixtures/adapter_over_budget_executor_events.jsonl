@@ -1,0 +1,10 @@
+{"event":"session","action":"begin","id":"over-budget-executor","budgets":{"frame_ms":8,"ram_mb":128,"vram_mb":128}}
+{"event":"frame","action":"begin","frame":0}
+{"event":"resource","id":"ram_boss_texture","kind":"texture","memory":"ram","size_mb":64,"lifetime":"asset","aliases":["boss_diffuse"]}
+{"event":"resource","id":"vram_boss_texture","kind":"texture","memory":"vram","size_mb":64,"lifetime":"frame","aliases":["boss_diffuse_gpu"]}
+{"event":"resource","id":"backbuffer","kind":"framebuffer","memory":"swapchain","size_mb":32,"lifetime":"frame","aliases":["frame0"]}
+{"event":"operation","id":"upload_boss_texture","operation_type":"upload","source":"ram_boss_texture","target":"vram_boss_texture","queue":"copy","reason":"late boss texture upload","cost_ms":3.0,"size_mb":64}
+{"event":"operation","id":"upload_boss_texture_duplicate","operation_type":"upload","source":"ram_boss_texture","target":"vram_boss_texture","queue":"copy","reason":"duplicate boss texture upload","cost_ms":1.0,"size_mb":64}
+{"event":"operation","id":"draw_boss","operation_type":"draw","source":"vram_boss_texture","target":"backbuffer","queue":"graphics","reason":"draw boss encounter","cost_ms":9.5,"size_mb":0}
+{"event":"frame","action":"end","frame":0}
+{"event":"session","action":"end"}

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .actuation import ActuationPlan, build_actuation_plan
+from .adaptive import AdaptiveExecutorLoop, build_adaptive_executor_loop
 from .admission import AdmissionPlan, build_admission_decision, build_admission_plan
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
@@ -30,7 +31,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.26"
+ADAPTER_MODE = "runtime-adapter-session-v0.27"
 
 
 @dataclass
@@ -97,6 +98,7 @@ class AdapterSessionResult:
     frame_window_plan: FrameWindowPlan
     execution_packet: ExecutionPacket
     execution_simulation: ExecutionSimulation
+    adaptive_executor_loop: AdaptiveExecutorLoop
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -133,6 +135,7 @@ class AdapterSessionResult:
             "frame_window_plan": self.frame_window_plan.to_dict(),
             "execution_packet": self.execution_packet.to_dict(),
             "execution_simulation": self.execution_simulation.to_dict(),
+            "adaptive_executor_loop": self.adaptive_executor_loop.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -196,6 +199,7 @@ class RuntimeAdapterSession:
         memory_route_plan = build_memory_route_plan(memory_transit_map)
         frame_window_plan = build_frame_window_plan(memory_route_plan)
         execution_packet = build_execution_packet(frame_window_plan)
+        execution_simulation = simulate_execution(execution_packet)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -221,7 +225,11 @@ class RuntimeAdapterSession:
             memory_route_plan=memory_route_plan,
             frame_window_plan=frame_window_plan,
             execution_packet=execution_packet,
-            execution_simulation=simulate_execution(execution_packet),
+            execution_simulation=execution_simulation,
+            adaptive_executor_loop=build_adaptive_executor_loop(
+                execution_simulation,
+                frame_targets,
+            ),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

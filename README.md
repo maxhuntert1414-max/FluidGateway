@@ -503,6 +503,25 @@ simulation that proves the runtime packet can be evaluated as a scheduler would:
 what disappeared, what moved earlier, what stayed hot, and how much useful work
 remains on the frame path.
 
+## Adaptive Executor Loop
+
+The v0.27 adaptive executor loop compares `execution_simulation` results against
+the frame target. It emits an `adaptive_executor_loop` that reports whether each
+frame is within budget or over budget, then recommends how aggressive the next
+packet should be.
+
+When the simulated hot path is still too expensive, the loop can emit directives
+such as:
+
+- `tighten-hot-path-admission`;
+- `expand-pre-frame-window`;
+- `split-protected-hot-path`;
+- `keep-suppression-active`.
+
+When the frame is within budget, it can preserve the current packet shape with
+directives such as `preserve-pre-frame-window`, `maintain-suppression-cache`, and
+`hold-current-packet`.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
