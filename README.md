@@ -522,6 +522,23 @@ When the frame is within budget, it can preserve the current packet shape with
 directives such as `preserve-pre-frame-window`, `maintain-suppression-cache`, and
 `hold-current-packet`.
 
+## Runtime Budget Envelope
+
+The v0.28 runtime budget envelope turns the adaptive loop into explicit next
+cycle constraints. Adapter and client summaries now include a `budget_envelope`
+with:
+
+- next-frame policy;
+- per-frame hot-path, copy-queue, and pre-frame budgets;
+- admission policy for protected work;
+- memory policy for RAM, VRAM, shared memory, staging, and swapchain layers;
+- active residency, configured budget, headroom, and pressure per memory layer.
+
+This is still a software-side contract, not a driver hook. Its purpose is to
+make the runtime behave more like a small governor: it can decide when to
+tighten hot-path admission, when to stop late copies, and when RAM/VRAM
+residency pressure should force eviction or deferral.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

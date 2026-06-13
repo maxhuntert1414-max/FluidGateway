@@ -8,6 +8,7 @@ from typing import Any
 from .actuation import ActuationPlan, build_actuation_plan
 from .adaptive import AdaptiveExecutorLoop, build_adaptive_executor_loop
 from .admission import AdmissionPlan, build_admission_decision, build_admission_plan
+from .budget import RuntimeBudgetEnvelope, build_runtime_budget_envelope
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
@@ -31,7 +32,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.27"
+ADAPTER_MODE = "runtime-adapter-session-v0.28"
 
 
 @dataclass
@@ -99,6 +100,7 @@ class AdapterSessionResult:
     execution_packet: ExecutionPacket
     execution_simulation: ExecutionSimulation
     adaptive_executor_loop: AdaptiveExecutorLoop
+    budget_envelope: RuntimeBudgetEnvelope
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -136,6 +138,7 @@ class AdapterSessionResult:
             "execution_packet": self.execution_packet.to_dict(),
             "execution_simulation": self.execution_simulation.to_dict(),
             "adaptive_executor_loop": self.adaptive_executor_loop.to_dict(),
+            "budget_envelope": self.budget_envelope.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -200,6 +203,11 @@ class RuntimeAdapterSession:
         frame_window_plan = build_frame_window_plan(memory_route_plan)
         execution_packet = build_execution_packet(frame_window_plan)
         execution_simulation = simulate_execution(execution_packet)
+        adaptive_executor_loop = build_adaptive_executor_loop(
+            execution_simulation,
+            frame_targets,
+        )
+        state_snapshot = self._build_state_snapshot()
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -214,7 +222,7 @@ class RuntimeAdapterSession:
             schedule_plan=schedule_plan,
             enforcement_plan=enforcement_plan,
             live_commands=list(self.live_commands),
-            state_snapshot=self._build_state_snapshot(),
+            state_snapshot=state_snapshot,
             policy_loop_directives=list(self.policy_loop_directives),
             execution_gates=list(self.execution_gates),
             admission_plan=admission_plan,
@@ -226,9 +234,11 @@ class RuntimeAdapterSession:
             frame_window_plan=frame_window_plan,
             execution_packet=execution_packet,
             execution_simulation=execution_simulation,
-            adaptive_executor_loop=build_adaptive_executor_loop(
-                execution_simulation,
-                frame_targets,
+            adaptive_executor_loop=adaptive_executor_loop,
+            budget_envelope=build_runtime_budget_envelope(
+                adaptive_executor_loop,
+                state_snapshot,
+                self.policy_engine.memory_budgets_mb,
             ),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
@@ -459,6 +469,7 @@ class RuntimeAdapterSession:
             frames=self.frames,
             active_resource_count=len(self.controller.resources),
             memory_totals_mb=self.policy_engine.memory_totals_mb,
+            memory_budgets_mb=self.policy_engine.memory_budgets_mb,
             decisions_count=len(self.controller.decisions),
             events_processed=self.events_processed,
             operation_events=self.operation_events,

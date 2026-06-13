@@ -19,6 +19,7 @@ class LiveStateSnapshot:
     resource_events: int
     active_resource_count: int
     memory_totals_mb: dict[str, float]
+    memory_budgets_mb: dict[str, float]
     queue_costs_ms: dict[str, float]
     decisions_count: int
     policy_action_count: int
@@ -38,6 +39,7 @@ class LiveStateSnapshot:
             "resource_events": self.resource_events,
             "active_resource_count": self.active_resource_count,
             "memory_totals_mb": rounded_map(self.memory_totals_mb),
+            "memory_budgets_mb": rounded_map(self.memory_budgets_mb),
             "queue_costs_ms": rounded_map(self.queue_costs_ms),
             "decisions_count": self.decisions_count,
             "policy_action_count": self.policy_action_count,
@@ -56,6 +58,7 @@ def build_live_state_snapshot(
     frames: dict[int, Any],
     active_resource_count: int,
     memory_totals_mb: dict[str, float],
+    memory_budgets_mb: dict[str, float],
     decisions_count: int,
     events_processed: int,
     operation_events: int,
@@ -80,6 +83,7 @@ def build_live_state_snapshot(
         resource_events=resource_events,
         active_resource_count=active_resource_count,
         memory_totals_mb=dict(memory_totals_mb),
+        memory_budgets_mb=dict(memory_budgets_mb),
         queue_costs_ms=queue_costs,
         decisions_count=decisions_count,
         policy_action_count=policy_action_count,

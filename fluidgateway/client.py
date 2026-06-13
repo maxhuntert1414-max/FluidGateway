@@ -8,6 +8,7 @@ from typing import Any, Iterable
 from .actuation import build_actuation_plan
 from .adaptive import build_adaptive_executor_loop
 from .admission import build_admission_plan
+from .budget import build_runtime_budget_envelope
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 from .executor import simulate_execution
@@ -18,7 +19,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.27"
+CLIENT_MODE = "runtime-event-client-v0.28"
 
 
 class RuntimeEventClient:
@@ -213,6 +214,11 @@ def summarize_client_responses(
         execution_simulation,
         frame_targets,
     )
+    state_snapshot = latest_state_snapshot(responses)
+    budget_envelope = build_runtime_budget_envelope(
+        adaptive_executor_loop,
+        state_snapshot,
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -243,6 +249,7 @@ def summarize_client_responses(
         "execution_packet": execution_packet.to_dict(),
         "execution_simulation": execution_simulation.to_dict(),
         "adaptive_executor_loop": adaptive_executor_loop.to_dict(),
+        "budget_envelope": budget_envelope.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }
@@ -272,6 +279,14 @@ def resources_from_responses(
         if resource_id:
             resources[resource_id] = resource
     return resources
+
+
+def latest_state_snapshot(responses: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for response in reversed(responses):
+        snapshot = response.get("state_snapshot")
+        if isinstance(snapshot, dict):
+            return snapshot
+    return None
 
 
 def write_client_responses(
