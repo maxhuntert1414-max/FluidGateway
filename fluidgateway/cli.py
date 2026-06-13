@@ -367,6 +367,7 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     print(f"Admission decisions: {admission_decision_count}")
     print(f"Efficiency impacts: {efficiency_impact_count}")
     print(f"Actuation commands: {summary['actuation_plan']['command_count']}")
+    print(f"Memory transit hops: {summary['memory_transit_map']['hop_count']}")
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -415,6 +416,11 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Actuation copy budget ms: "
         f"{result.actuation_plan.total_copy_budget_ms:.4f}"
+    )
+    print(f"Memory transit hops: {result.memory_transit_map.hop_count}")
+    print(
+        "Memory avoided transfer MB: "
+        f"{result.memory_transit_map.avoided_transfer_mb:.4f}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

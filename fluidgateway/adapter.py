@@ -23,9 +23,10 @@ from .live import LiveCommand, build_live_command
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
+from .transit import MemoryTransitMap, build_memory_transit_map
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.21"
+ADAPTER_MODE = "runtime-adapter-session-v0.22"
 
 
 @dataclass
@@ -87,6 +88,7 @@ class AdapterSessionResult:
     efficiency_ledger: EfficiencyLedger
     feedback_plan: FeedbackPlan
     actuation_plan: ActuationPlan
+    memory_transit_map: MemoryTransitMap
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -118,6 +120,7 @@ class AdapterSessionResult:
             "efficiency_ledger": self.efficiency_ledger.to_dict(),
             "feedback_plan": self.feedback_plan.to_dict(),
             "actuation_plan": self.actuation_plan.to_dict(),
+            "memory_transit_map": self.memory_transit_map.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -195,6 +198,10 @@ class RuntimeAdapterSession:
             efficiency_ledger=efficiency_ledger,
             feedback_plan=feedback_plan,
             actuation_plan=build_actuation_plan(feedback_plan),
+            memory_transit_map=build_memory_transit_map(
+                self.results,
+                self.lifetime_planner.resources,
+            ),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

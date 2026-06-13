@@ -10,9 +10,10 @@ from .admission import build_admission_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 from .feedback import build_feedback_plan
+from .transit import build_memory_transit_map
 
 
-CLIENT_MODE = "runtime-event-client-v0.21"
+CLIENT_MODE = "runtime-event-client-v0.22"
 
 
 class RuntimeEventClient:
@@ -195,6 +196,10 @@ def summarize_client_responses(
     frame_targets = frame_targets_from_responses(frame_responses)
     feedback_plan = build_feedback_plan(efficiency_ledger, frame_targets)
     actuation_plan = build_actuation_plan(feedback_plan)
+    memory_transit_map = build_memory_transit_map(
+        operation_results,
+        resources_from_responses(resource_responses),
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -219,6 +224,7 @@ def summarize_client_responses(
         "efficiency_ledger": efficiency_ledger.to_dict(),
         "feedback_plan": feedback_plan.to_dict(),
         "actuation_plan": actuation_plan.to_dict(),
+        "memory_transit_map": memory_transit_map.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }
@@ -234,6 +240,20 @@ def frame_targets_from_responses(responses: list[dict[str, Any]]) -> dict[int, f
             continue
         targets[int(frame)] = float(target)
     return targets
+
+
+def resources_from_responses(
+    responses: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    resources: dict[str, dict[str, Any]] = {}
+    for response in responses:
+        resource = response.get("resource")
+        if not isinstance(resource, dict):
+            continue
+        resource_id = str(resource.get("id") or "").strip()
+        if resource_id:
+            resources[resource_id] = resource
+    return resources
 
 
 def write_client_responses(

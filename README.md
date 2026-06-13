@@ -411,6 +411,26 @@ and starts expressing what a scheduler could actually apply on the next frame.
 The current commands are still advisory and serialized as JSON so they can be
 tested safely before any lower-level integration exists.
 
+## Memory Transit Map
+
+The v0.22 memory transit map makes RAM/VRAM/display movement explicit. Adapter
+and client summaries now include a `memory_transit_map` that turns operation
+results into per-hop paths such as `ram->vram`, `vram->swapchain`, and
+`sync->graphics`.
+
+For each hop, FluidGateway records:
+
+- source and target memory layer;
+- operation type, queue, frame, size, and cost;
+- whether the hop executed or was avoided by a runtime decision;
+- classification such as `cross-memory-transfer`, `duplicate-transfer`,
+  `same-layer-aliased-copy`, or `orphan-sync`.
+
+The map also aggregates attempted, executed, and avoided MB per path. This gives
+the project a concrete vocabulary for the core mission: find the useless
+transport between CPU, GPU, RAM, VRAM, staging buffers, swapchain, and display
+before a future scheduler tries to remove it.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
