@@ -312,6 +312,21 @@ future gateway: an engine adapter can ask not only "what should I do with this
 operation?", but also "what does FluidGateway currently believe about the frame,
 memory pressure, and queued work?"
 
+## Live Policy Loop
+
+The v0.16 live policy loop turns the state snapshot into immediate management
+directives. While events are streaming, FluidGateway can now emit
+`policy_loop_directives` such as:
+
+- `prefetch-before-critical-path`: move a large transfer before draw-critical work;
+- `drain-copy-queue-before-draw`: stop copy queue pressure from landing late in the frame;
+- `protect-frame-budget`: defer non-critical work when the frame is close to budget;
+- `reduce-memory-residency`: release or avoid duplicate RAM/VRAM residency when a budget is exceeded.
+
+This still does not hook drivers or games. It is the next user-space contract
+for the future scheduler: live telemetry in, actionable CPU/GPU/RAM/VRAM
+management intent out.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

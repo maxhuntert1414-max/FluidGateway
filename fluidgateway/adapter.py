@@ -8,6 +8,7 @@ from typing import Any
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
+from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .live import LiveCommand, build_live_command
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
@@ -15,7 +16,7 @@ from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.15"
+ADAPTER_MODE = "runtime-adapter-session-v0.16"
 
 
 @dataclass
@@ -71,6 +72,7 @@ class AdapterSessionResult:
     enforcement_plan: EnforcementPlan
     live_commands: list[LiveCommand]
     state_snapshot: LiveStateSnapshot
+    policy_loop_directives: list[GovernorDirective]
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -92,6 +94,10 @@ class AdapterSessionResult:
             "live_command_count": len(self.live_commands),
             "live_commands": [command.to_dict() for command in self.live_commands],
             "state_snapshot": self.state_snapshot.to_dict(),
+            "policy_loop_directive_count": len(self.policy_loop_directives),
+            "policy_loop_directives": [
+                directive.to_dict() for directive in self.policy_loop_directives
+            ],
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -105,6 +111,7 @@ class RuntimeAdapterSession:
         self.controller = FluidGatewayController()
         self.policy_engine = RuntimePolicyEngine()
         self.lifetime_planner = ResourceLifetimePlanner()
+        self.policy_governor = LivePolicyGovernor()
         self.current_frame: int | None = None
         self.events_processed = 0
         self.lifecycle_events = 0
@@ -113,6 +120,7 @@ class RuntimeAdapterSession:
         self.released_resources: list[str] = []
         self.frames: dict[int, AdapterFrameStats] = {}
         self.live_commands: list[LiveCommand] = []
+        self.policy_loop_directives: list[GovernorDirective] = []
         self.results: list[dict[str, Any]] = []
         self.closed = False
 
@@ -154,6 +162,7 @@ class RuntimeAdapterSession:
             enforcement_plan=enforcement_plan,
             live_commands=list(self.live_commands),
             state_snapshot=self._build_state_snapshot(),
+            policy_loop_directives=list(self.policy_loop_directives),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -328,7 +337,7 @@ class RuntimeAdapterSession:
             "live_command": live_command.to_dict(),
             "policy_actions": [item.to_dict() for item in policy_actions],
         }
-        return self._with_state_snapshot(response, event_index)
+        return self._with_state_snapshot(response, event_index, live_command)
 
     def _process_state_event(
         self, payload: dict[str, Any], event_index: int | None
@@ -388,10 +397,33 @@ class RuntimeAdapterSession:
         )
 
     def _with_state_snapshot(
-        self, response: dict[str, Any], event_index: int | None
+        self,
+        response: dict[str, Any],
+        event_index: int | None,
+        live_command: LiveCommand | None = None,
     ) -> dict[str, Any]:
-        response["state_snapshot"] = self._build_state_snapshot().to_dict()
+        snapshot = self._build_state_snapshot()
+        directives = self.policy_governor.evaluate(
+            snapshot=snapshot,
+            target_frame_ms=self._target_frame_ms(snapshot.current_frame, live_command),
+            memory_budgets_mb=self.policy_engine.memory_budgets_mb,
+            live_command=live_command,
+        )
+        self.policy_loop_directives.extend(directives)
+        response["state_snapshot"] = snapshot.to_dict()
+        response["policy_loop_directives"] = [
+            directive.to_dict() for directive in directives
+        ]
         return with_event_index(response, event_index)
+
+    def _target_frame_ms(
+        self, current_frame: int | None, live_command: LiveCommand | None
+    ) -> float:
+        if current_frame is not None:
+            return self._frame_stats(current_frame).target_frame_ms
+        if live_command is not None and live_command.frame is not None:
+            return self._frame_stats(live_command.frame).target_frame_ms
+        return self.policy_engine.target_frame_ms
 
 
 def replay_adapter_event_stream(path: str | Path) -> AdapterSessionResult:
