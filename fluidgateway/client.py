@@ -5,13 +5,14 @@ import socket
 from pathlib import Path
 from typing import Any, Iterable
 
+from .actuation import build_actuation_plan
 from .admission import build_admission_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 from .feedback import build_feedback_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.20"
+CLIENT_MODE = "runtime-event-client-v0.21"
 
 
 class RuntimeEventClient:
@@ -192,6 +193,8 @@ def summarize_client_responses(
     admission_plan = build_admission_plan(operation_results)
     efficiency_ledger = build_efficiency_ledger(admission_plan)
     frame_targets = frame_targets_from_responses(frame_responses)
+    feedback_plan = build_feedback_plan(efficiency_ledger, frame_targets)
+    actuation_plan = build_actuation_plan(feedback_plan)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -214,7 +217,8 @@ def summarize_client_responses(
         "admission_plan": admission_plan.to_dict(),
         "efficiency_impact_count": efficiency_impact_count,
         "efficiency_ledger": efficiency_ledger.to_dict(),
-        "feedback_plan": build_feedback_plan(efficiency_ledger, frame_targets).to_dict(),
+        "feedback_plan": feedback_plan.to_dict(),
+        "actuation_plan": actuation_plan.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

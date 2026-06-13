@@ -395,6 +395,22 @@ This gives the future scheduler a practical feedback signal: after FluidGateway
 measures how much work was shifted or avoided, it can recommend how to shape the
 next frame's CPU/GPU/RAM/VRAM work before the same waste appears again.
 
+## Adaptive Actuation Plan
+
+The v0.21 actuation plan turns that feedback into a small command packet for a
+future runtime adapter. It does not hook a game or driver yet; it translates the
+`feedback_plan` into explicit `actuation_plan` commands such as:
+
+- `reserve_prefetch_window`;
+- `set_copy_queue_budget`;
+- `enable_reuse_dedupe`;
+- `protect_hot_path_headroom`.
+
+This is the first place where the project stops saying only "what looks wasteful"
+and starts expressing what a scheduler could actually apply on the next frame.
+The current commands are still advisory and serialized as JSON so they can be
+tested safely before any lower-level integration exists.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

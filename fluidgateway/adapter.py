@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .actuation import ActuationPlan, build_actuation_plan
 from .admission import AdmissionPlan, build_admission_decision, build_admission_plan
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
@@ -24,7 +25,7 @@ from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.20"
+ADAPTER_MODE = "runtime-adapter-session-v0.21"
 
 
 @dataclass
@@ -85,6 +86,7 @@ class AdapterSessionResult:
     admission_plan: AdmissionPlan
     efficiency_ledger: EfficiencyLedger
     feedback_plan: FeedbackPlan
+    actuation_plan: ActuationPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -115,6 +117,7 @@ class AdapterSessionResult:
             "admission_plan": self.admission_plan.to_dict(),
             "efficiency_ledger": self.efficiency_ledger.to_dict(),
             "feedback_plan": self.feedback_plan.to_dict(),
+            "actuation_plan": self.actuation_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -170,6 +173,7 @@ class RuntimeAdapterSession:
         frame_targets = {
             frame.frame: frame.target_frame_ms for frame in self.frames.values()
         }
+        feedback_plan = build_feedback_plan(efficiency_ledger, frame_targets)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -189,7 +193,8 @@ class RuntimeAdapterSession:
             execution_gates=list(self.execution_gates),
             admission_plan=admission_plan,
             efficiency_ledger=efficiency_ledger,
-            feedback_plan=build_feedback_plan(efficiency_ledger, frame_targets),
+            feedback_plan=feedback_plan,
+            actuation_plan=build_actuation_plan(feedback_plan),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

@@ -6,7 +6,11 @@ import sys
 from . import __version__
 from .adapter import replay_adapter_event_stream, write_adapter_session
 from .analyzer import analyze_trace
-from .client import RuntimeEventClient, write_client_responses
+from .client import (
+    RuntimeEventClient,
+    summarize_client_responses,
+    write_client_responses,
+)
 from .control import FluidGatewayController
 from .events import replay_event_stream, write_event_replay
 from .parser import parse_presentmon_csv
@@ -324,6 +328,7 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     with RuntimeEventClient(args.host, args.port, args.timeout) as client:
         responses = client.send_jsonl(args.events)
     output_path = write_client_responses(responses, args.out)
+    summary = summarize_client_responses(responses)
     operation_responses = [
         response for response in responses if response.get("event") == "operation"
     ]
@@ -361,6 +366,7 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     print(f"Execution gates: {execution_gate_count}")
     print(f"Admission decisions: {admission_decision_count}")
     print(f"Efficiency impacts: {efficiency_impact_count}")
+    print(f"Actuation commands: {summary['actuation_plan']['command_count']}")
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -405,6 +411,11 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
             "Feedback next copy budget ms: "
             f"{result.feedback_plan.frames[0].suggested_copy_budget_ms:.4f}"
         )
+    print(f"Actuation commands: {result.actuation_plan.command_count}")
+    print(
+        "Actuation copy budget ms: "
+        f"{result.actuation_plan.total_copy_budget_ms:.4f}"
+    )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
     print(
