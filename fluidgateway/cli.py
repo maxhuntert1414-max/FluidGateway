@@ -399,6 +399,12 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
         "Efficiency transfer relief MB: "
         f"{result.efficiency_ledger.transfer_relief_mb:.4f}"
     )
+    print(f"Feedback actions: {result.feedback_plan.action_count}")
+    if result.feedback_plan.frames:
+        print(
+            "Feedback next copy budget ms: "
+            f"{result.feedback_plan.frames[0].suggested_copy_budget_ms:.4f}"
+        )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
     print(

@@ -379,6 +379,22 @@ This makes the prototype measurable: FluidGateway can now say not only what it
 would do, but how much frame-path pressure and memory traffic it believes the
 management loop removed or moved earlier.
 
+## Adaptive Feedback Controller
+
+The v0.20 feedback controller closes the loop from measurement back into the
+next frame. It reads the `efficiency_ledger`, frame targets, and managed
+transfer pressure, then emits a `feedback_plan` with:
+
+- suggested copy-queue budget for the next frame;
+- suggested prefetch window size;
+- hot-path headroom;
+- actions such as `preserve-prefetch-window`, `maintain-reuse-dedupe`, and
+  `cap-copy-queue`.
+
+This gives the future scheduler a practical feedback signal: after FluidGateway
+measures how much work was shifted or avoided, it can recommend how to shape the
+next frame's CPU/GPU/RAM/VRAM work before the same waste appears again.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

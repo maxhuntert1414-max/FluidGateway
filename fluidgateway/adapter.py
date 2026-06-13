@@ -14,6 +14,7 @@ from .efficiency import (
     build_efficiency_impact,
     build_efficiency_ledger,
 )
+from .feedback import FeedbackPlan, build_feedback_plan
 from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
@@ -23,7 +24,7 @@ from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.19"
+ADAPTER_MODE = "runtime-adapter-session-v0.20"
 
 
 @dataclass
@@ -83,6 +84,7 @@ class AdapterSessionResult:
     execution_gates: list[ExecutionGateDecision]
     admission_plan: AdmissionPlan
     efficiency_ledger: EfficiencyLedger
+    feedback_plan: FeedbackPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -112,6 +114,7 @@ class AdapterSessionResult:
             "execution_gates": [gate.to_dict() for gate in self.execution_gates],
             "admission_plan": self.admission_plan.to_dict(),
             "efficiency_ledger": self.efficiency_ledger.to_dict(),
+            "feedback_plan": self.feedback_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -163,6 +166,10 @@ class RuntimeAdapterSession:
         schedule_plan = self._build_schedule_plan(lifetime_plan)
         enforcement_plan = build_enforcement_plan(schedule_plan)
         admission_plan = build_admission_plan(self.results)
+        efficiency_ledger = build_efficiency_ledger(admission_plan)
+        frame_targets = {
+            frame.frame: frame.target_frame_ms for frame in self.frames.values()
+        }
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -181,7 +188,8 @@ class RuntimeAdapterSession:
             policy_loop_directives=list(self.policy_loop_directives),
             execution_gates=list(self.execution_gates),
             admission_plan=admission_plan,
-            efficiency_ledger=build_efficiency_ledger(admission_plan),
+            efficiency_ledger=efficiency_ledger,
+            feedback_plan=build_feedback_plan(efficiency_ledger, frame_targets),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

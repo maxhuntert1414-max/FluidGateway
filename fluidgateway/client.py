@@ -8,9 +8,10 @@ from typing import Any, Iterable
 from .admission import build_admission_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
+from .feedback import build_feedback_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.19"
+CLIENT_MODE = "runtime-event-client-v0.20"
 
 
 class RuntimeEventClient:
@@ -189,6 +190,8 @@ def summarize_client_responses(
         if isinstance(response.get("result"), dict)
     ]
     admission_plan = build_admission_plan(operation_results)
+    efficiency_ledger = build_efficiency_ledger(admission_plan)
+    frame_targets = frame_targets_from_responses(frame_responses)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -210,10 +213,23 @@ def summarize_client_responses(
         "admission_decision_count": admission_decision_count,
         "admission_plan": admission_plan.to_dict(),
         "efficiency_impact_count": efficiency_impact_count,
-        "efficiency_ledger": build_efficiency_ledger(admission_plan).to_dict(),
+        "efficiency_ledger": efficiency_ledger.to_dict(),
+        "feedback_plan": build_feedback_plan(efficiency_ledger, frame_targets).to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }
+
+
+def frame_targets_from_responses(responses: list[dict[str, Any]]) -> dict[int, float]:
+    targets: dict[int, float] = {}
+    for response in responses:
+        frame = response.get("frame")
+        state = response.get("frame_state") or {}
+        target = state.get("target_frame_ms")
+        if frame is None or target is None:
+            continue
+        targets[int(frame)] = float(target)
+    return targets
 
 
 def write_client_responses(
