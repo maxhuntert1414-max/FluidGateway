@@ -294,6 +294,24 @@ safe user space, but the protocol now answers the question a real integration
 needs to ask at operation time: "what should I do with this CPU/GPU/RAM/VRAM
 work right now?"
 
+## Live State Snapshot
+
+The v0.15 live state snapshot lets an adapter inspect the active session while
+events are still streaming. Every successful lifecycle/resource/operation
+response includes a `state_snapshot`, and an integration can explicitly ask for
+one with:
+
+```jsonl
+{"event":"state","action":"snapshot"}
+```
+
+The snapshot reports the open frame, frames observed, active RAM/VRAM residency,
+queue costs, current-frame transfer volume, decisions, policy actions, and live
+commands emitted so far. This makes the local runtime endpoint closer to the
+future gateway: an engine adapter can ask not only "what should I do with this
+operation?", but also "what does FluidGateway currently believe about the frame,
+memory pressure, and queued work?"
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

@@ -1,0 +1,9 @@
+{"event":"session","action":"begin","id":"state-demo","budgets":{"frame_ms":8,"ram_mb":96,"vram_mb":96}}
+{"event":"frame","action":"begin","frame":0}
+{"event":"resource","id":"ram_texture","kind":"texture","memory":"ram","size_mb":64,"lifetime":"asset","aliases":["hero_diffuse"]}
+{"event":"resource","id":"vram_texture","kind":"texture","memory":"vram","size_mb":64,"lifetime":"frame","aliases":["hero_diffuse_gpu"]}
+{"event":"operation","id":"upload_hero","operation_type":"upload","source":"ram_texture","target":"vram_texture","queue":"copy","reason":"late hero texture upload","cost_ms":4.2,"size_mb":64}
+{"event":"state","action":"snapshot"}
+{"event":"operation","id":"draw_hero","operation_type":"draw","source":"vram_texture","target":"vram_texture","queue":"graphics","reason":"draw hero","cost_ms":3.2,"size_mb":0}
+{"event":"frame","action":"end","frame":0}
+{"event":"session","action":"end"}

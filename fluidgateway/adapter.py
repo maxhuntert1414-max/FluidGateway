@@ -12,9 +12,10 @@ from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .live import LiveCommand, build_live_command
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 from .scheduler import SchedulerPlan, simulate_scheduler
+from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.14"
+ADAPTER_MODE = "runtime-adapter-session-v0.15"
 
 
 @dataclass
@@ -69,6 +70,7 @@ class AdapterSessionResult:
     schedule_plan: SchedulerPlan
     enforcement_plan: EnforcementPlan
     live_commands: list[LiveCommand]
+    state_snapshot: LiveStateSnapshot
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -89,6 +91,7 @@ class AdapterSessionResult:
             "enforcement_plan": self.enforcement_plan.to_dict(),
             "live_command_count": len(self.live_commands),
             "live_commands": [command.to_dict() for command in self.live_commands],
+            "state_snapshot": self.state_snapshot.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -128,6 +131,8 @@ class RuntimeAdapterSession:
             return self._process_resource_event(payload, event_index)
         if event_type == "operation":
             return self._process_operation_event(payload, event_index)
+        if event_type == "state":
+            return self._process_state_event(payload, event_index)
         raise ValueError(f"Unsupported adapter event type: {event_type or 'missing'}")
 
     def to_result(self) -> AdapterSessionResult:
@@ -148,6 +153,7 @@ class RuntimeAdapterSession:
             schedule_plan=schedule_plan,
             enforcement_plan=enforcement_plan,
             live_commands=list(self.live_commands),
+            state_snapshot=self._build_state_snapshot(),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -183,7 +189,7 @@ class RuntimeAdapterSession:
             "schedule_plan": schedule_plan.to_dict() if schedule_plan else None,
             "enforcement_plan": enforcement_plan.to_dict() if enforcement_plan else None,
         }
-        return with_event_index(response, event_index)
+        return self._with_state_snapshot(response, event_index)
 
     def _process_frame_event(
         self, payload: dict[str, Any], event_index: int | None
@@ -224,7 +230,7 @@ class RuntimeAdapterSession:
             "frame_state": stats.to_dict(),
             "policy_actions": [item.to_dict() for item in policy_actions],
         }
-        return with_event_index(response, event_index)
+        return self._with_state_snapshot(response, event_index)
 
     def _process_resource_event(
         self, payload: dict[str, Any], event_index: int | None
@@ -253,7 +259,7 @@ class RuntimeAdapterSession:
                 "released": released,
                 "policy_actions": [],
             }
-            return with_event_index(response, event_index)
+            return self._with_state_snapshot(response, event_index)
 
         resource = register_resource_event(self.controller, payload)
         self.lifetime_planner.register_resource(resource, self.current_frame)
@@ -268,7 +274,7 @@ class RuntimeAdapterSession:
             "resource": resource.to_dict(),
             "policy_actions": [item.to_dict() for item in policy_actions],
         }
-        return with_event_index(response, event_index)
+        return self._with_state_snapshot(response, event_index)
 
     def _process_operation_event(
         self, payload: dict[str, Any], event_index: int | None
@@ -322,7 +328,19 @@ class RuntimeAdapterSession:
             "live_command": live_command.to_dict(),
             "policy_actions": [item.to_dict() for item in policy_actions],
         }
-        return with_event_index(response, event_index)
+        return self._with_state_snapshot(response, event_index)
+
+    def _process_state_event(
+        self, payload: dict[str, Any], event_index: int | None
+    ) -> dict[str, Any]:
+        action = normalized_action(payload.get("action"), {"snapshot"}, "snapshot")
+        response = {
+            "ok": True,
+            "event": "state",
+            "action": action,
+            "session_id": self.session_id,
+        }
+        return self._with_state_snapshot(response, event_index)
 
     def _frame_stats(self, frame: int) -> AdapterFrameStats:
         if frame not in self.frames:
@@ -353,6 +371,27 @@ class RuntimeAdapterSession:
             },
             lifetime_plan=lifetime_plan,
         )
+
+    def _build_state_snapshot(self) -> LiveStateSnapshot:
+        return build_live_state_snapshot(
+            session_id=self.session_id,
+            current_frame=self.current_frame,
+            frames=self.frames,
+            active_resource_count=len(self.controller.resources),
+            memory_totals_mb=self.policy_engine.memory_totals_mb,
+            decisions_count=len(self.controller.decisions),
+            events_processed=self.events_processed,
+            operation_events=self.operation_events,
+            resource_events=self.resource_events,
+            policy_action_count=len(self.policy_engine.actions),
+            live_command_count=len(self.live_commands),
+        )
+
+    def _with_state_snapshot(
+        self, response: dict[str, Any], event_index: int | None
+    ) -> dict[str, Any]:
+        response["state_snapshot"] = self._build_state_snapshot().to_dict()
+        return with_event_index(response, event_index)
 
 
 def replay_adapter_event_stream(path: str | Path) -> AdapterSessionResult:
