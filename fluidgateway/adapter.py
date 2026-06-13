@@ -20,6 +20,7 @@ from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .live import LiveCommand, build_live_command
+from .packet import ExecutionPacket, build_execution_packet
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 from .routing import MemoryRoutePlan, build_memory_route_plan
 from .scheduler import SchedulerPlan, simulate_scheduler
@@ -28,7 +29,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.24"
+ADAPTER_MODE = "runtime-adapter-session-v0.25"
 
 
 @dataclass
@@ -93,6 +94,7 @@ class AdapterSessionResult:
     memory_transit_map: MemoryTransitMap
     memory_route_plan: MemoryRoutePlan
     frame_window_plan: FrameWindowPlan
+    execution_packet: ExecutionPacket
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -127,6 +129,7 @@ class AdapterSessionResult:
             "memory_transit_map": self.memory_transit_map.to_dict(),
             "memory_route_plan": self.memory_route_plan.to_dict(),
             "frame_window_plan": self.frame_window_plan.to_dict(),
+            "execution_packet": self.execution_packet.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -188,6 +191,7 @@ class RuntimeAdapterSession:
             self.lifetime_planner.resources,
         )
         memory_route_plan = build_memory_route_plan(memory_transit_map)
+        frame_window_plan = build_frame_window_plan(memory_route_plan)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -211,7 +215,8 @@ class RuntimeAdapterSession:
             actuation_plan=build_actuation_plan(feedback_plan),
             memory_transit_map=memory_transit_map,
             memory_route_plan=memory_route_plan,
-            frame_window_plan=build_frame_window_plan(memory_route_plan),
+            frame_window_plan=frame_window_plan,
+            execution_packet=build_execution_packet(frame_window_plan),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

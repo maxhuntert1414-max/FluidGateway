@@ -469,6 +469,23 @@ This is the first explicit timing contract in the runtime prototype. It does not
 execute work yet, but it gives an engine adapter a stable schedule-shaped packet
 instead of loose recommendations.
 
+## Execution Packet
+
+The v0.25 execution packet turns frame windows into ordered adapter commands.
+Adapter and client summaries now include an `execution_packet` with command
+actions such as:
+
+- `skip_transfer`;
+- `reuse_allocation`;
+- `drop_sync_wait`;
+- `prestage_transfer`;
+- `pool_allocation`;
+- `execute_protected`.
+
+This packet is still advisory, but it is the closest v0 shape to a real runtime
+contract: a consuming engine adapter can read ordered commands, apply the
+`never` and `pre-frame` choices first, then let protected hot-path work proceed.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
