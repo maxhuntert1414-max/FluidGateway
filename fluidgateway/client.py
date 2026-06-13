@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .admission import build_admission_plan
+from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 
 
-CLIENT_MODE = "runtime-event-client-v0.18"
+CLIENT_MODE = "runtime-event-client-v0.19"
 
 
 class RuntimeEventClient:
@@ -179,11 +180,15 @@ def summarize_client_responses(
     admission_decision_count = sum(
         1 for response in responses if response.get("admission_decision")
     )
+    efficiency_impact_count = sum(
+        1 for response in responses if response.get("efficiency_impact")
+    )
     operation_results = [
         response.get("result")
         for response in operation_responses
         if isinstance(response.get("result"), dict)
     ]
+    admission_plan = build_admission_plan(operation_results)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -203,7 +208,9 @@ def summarize_client_responses(
         "policy_loop_directive_count": policy_loop_directive_count,
         "execution_gate_count": execution_gate_count,
         "admission_decision_count": admission_decision_count,
-        "admission_plan": build_admission_plan(operation_results).to_dict(),
+        "admission_plan": admission_plan.to_dict(),
+        "efficiency_impact_count": efficiency_impact_count,
+        "efficiency_ledger": build_efficiency_ledger(admission_plan).to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

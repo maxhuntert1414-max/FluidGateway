@@ -9,6 +9,11 @@ from .admission import AdmissionPlan, build_admission_decision, build_admission_
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
+from .efficiency import (
+    EfficiencyLedger,
+    build_efficiency_impact,
+    build_efficiency_ledger,
+)
 from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
@@ -18,7 +23,7 @@ from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.18"
+ADAPTER_MODE = "runtime-adapter-session-v0.19"
 
 
 @dataclass
@@ -77,6 +82,7 @@ class AdapterSessionResult:
     policy_loop_directives: list[GovernorDirective]
     execution_gates: list[ExecutionGateDecision]
     admission_plan: AdmissionPlan
+    efficiency_ledger: EfficiencyLedger
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -105,6 +111,7 @@ class AdapterSessionResult:
             "execution_gate_count": len(self.execution_gates),
             "execution_gates": [gate.to_dict() for gate in self.execution_gates],
             "admission_plan": self.admission_plan.to_dict(),
+            "efficiency_ledger": self.efficiency_ledger.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -155,6 +162,7 @@ class RuntimeAdapterSession:
         lifetime_plan = self.lifetime_planner.finalize()
         schedule_plan = self._build_schedule_plan(lifetime_plan)
         enforcement_plan = build_enforcement_plan(schedule_plan)
+        admission_plan = build_admission_plan(self.results)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -172,7 +180,8 @@ class RuntimeAdapterSession:
             state_snapshot=self._build_state_snapshot(),
             policy_loop_directives=list(self.policy_loop_directives),
             execution_gates=list(self.execution_gates),
-            admission_plan=build_admission_plan(self.results),
+            admission_plan=admission_plan,
+            efficiency_ledger=build_efficiency_ledger(admission_plan),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -442,8 +451,11 @@ class RuntimeAdapterSession:
             response["execution_gate"] = execution_gate.to_dict()
             response["result"]["execution_gate"] = execution_gate.to_dict()
             admission_decision = build_admission_decision(response["result"])
+            efficiency_impact = build_efficiency_impact(admission_decision)
             response["admission_decision"] = admission_decision.to_dict()
             response["result"]["admission_decision"] = admission_decision.to_dict()
+            response["efficiency_impact"] = efficiency_impact.to_dict()
+            response["result"]["efficiency_impact"] = efficiency_impact.to_dict()
             self.results.append(response["result"])
         return with_event_index(response, event_index)
 

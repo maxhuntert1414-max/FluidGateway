@@ -362,6 +362,23 @@ This is the first controller-shaped layer above individual operation gates. It
 does not just say what one operation should do; it reports how the runtime queue
 would be reshaped to reduce CPU/GPU/RAM/VRAM traffic on the hot frame path.
 
+## Frame Efficiency Ledger
+
+The v0.19 efficiency ledger turns the admission plan into a measured efficiency
+view. Each operation response includes an `efficiency_impact`, and the final
+session/client output includes an `efficiency_ledger` with:
+
+- hot-path cost that still has to execute;
+- transfer or setup cost shifted out of the hot path;
+- redundant or reusable work avoided;
+- non-critical work held for a later frame;
+- total MB of transfer or allocation relief;
+- an efficiency score based on managed work shifted or avoided.
+
+This makes the prototype measurable: FluidGateway can now say not only what it
+would do, but how much frame-path pressure and memory traffic it believes the
+management loop removed or moved earlier.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
