@@ -21,12 +21,13 @@ from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .live import LiveCommand, build_live_command
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
+from .routing import MemoryRoutePlan, build_memory_route_plan
 from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 from .transit import MemoryTransitMap, build_memory_transit_map
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.22"
+ADAPTER_MODE = "runtime-adapter-session-v0.23"
 
 
 @dataclass
@@ -89,6 +90,7 @@ class AdapterSessionResult:
     feedback_plan: FeedbackPlan
     actuation_plan: ActuationPlan
     memory_transit_map: MemoryTransitMap
+    memory_route_plan: MemoryRoutePlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -121,6 +123,7 @@ class AdapterSessionResult:
             "feedback_plan": self.feedback_plan.to_dict(),
             "actuation_plan": self.actuation_plan.to_dict(),
             "memory_transit_map": self.memory_transit_map.to_dict(),
+            "memory_route_plan": self.memory_route_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -177,6 +180,10 @@ class RuntimeAdapterSession:
             frame.frame: frame.target_frame_ms for frame in self.frames.values()
         }
         feedback_plan = build_feedback_plan(efficiency_ledger, frame_targets)
+        memory_transit_map = build_memory_transit_map(
+            self.results,
+            self.lifetime_planner.resources,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -198,10 +205,8 @@ class RuntimeAdapterSession:
             efficiency_ledger=efficiency_ledger,
             feedback_plan=feedback_plan,
             actuation_plan=build_actuation_plan(feedback_plan),
-            memory_transit_map=build_memory_transit_map(
-                self.results,
-                self.lifetime_planner.resources,
-            ),
+            memory_transit_map=memory_transit_map,
+            memory_route_plan=build_memory_route_plan(memory_transit_map),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

@@ -10,10 +10,11 @@ from .admission import build_admission_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 from .feedback import build_feedback_plan
+from .routing import build_memory_route_plan
 from .transit import build_memory_transit_map
 
 
-CLIENT_MODE = "runtime-event-client-v0.22"
+CLIENT_MODE = "runtime-event-client-v0.23"
 
 
 class RuntimeEventClient:
@@ -200,6 +201,7 @@ def summarize_client_responses(
         operation_results,
         resources_from_responses(resource_responses),
     )
+    memory_route_plan = build_memory_route_plan(memory_transit_map)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -225,6 +227,7 @@ def summarize_client_responses(
         "feedback_plan": feedback_plan.to_dict(),
         "actuation_plan": actuation_plan.to_dict(),
         "memory_transit_map": memory_transit_map.to_dict(),
+        "memory_route_plan": memory_route_plan.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

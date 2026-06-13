@@ -431,6 +431,25 @@ the project a concrete vocabulary for the core mission: find the useless
 transport between CPU, GPU, RAM, VRAM, staging buffers, swapchain, and display
 before a future scheduler tries to remove it.
 
+## Memory Route Plan
+
+The v0.23 memory route plan turns the transit map into routing directives. A
+`memory_route_plan` now appears in adapter and client summaries with actions
+such as:
+
+- `suppress_redundant_hop` for duplicate transfers, aliased same-layer copies,
+  and self-transfers;
+- `remove_sync_wait` for synchronization that no longer gates useful work;
+- `prestage_cross_memory_transfer` for large RAM/VRAM movement that should move
+  before draw-critical work;
+- `pool_transient_allocation` for reusable allocation shapes;
+- `protect_presentation_route` for final frame paths that should stay
+  predictable.
+
+This is still an advisory software contract, but it is closer to the intended
+gateway: telemetry becomes a map, the map becomes route decisions, and those
+decisions become something a scheduler or engine adapter can apply.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
