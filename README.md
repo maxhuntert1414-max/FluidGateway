@@ -345,6 +345,23 @@ make the future scheduler's shape concrete: operation intent comes in, current
 frame/memory/queue state is considered, and a gate decision comes out before an
 engine integration commits the work.
 
+## Adaptive Admission Controller
+
+The v0.18 admission controller aggregates execution gates into an applied queue
+view. Each operation response includes an `admission_decision`, and the final
+adapter/session output includes an `admission_plan` that summarizes:
+
+- hot-path work admitted into the current frame;
+- transfer work prestaged before draw-critical work;
+- redundant work rejected before execution;
+- transient/resource reuse;
+- non-critical work held for a later frame;
+- estimated cost and MB shifted or avoided.
+
+This is the first controller-shaped layer above individual operation gates. It
+does not just say what one operation should do; it reports how the runtime queue
+would be reshaped to reduce CPU/GPU/RAM/VRAM traffic on the hot frame path.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

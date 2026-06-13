@@ -5,10 +5,11 @@ import socket
 from pathlib import Path
 from typing import Any, Iterable
 
+from .admission import build_admission_plan
 from .events import iter_jsonl
 
 
-CLIENT_MODE = "runtime-event-client-v0.17"
+CLIENT_MODE = "runtime-event-client-v0.18"
 
 
 class RuntimeEventClient:
@@ -175,6 +176,14 @@ def summarize_client_responses(
     execution_gate_count = sum(
         1 for response in responses if response.get("execution_gate")
     )
+    admission_decision_count = sum(
+        1 for response in responses if response.get("admission_decision")
+    )
+    operation_results = [
+        response.get("result")
+        for response in operation_responses
+        if isinstance(response.get("result"), dict)
+    ]
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -193,6 +202,8 @@ def summarize_client_responses(
         "state_snapshot_count": state_snapshot_count,
         "policy_loop_directive_count": policy_loop_directive_count,
         "execution_gate_count": execution_gate_count,
+        "admission_decision_count": admission_decision_count,
+        "admission_plan": build_admission_plan(operation_results).to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

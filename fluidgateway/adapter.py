@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .admission import AdmissionPlan, build_admission_decision, build_admission_plan
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
@@ -17,7 +18,7 @@ from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.17"
+ADAPTER_MODE = "runtime-adapter-session-v0.18"
 
 
 @dataclass
@@ -75,6 +76,7 @@ class AdapterSessionResult:
     state_snapshot: LiveStateSnapshot
     policy_loop_directives: list[GovernorDirective]
     execution_gates: list[ExecutionGateDecision]
+    admission_plan: AdmissionPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -102,6 +104,7 @@ class AdapterSessionResult:
             ],
             "execution_gate_count": len(self.execution_gates),
             "execution_gates": [gate.to_dict() for gate in self.execution_gates],
+            "admission_plan": self.admission_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -169,6 +172,7 @@ class RuntimeAdapterSession:
             state_snapshot=self._build_state_snapshot(),
             policy_loop_directives=list(self.policy_loop_directives),
             execution_gates=list(self.execution_gates),
+            admission_plan=build_admission_plan(self.results),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -437,6 +441,9 @@ class RuntimeAdapterSession:
             self.execution_gates.append(execution_gate)
             response["execution_gate"] = execution_gate.to_dict()
             response["result"]["execution_gate"] = execution_gate.to_dict()
+            admission_decision = build_admission_decision(response["result"])
+            response["admission_decision"] = admission_decision.to_dict()
+            response["result"]["admission_decision"] = admission_decision.to_dict()
             self.results.append(response["result"])
         return with_event_index(response, event_index)
 

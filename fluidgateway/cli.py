@@ -345,6 +345,9 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     execution_gate_count = sum(
         1 for response in responses if response.get("execution_gate")
     )
+    admission_decision_count = sum(
+        1 for response in responses if response.get("admission_decision")
+    )
     failed_responses = sum(1 for response in responses if not response.get("ok"))
     print(f"FluidGateway server responses written: {output_path}")
     print(f"Events sent: {len(responses)}")
@@ -353,6 +356,7 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
     print(f"State snapshots: {state_snapshot_count}")
     print(f"Policy loop directives: {policy_loop_directive_count}")
     print(f"Execution gates: {execution_gate_count}")
+    print(f"Admission decisions: {admission_decision_count}")
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -374,6 +378,15 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(f"Live commands: {len(result.live_commands)}")
     print(f"Policy loop directives: {len(result.policy_loop_directives)}")
     print(f"Execution gates: {len(result.execution_gates)}")
+    print(f"Admission operations: {result.admission_plan.operation_count}")
+    print(
+        "Admission hot-path cost ms: "
+        f"{result.admission_plan.estimated_hot_path_cost_ms:.4f}"
+    )
+    print(
+        "Admission avoided cost ms: "
+        f"{result.admission_plan.estimated_avoided_cost_ms:.4f}"
+    )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
     print(
