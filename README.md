@@ -327,6 +327,24 @@ This still does not hook drivers or games. It is the next user-space contract
 for the future scheduler: live telemetry in, actionable CPU/GPU/RAM/VRAM
 management intent out.
 
+## Adaptive Execution Gate
+
+The v0.17 adaptive execution gate turns live commands and policy-loop
+directives into an operation-level decision. Each operation response now
+includes an `execution_gate` with an action, preferred phase, and whether the
+adapter should execute the work now:
+
+- `execute_now`: keep required critical work moving;
+- `prestage_before_draw`: run predictable transfers before draw-critical work;
+- `defer_redundant_work`: skip work the control plane already proved redundant;
+- `reuse_existing_resource`: reuse an existing transient allocation or resource;
+- `hold_noncritical_work`: keep late non-critical work out of a hot frame.
+
+This is still a safe prototype contract, not a game hook. Its purpose is to
+make the future scheduler's shape concrete: operation intent comes in, current
+frame/memory/queue state is considered, and a gate decision comes out before an
+engine integration commits the work.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

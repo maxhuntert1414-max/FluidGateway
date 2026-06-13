@@ -8,6 +8,7 @@ from typing import Any
 from .control import FluidGatewayController
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
+from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .live import LiveCommand, build_live_command
@@ -16,7 +17,7 @@ from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.16"
+ADAPTER_MODE = "runtime-adapter-session-v0.17"
 
 
 @dataclass
@@ -73,6 +74,7 @@ class AdapterSessionResult:
     live_commands: list[LiveCommand]
     state_snapshot: LiveStateSnapshot
     policy_loop_directives: list[GovernorDirective]
+    execution_gates: list[ExecutionGateDecision]
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -98,6 +100,8 @@ class AdapterSessionResult:
             "policy_loop_directives": [
                 directive.to_dict() for directive in self.policy_loop_directives
             ],
+            "execution_gate_count": len(self.execution_gates),
+            "execution_gates": [gate.to_dict() for gate in self.execution_gates],
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -121,6 +125,7 @@ class RuntimeAdapterSession:
         self.frames: dict[int, AdapterFrameStats] = {}
         self.live_commands: list[LiveCommand] = []
         self.policy_loop_directives: list[GovernorDirective] = []
+        self.execution_gates: list[ExecutionGateDecision] = []
         self.results: list[dict[str, Any]] = []
         self.closed = False
 
@@ -163,6 +168,7 @@ class RuntimeAdapterSession:
             live_commands=list(self.live_commands),
             state_snapshot=self._build_state_snapshot(),
             policy_loop_directives=list(self.policy_loop_directives),
+            execution_gates=list(self.execution_gates),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
@@ -305,7 +311,6 @@ class RuntimeAdapterSession:
         live_command = build_live_command(result, target_frame_ms)
         self.live_commands.append(live_command)
         result_payload["live_command"] = live_command.to_dict()
-        self.results.append(result_payload)
         if operation_frame is not None:
             stats = self._frame_stats(operation_frame)
             stats.operation_count += 1
@@ -337,7 +342,12 @@ class RuntimeAdapterSession:
             "live_command": live_command.to_dict(),
             "policy_actions": [item.to_dict() for item in policy_actions],
         }
-        return self._with_state_snapshot(response, event_index, live_command)
+        return self._with_state_snapshot(
+            response,
+            event_index,
+            live_command=live_command,
+            operation_result=result,
+        )
 
     def _process_state_event(
         self, payload: dict[str, Any], event_index: int | None
@@ -401,11 +411,13 @@ class RuntimeAdapterSession:
         response: dict[str, Any],
         event_index: int | None,
         live_command: LiveCommand | None = None,
+        operation_result: Any | None = None,
     ) -> dict[str, Any]:
         snapshot = self._build_state_snapshot()
+        target_frame_ms = self._target_frame_ms(snapshot.current_frame, live_command)
         directives = self.policy_governor.evaluate(
             snapshot=snapshot,
-            target_frame_ms=self._target_frame_ms(snapshot.current_frame, live_command),
+            target_frame_ms=target_frame_ms,
             memory_budgets_mb=self.policy_engine.memory_budgets_mb,
             live_command=live_command,
         )
@@ -414,6 +426,18 @@ class RuntimeAdapterSession:
         response["policy_loop_directives"] = [
             directive.to_dict() for directive in directives
         ]
+        if operation_result is not None and live_command is not None:
+            execution_gate = build_execution_gate(
+                result=operation_result,
+                live_command=live_command,
+                directives=directives,
+                snapshot=snapshot,
+                target_frame_ms=target_frame_ms,
+            )
+            self.execution_gates.append(execution_gate)
+            response["execution_gate"] = execution_gate.to_dict()
+            response["result"]["execution_gate"] = execution_gate.to_dict()
+            self.results.append(response["result"])
         return with_event_index(response, event_index)
 
     def _target_frame_ms(

@@ -384,7 +384,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["events_sent"], 12)
         self.assertEqual(summary["resource_responses"], 5)
         self.assertEqual(summary["operation_responses"], 7)
@@ -423,7 +423,7 @@ class FluidGatewayTests(unittest.TestCase):
 
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-event-client-v0.16")
+            self.assertEqual(payload["mode"], "runtime-event-client-v0.17")
             self.assertEqual(payload["events_sent"], 12)
             self.assertEqual(payload["decision_count"], 4)
             self.assertEqual(payload["failed_responses"], 0)
@@ -438,7 +438,7 @@ class FluidGatewayTests(unittest.TestCase):
             if item["decision"] is not None
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
         self.assertEqual(payload["session_id"], "demo-adapter")
         self.assertEqual(payload["events_processed"], 12)
         self.assertEqual(payload["lifecycle_events"], 4)
@@ -471,7 +471,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
             self.assertEqual(payload["snapshot"]["estimated_saved_mb"], 40)
 
     def test_runtime_event_server_accepts_adapter_lifecycle_events(self):
@@ -494,7 +494,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["session_responses"], 2)
         self.assertEqual(summary["frame_responses"], 2)
         self.assertEqual(summary["decision_count"], 2)
@@ -516,7 +516,7 @@ class FluidGatewayTests(unittest.TestCase):
         frame = payload["frames"][0]
         action_ids = {action["id"] for action in payload["policy_actions"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
         self.assertEqual(payload["session_id"], "policy-pressure")
         self.assertEqual(payload["policy_action_count"], 3)
         self.assertEqual(frame["frame"], 0)
@@ -544,7 +544,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
             self.assertEqual(payload["policy_action_count"], 3)
 
     def test_runtime_event_server_reports_policy_actions(self):
@@ -563,7 +563,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["policy_action_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -578,7 +578,7 @@ class FluidGatewayTests(unittest.TestCase):
             (item["resource_id"], item["action"]) for item in plan["actions"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
         self.assertEqual(plan["mode"], "resource-lifetime-plan-v0.11")
         self.assertEqual(plan["plan_action_count"], 4)
         self.assertEqual(plan["estimated_reduced_transfer_mb"], 64)
@@ -605,7 +605,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
             self.assertEqual(payload["lifetime_plan"]["plan_action_count"], 4)
 
     def test_runtime_event_server_reports_lifetime_plan_delta(self):
@@ -624,7 +624,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["lifetime_plan_action_count"], 4)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -665,7 +665,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
             self.assertEqual(
                 payload["schedule_plan"]["estimated_latency_reduction_ms"],
                 4.2,
@@ -687,7 +687,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["schedule_step_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -727,7 +727,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
             self.assertEqual(payload["enforcement_plan"]["command_count"], 3)
 
     def test_runtime_event_server_reports_enforcement_commands(self):
@@ -746,7 +746,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["enforcement_command_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -760,7 +760,7 @@ class FluidGatewayTests(unittest.TestCase):
             for item in payload["results"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
         self.assertEqual(payload["live_command_count"], 2)
         self.assertEqual(live_by_operation["upload_hero"], "prefetch_now")
         self.assertEqual(live_by_operation["draw_hero"], "execute_now")
@@ -795,7 +795,7 @@ class FluidGatewayTests(unittest.TestCase):
         operation_responses = [
             response for response in responses if response.get("event") == "operation"
         ]
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["live_command_count"], 2)
         self.assertEqual(
             [response["live_command"]["action"] for response in operation_responses],
@@ -868,7 +868,7 @@ class FluidGatewayTests(unittest.TestCase):
         payload = result.to_dict()
         snapshot = payload["state_snapshot"]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
         self.assertEqual(snapshot["mode"], "live-state-snapshot-v0.15")
         self.assertIsNone(snapshot["current_frame"])
         self.assertFalse(snapshot["open_frame"])
@@ -900,7 +900,7 @@ class FluidGatewayTests(unittest.TestCase):
             response for response in responses if response.get("event") == "operation"
         ]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["state_response_count"], 1)
         self.assertEqual(summary["state_snapshot_count"], len(responses))
         self.assertEqual(
@@ -920,7 +920,7 @@ class FluidGatewayTests(unittest.TestCase):
         directives = payload["policy_loop_directives"]
         actions = {directive["action"] for directive in directives}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.16")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
         self.assertEqual(payload["policy_loop_directive_count"], 3)
         self.assertIn("prefetch-before-critical-path", actions)
         self.assertIn("drain-copy-queue-before-draw", actions)
@@ -1009,8 +1009,129 @@ class FluidGatewayTests(unittest.TestCase):
 
         summary = summarize_client_responses(responses)
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.16")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
         self.assertEqual(summary["policy_loop_directive_count"], 3)
+        self.assertEqual(summary["failed_responses"], 0)
+
+    def test_execution_gate_prestages_heavy_uploads_before_draw(self):
+        result = replay_adapter_event_stream(
+            FIXTURES / "adapter_state_query_events.jsonl"
+        )
+        payload = result.to_dict()
+        gates = {
+            item["operation"]["id"]: item["execution_gate"]
+            for item in payload["results"]
+        }
+
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.17")
+        self.assertEqual(payload["execution_gate_count"], 2)
+        self.assertEqual(gates["upload_hero"]["mode"], "adaptive-execution-gate-v0.17")
+        self.assertEqual(gates["upload_hero"]["action"], "prestage_before_draw")
+        self.assertEqual(gates["upload_hero"]["preferred_phase"], "prefetch")
+        self.assertTrue(gates["upload_hero"]["should_execute"])
+        self.assertEqual(gates["draw_hero"]["action"], "execute_now")
+        self.assertEqual(gates["draw_hero"]["preferred_phase"], "critical")
+
+    def test_execution_gate_maps_reuse_and_defer_decisions(self):
+        result = replay_adapter_event_stream(FIXTURES / "runtime_events.jsonl")
+        payload = result.to_dict()
+        gates = {
+            item["operation"]["id"]: item["execution_gate"]
+            for item in payload["results"]
+        }
+
+        self.assertEqual(gates["alloc_scratch_2"]["action"], "reuse_existing_resource")
+        self.assertFalse(gates["alloc_scratch_2"]["should_execute"])
+        self.assertEqual(
+            gates["upload_texture_a_duplicate"]["action"],
+            "defer_redundant_work",
+        )
+        self.assertFalse(gates["upload_texture_a_duplicate"]["should_execute"])
+
+    def test_execution_gate_holds_noncritical_work_when_frame_is_hot(self):
+        session = RuntimeAdapterSession()
+        session.process_event(
+            {
+                "event": "session",
+                "action": "begin",
+                "id": "gate-hot-frame",
+                "budgets": {"frame_ms": 8, "ram_mb": 128, "vram_mb": 128},
+            }
+        )
+        session.process_event({"event": "frame", "action": "begin", "frame": 0})
+        session.process_event(
+            {
+                "event": "operation",
+                "id": "draw_heavy",
+                "operation_type": "draw",
+                "queue": "graphics",
+                "reason": "critical scene draw",
+                "cost_ms": 7.4,
+            }
+        )
+        session.process_event(
+            {
+                "event": "resource",
+                "id": "ram_cosmetic",
+                "kind": "texture",
+                "memory": "ram",
+                "size_mb": 1,
+            }
+        )
+        session.process_event(
+            {
+                "event": "resource",
+                "id": "vram_cosmetic",
+                "kind": "texture",
+                "memory": "vram",
+                "size_mb": 1,
+            }
+        )
+        response = session.process_event(
+            {
+                "event": "operation",
+                "id": "late_tiny_upload",
+                "operation_type": "upload",
+                "source": "ram_cosmetic",
+                "target": "vram_cosmetic",
+                "queue": "copy",
+                "reason": "tiny late cosmetic upload",
+                "cost_ms": 0.1,
+                "size_mb": 1,
+            }
+        )
+        gate = response["execution_gate"]
+
+        self.assertEqual(gate["action"], "hold_noncritical_work")
+        self.assertEqual(gate["preferred_phase"], "next-frame")
+        self.assertFalse(gate["should_execute"])
+
+    def test_runtime_event_server_reports_execution_gates(self):
+        with create_runtime_event_server("127.0.0.1", 0) as server:
+            server.timeout = 5
+            host, port = server.server_address
+            thread = threading.Thread(target=server.handle_request)
+            thread.start()
+
+            with RuntimeEventClient(host, port, timeout=5) as client:
+                responses = client.send_jsonl(
+                    FIXTURES / "adapter_state_query_events.jsonl"
+                )
+
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
+        summary = summarize_client_responses(responses)
+        operation_responses = [
+            response for response in responses if response.get("event") == "operation"
+        ]
+
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.17")
+        self.assertEqual(summary["execution_gate_count"], 2)
+        self.assertEqual(
+            operation_responses[0]["execution_gate"]["action"],
+            "prestage_before_draw",
+        )
         self.assertEqual(summary["failed_responses"], 0)
 
 
