@@ -780,6 +780,27 @@ residency. It creates the stateful contract needed before a future runtime
 manager can compare the previous cycle against the next one and decide what to
 preserve, tighten, defer, or release.
 
+## Runtime State Persistence
+
+The v0.41 runtime state persistence path lets `runtime run-adapter` load a
+previous `runtime_state_accumulator` JSON and write the next one:
+
+```powershell
+python -m fluidgateway runtime run-adapter `
+  --events tests/fixtures/adapter_budget_pressure_events.jsonl `
+  --state-in tmp/runtime-state.json `
+  --state-out tmp/runtime-state.json `
+  --out tmp/adapter-session.json
+```
+
+If `--state-in` points to a missing file, FluidGateway starts a fresh cycle. If
+the file exists but is not a supported accumulator JSON, the command fails
+instead of silently corrupting the runtime memory.
+
+This is still an offline advisory loop. It is the first persisted bridge
+between runs: a future manager can now compare previous cycle pressure against
+new CPU/GPU/RAM/VRAM evidence instead of treating each replay as isolated.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

@@ -18,6 +18,10 @@ from .report import write_report
 from .report import write_management_plan
 from .runtime import RuntimeManifest, load_manifest, optimize_manifest, write_runtime_plan
 from .server import serve_runtime_events
+from .state_accumulator import (
+    load_runtime_state_accumulator,
+    write_runtime_state_accumulator,
+)
 from .tracker import DEFAULT_REGISTRY, summarize_registry, track_trace
 
 
@@ -198,6 +202,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         required=True,
         help="Path to the adapter session JSON output.",
+    )
+    adapter.add_argument(
+        "--state-in",
+        help=(
+            "Optional previous runtime_state_accumulator JSON. Missing files "
+            "start a fresh cycle."
+        ),
+    )
+    adapter.add_argument(
+        "--state-out",
+        help="Optional path to write the next runtime_state_accumulator JSON.",
     )
     adapter.set_defaults(func=run_runtime_run_adapter)
     serve = runtime_subparsers.add_parser(
@@ -529,10 +544,23 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
 
 
 def run_runtime_run_adapter(args: argparse.Namespace) -> int:
-    result = replay_adapter_event_stream(args.events)
+    previous_state = (
+        load_runtime_state_accumulator(args.state_in) if args.state_in else None
+    )
+    result = replay_adapter_event_stream(args.events, previous_state=previous_state)
     output_path = write_adapter_session(result, args.out)
+    state_output_path = None
+    if args.state_out:
+        state_output_path = write_runtime_state_accumulator(
+            result.runtime_state_accumulator,
+            args.state_out,
+        )
     snapshot = result.snapshot
     print(f"FluidGateway adapter session written: {output_path}")
+    if previous_state is not None:
+        print(f"Runtime previous state cycles: {previous_state.cycle_count}")
+    if state_output_path is not None:
+        print(f"Runtime state accumulator written: {state_output_path}")
     print(f"Events processed: {result.events_processed}")
     print(f"Frames observed: {len(result.frames)}")
     print(f"Operation events: {result.operation_events}")

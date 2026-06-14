@@ -50,7 +50,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.40"
+ADAPTER_MODE = "runtime-adapter-session-v0.41"
 
 
 @dataclass
@@ -227,7 +227,10 @@ class RuntimeAdapterSession:
             return self._process_state_event(payload, event_index)
         raise ValueError(f"Unsupported adapter event type: {event_type or 'missing'}")
 
-    def to_result(self) -> AdapterSessionResult:
+    def to_result(
+        self,
+        previous_state: RuntimeStateAccumulator | None = None,
+    ) -> AdapterSessionResult:
         lifetime_plan = self.lifetime_planner.finalize()
         schedule_plan = self._build_schedule_plan(lifetime_plan)
         enforcement_plan = build_enforcement_plan(schedule_plan)
@@ -283,7 +286,8 @@ class RuntimeAdapterSession:
         )
         runtime_policy_update = build_runtime_policy_update(runtime_gateway_feedback)
         runtime_state_accumulator = build_runtime_state_accumulator(
-            runtime_policy_update
+            runtime_policy_update,
+            previous=previous_state,
         )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
@@ -613,11 +617,14 @@ class RuntimeAdapterSession:
         return self.policy_engine.target_frame_ms
 
 
-def replay_adapter_event_stream(path: str | Path) -> AdapterSessionResult:
+def replay_adapter_event_stream(
+    path: str | Path,
+    previous_state: RuntimeStateAccumulator | None = None,
+) -> AdapterSessionResult:
     session = RuntimeAdapterSession()
     for index, payload in iter_jsonl(path):
         session.process_event(payload, event_index=index)
-    return session.to_result()
+    return session.to_result(previous_state=previous_state)
 
 
 def write_adapter_session(result: AdapterSessionResult, output_path: str | Path) -> Path:

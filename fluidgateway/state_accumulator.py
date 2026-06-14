@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .policy_update import FramePolicyUpdate, MemoryPolicyUpdate, RuntimePolicyUpdate
 
 
-STATE_ACCUMULATOR_MODE = "runtime-state-accumulator-v0.40"
+STATE_ACCUMULATOR_MODE = "runtime-state-accumulator-v0.41"
+SUPPORTED_STATE_ACCUMULATOR_MODES = {
+    "runtime-state-accumulator-v0.40",
+    STATE_ACCUMULATOR_MODE,
+}
 
 
 @dataclass(frozen=True)
@@ -188,3 +194,142 @@ def build_state_digest(update: RuntimePolicyUpdate, cycle_count: int) -> str:
         f"memory:{update.memory_relief_target_mb:.4f}:{update.memory_headroom_target_mb:.4f}|"
         f"cycle:{cycle_count}"
     )
+
+
+def load_runtime_state_accumulator(
+    input_path: str | Path,
+) -> RuntimeStateAccumulator | None:
+    path = Path(input_path)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Runtime state file is not valid JSON: {path}") from exc
+    return runtime_state_accumulator_from_dict(payload)
+
+
+def write_runtime_state_accumulator(
+    state: RuntimeStateAccumulator,
+    output_path: str | Path,
+) -> Path:
+    path = Path(output_path)
+    if path.suffix.lower() != ".json":
+        path = path.with_suffix(".json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(state.to_dict(), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return path
+
+
+def runtime_state_accumulator_from_dict(
+    payload: dict[str, Any],
+) -> RuntimeStateAccumulator:
+    if not isinstance(payload, dict):
+        raise ValueError("Runtime state payload must be a JSON object.")
+    mode = str(payload.get("mode") or "")
+    if mode not in SUPPORTED_STATE_ACCUMULATOR_MODES:
+        raise ValueError(f"Unsupported runtime state accumulator mode: {mode}")
+    frames = [
+        frame_state_from_dict(item) for item in required_list(payload, "frames")
+    ]
+    memory = [
+        memory_state_from_dict(item) for item in required_list(payload, "memory")
+    ]
+    return RuntimeStateAccumulator(
+        mode=mode,
+        profile=required_str(payload, "profile"),
+        policy_action=required_str(payload, "policy_action"),
+        convergence_status=required_str(payload, "convergence_status"),
+        drift_risk=required_str(payload, "drift_risk"),
+        cycle_count=required_int(payload, "cycle_count"),
+        frame_state_count=required_int(payload, "frame_state_count"),
+        memory_state_count=required_int(payload, "memory_state_count"),
+        active_policy_count=required_int(payload, "active_policy_count"),
+        next_frame_budget_ms=required_float(payload, "next_frame_budget_ms"),
+        hot_path_budget_ms=required_float(payload, "hot_path_budget_ms"),
+        copy_queue_budget_ms=required_float(payload, "copy_queue_budget_ms"),
+        pre_frame_window_ms=required_float(payload, "pre_frame_window_ms"),
+        memory_relief_target_mb=required_float(payload, "memory_relief_target_mb"),
+        memory_headroom_target_mb=required_float(
+            payload,
+            "memory_headroom_target_mb",
+        ),
+        state_digest=required_str(payload, "state_digest"),
+        frames=frames,
+        memory=memory,
+    )
+
+
+def frame_state_from_dict(payload: dict[str, Any]) -> FrameAccumulatedState:
+    if not isinstance(payload, dict):
+        raise ValueError("Frame state payload must be a JSON object.")
+    return FrameAccumulatedState(
+        frame=required_int(payload, "frame"),
+        action=required_str(payload, "action"),
+        admission_policy=required_str(payload, "admission_policy"),
+        scheduler_policy=required_str(payload, "scheduler_policy"),
+        next_frame_budget_ms=required_float(payload, "next_frame_budget_ms"),
+        hot_path_budget_ms=required_float(payload, "hot_path_budget_ms"),
+        copy_queue_budget_ms=required_float(payload, "copy_queue_budget_ms"),
+        pre_frame_window_ms=required_float(payload, "pre_frame_window_ms"),
+        guardband_ms=required_float(payload, "guardband_ms"),
+        cycle_count=required_int(payload, "cycle_count"),
+    )
+
+
+def memory_state_from_dict(payload: dict[str, Any]) -> MemoryAccumulatedState:
+    if not isinstance(payload, dict):
+        raise ValueError("Memory state payload must be a JSON object.")
+    return MemoryAccumulatedState(
+        action=required_str(payload, "action"),
+        residency_policy=required_str(payload, "residency_policy"),
+        relief_target_mb=required_float(payload, "relief_target_mb"),
+        headroom_target_mb=required_float(payload, "headroom_target_mb"),
+        memory_delta_mb=required_float(payload, "memory_delta_mb"),
+        active=required_bool(payload, "active"),
+        cycle_count=required_int(payload, "cycle_count"),
+    )
+
+
+def required_list(payload: dict[str, Any], key: str) -> list[Any]:
+    value = payload.get(key)
+    if not isinstance(value, list):
+        raise ValueError(f"Runtime state field must be a list: {key}")
+    return value
+
+
+def required_str(payload: dict[str, Any], key: str) -> str:
+    value = payload.get(key)
+    if value is None:
+        raise ValueError(f"Runtime state field is required: {key}")
+    return str(value)
+
+
+def required_int(payload: dict[str, Any], key: str) -> int:
+    value = payload.get(key)
+    if value is None:
+        raise ValueError(f"Runtime state field is required: {key}")
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Runtime state field must be an integer: {key}") from exc
+
+
+def required_float(payload: dict[str, Any], key: str) -> float:
+    value = payload.get(key)
+    if value is None:
+        raise ValueError(f"Runtime state field is required: {key}")
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Runtime state field must be numeric: {key}") from exc
+
+
+def required_bool(payload: dict[str, Any], key: str) -> bool:
+    value = payload.get(key)
+    if isinstance(value, bool):
+        return value
+    raise ValueError(f"Runtime state field must be boolean: {key}")

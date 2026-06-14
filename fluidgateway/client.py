@@ -31,7 +31,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.40"
+CLIENT_MODE = "runtime-event-client-v0.41"
 
 
 class RuntimeEventClient:
