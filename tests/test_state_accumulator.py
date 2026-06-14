@@ -32,7 +32,7 @@ class RuntimeStateAccumulatorTests(unittest.TestCase):
         frame = state["frames"][0]
         memory = state["memory"][0]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.42")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.43")
         self.assertEqual(state["mode"], "runtime-state-accumulator-v0.41")
         self.assertEqual(state["profile"], "aggressive")
         self.assertEqual(state["policy_action"], "continue-runtime-pressure-policy")
@@ -81,7 +81,7 @@ class RuntimeStateAccumulatorTests(unittest.TestCase):
         state = summary["runtime_state_accumulator"]
         memory = state["memory"][0]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.42")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.43")
         self.assertEqual(state["mode"], "runtime-state-accumulator-v0.41")
         self.assertEqual(state["profile"], "stable")
         self.assertEqual(state["policy_action"], "preserve-runtime-cycle-policy")

@@ -34,7 +34,7 @@ class RuntimePolicyUpdateTests(unittest.TestCase):
         frame = update["frame_updates"][0]
         memory = update["memory_updates"][0]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.42")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.43")
         self.assertEqual(update["mode"], "runtime-policy-update-v0.39")
         self.assertEqual(update["profile"], "aggressive")
         self.assertEqual(update["next_profile"], "aggressive")
@@ -83,7 +83,7 @@ class RuntimePolicyUpdateTests(unittest.TestCase):
         frame = update["frame_updates"][0]
         memory = update["memory_updates"][0]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.42")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.43")
         self.assertEqual(update["mode"], "runtime-policy-update-v0.39")
         self.assertEqual(update["profile"], "stable")
         self.assertEqual(update["next_profile"], "stable")

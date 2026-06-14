@@ -25,7 +25,7 @@ class RuntimeStateTransitionTests(unittest.TestCase):
         state = payload["runtime_state_accumulator"]
         transition = payload["runtime_state_transition"]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.42")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.43")
         self.assertEqual(transition["mode"], "runtime-state-transition-v0.42")
         self.assertFalse(transition["has_previous_state"])
         self.assertIsNone(transition["previous_cycle_count"])
@@ -101,7 +101,7 @@ class RuntimeStateTransitionTests(unittest.TestCase):
         summary = summarize_client_responses(responses)
         transition = summary["runtime_state_transition"]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.42")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.43")
         self.assertEqual(transition["mode"], "runtime-state-transition-v0.42")
         self.assertEqual(transition["trend"], "baseline")
         self.assertEqual(transition["transition_action"], "establish-runtime-baseline")

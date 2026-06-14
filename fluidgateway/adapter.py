@@ -50,11 +50,15 @@ from .state_transition import (
     RuntimeStateTransition,
     build_runtime_state_transition,
 )
+from .supervisor import (
+    RuntimeSupervisorDirective,
+    build_runtime_supervisor_directive,
+)
 from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.42"
+ADAPTER_MODE = "runtime-adapter-session-v0.43"
 
 
 @dataclass
@@ -136,6 +140,7 @@ class AdapterSessionResult:
     runtime_policy_update: RuntimePolicyUpdate
     runtime_state_accumulator: RuntimeStateAccumulator
     runtime_state_transition: RuntimeStateTransition
+    runtime_supervisor_directive: RuntimeSupervisorDirective
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -187,6 +192,9 @@ class AdapterSessionResult:
             "runtime_policy_update": self.runtime_policy_update.to_dict(),
             "runtime_state_accumulator": self.runtime_state_accumulator.to_dict(),
             "runtime_state_transition": self.runtime_state_transition.to_dict(),
+            "runtime_supervisor_directive": (
+                self.runtime_supervisor_directive.to_dict()
+            ),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -299,6 +307,10 @@ class RuntimeAdapterSession:
             previous_state,
             runtime_state_accumulator,
         )
+        runtime_supervisor_directive = build_runtime_supervisor_directive(
+            runtime_state_accumulator,
+            runtime_state_transition,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -340,6 +352,7 @@ class RuntimeAdapterSession:
             runtime_policy_update=runtime_policy_update,
             runtime_state_accumulator=runtime_state_accumulator,
             runtime_state_transition=runtime_state_transition,
+            runtime_supervisor_directive=runtime_supervisor_directive,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

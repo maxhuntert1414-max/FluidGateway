@@ -823,6 +823,27 @@ does not schedule OS threads or GPU queues, but it can now tell whether the
 advisory gateway loop is moving toward less pressure or drifting back into
 waste.
 
+## Runtime Supervisor Directive
+
+The v0.43 runtime supervisor directive consumes `runtime_state_accumulator` and
+`runtime_state_transition`, then emits `runtime_supervisor_directive`.
+
+It translates trend into a next-cycle posture:
+
+- `establish-supervisor-baseline` for a first persisted cycle;
+- `relax-supervisor-pressure` when pressure is improving and the state is
+  stable;
+- `hold-recovery-supervision` when pressure is improving but the runtime is
+  still aggressive;
+- `escalate-supervisor-pressure` when pressure regresses;
+- `preserve-supervisor-state` or `monitor-supervisor-state` when pressure is
+  mostly unchanged.
+
+The directive carries scheduler, admission, memory, frame-budget, copy-queue,
+pre-frame, and guardband posture. This is still not a kernel scheduler, driver
+hook, or game injection layer. It is the first explicit management translation:
+persisted runtime evidence becomes a supervised next-cycle posture.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

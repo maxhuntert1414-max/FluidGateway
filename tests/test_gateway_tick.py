@@ -30,7 +30,7 @@ class RuntimeGatewayTickTests(unittest.TestCase):
         steps = tick["steps"]
         memory = {step["memory"]: step for step in steps if step["domain"] == "memory"}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.42")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.43")
         self.assertEqual(tick["mode"], "runtime-gateway-tick-v0.36")
         self.assertEqual(tick["profile"], "aggressive")
         self.assertEqual(tick["tick_policy"], "closed-loop-pressure-management")
@@ -102,7 +102,7 @@ class RuntimeGatewayTickTests(unittest.TestCase):
         steps = tick["steps"]
         memory = {step["memory"]: step for step in steps if step["domain"] == "memory"}
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.42")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.43")
         self.assertEqual(tick["mode"], "runtime-gateway-tick-v0.36")
         self.assertEqual(tick["profile"], "stable")
         self.assertEqual(tick["tick_policy"], "stable-budget-guard")
