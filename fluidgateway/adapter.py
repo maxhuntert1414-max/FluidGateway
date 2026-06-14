@@ -54,11 +54,12 @@ from .supervisor import (
     RuntimeSupervisorDirective,
     build_runtime_supervisor_directive,
 )
+from .supervisor_plan import RuntimeSupervisorPlan, build_runtime_supervisor_plan
 from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.43"
+ADAPTER_MODE = "runtime-adapter-session-v0.44"
 
 
 @dataclass
@@ -141,6 +142,7 @@ class AdapterSessionResult:
     runtime_state_accumulator: RuntimeStateAccumulator
     runtime_state_transition: RuntimeStateTransition
     runtime_supervisor_directive: RuntimeSupervisorDirective
+    runtime_supervisor_plan: RuntimeSupervisorPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -195,6 +197,7 @@ class AdapterSessionResult:
             "runtime_supervisor_directive": (
                 self.runtime_supervisor_directive.to_dict()
             ),
+            "runtime_supervisor_plan": self.runtime_supervisor_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -311,6 +314,9 @@ class RuntimeAdapterSession:
             runtime_state_accumulator,
             runtime_state_transition,
         )
+        runtime_supervisor_plan = build_runtime_supervisor_plan(
+            runtime_supervisor_directive
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -353,6 +359,7 @@ class RuntimeAdapterSession:
             runtime_state_accumulator=runtime_state_accumulator,
             runtime_state_transition=runtime_state_transition,
             runtime_supervisor_directive=runtime_supervisor_directive,
+            runtime_supervisor_plan=runtime_supervisor_plan,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

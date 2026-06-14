@@ -844,6 +844,28 @@ pre-frame, and guardband posture. This is still not a kernel scheduler, driver
 hook, or game injection layer. It is the first explicit management translation:
 persisted runtime evidence becomes a supervised next-cycle posture.
 
+## Runtime Supervisor Plan
+
+The v0.44 runtime supervisor plan consumes `runtime_supervisor_directive` and
+emits `runtime_supervisor_plan`: a structured command list for the next
+advisory cycle.
+
+The plan currently emits one command per domain:
+
+- `scheduler`
+- `admission`
+- `memory`
+- `frame-budget`
+- `guardband`
+
+Each command has an id, phase, action, target, budget or memory target, blocking
+flag, and reason. The plan also summarizes command counts, blocking commands,
+escalation level, cooldown cycles, and confidence.
+
+This still does not execute OS scheduling or GPU queue changes. It is the first
+bridge from supervisor posture to command-shaped work that a future daemon,
+native scheduler, or engine adapter could consume.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

@@ -24,7 +24,7 @@ class RuntimeSupervisorDirectiveTests(unittest.TestCase):
         payload = result.to_dict()
         directive = payload["runtime_supervisor_directive"]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.43")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.44")
         self.assertEqual(directive["mode"], "runtime-supervisor-directive-v0.43")
         self.assertEqual(directive["source_trend"], "baseline")
         self.assertEqual(
@@ -103,7 +103,7 @@ class RuntimeSupervisorDirectiveTests(unittest.TestCase):
         summary = summarize_client_responses(responses)
         directive = summary["runtime_supervisor_directive"]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.43")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.44")
         self.assertEqual(directive["mode"], "runtime-supervisor-directive-v0.43")
         self.assertEqual(directive["source_trend"], "baseline")
         self.assertEqual(directive["directive_action"], "establish-supervisor-baseline")

@@ -562,6 +562,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime supervisor memory posture: "
         f"{summary['runtime_supervisor_directive']['memory_posture']}"
     )
+    print(
+        "Runtime supervisor plan action: "
+        f"{summary['runtime_supervisor_plan']['plan_action']}"
+    )
+    print(
+        "Runtime supervisor plan commands: "
+        f"{summary['runtime_supervisor_plan']['command_count']}"
+    )
+    print(
+        "Runtime supervisor plan blocking commands: "
+        f"{summary['runtime_supervisor_plan']['blocking_command_count']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -815,6 +827,15 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime supervisor memory posture: "
         f"{result.runtime_supervisor_directive.memory_posture}"
+    )
+    print(f"Runtime supervisor plan action: {result.runtime_supervisor_plan.plan_action}")
+    print(
+        "Runtime supervisor plan commands: "
+        f"{result.runtime_supervisor_plan.command_count}"
+    )
+    print(
+        "Runtime supervisor plan blocking commands: "
+        f"{result.runtime_supervisor_plan.blocking_command_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
