@@ -575,6 +575,25 @@ This is still a contract, not a kernel scheduler. But it is now shaped like an
 adapter execution queue: a future native layer can consume it phase by phase
 instead of reinterpreting diagnostics.
 
+## Dispatch Execution Dry Run
+
+The v0.31 dispatch execution dry run consumes `dispatch_plan` and emits
+`dispatch_execution`: a phase-by-phase report of what the runtime would apply,
+schedule, defer, or remove.
+
+It reports:
+
+- cost that remains on the current frame;
+- cost moved to pre-frame work;
+- redundant cost removed before execution;
+- hot-path cost deferred or split into a later frame;
+- RAM/VRAM/swapchain residency pressure that memory commands are expected to
+  relieve.
+
+This is still dry-run execution, but it closes the loop from detection to an
+ordered queue and then to an applied effect model. It is the clearest v0 bridge
+between a diagnostic tool and a future runtime manager.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

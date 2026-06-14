@@ -402,6 +402,22 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Dispatch next-frame commands: "
         f"{summary['dispatch_plan']['next_frame_count']}"
     )
+    print(
+        "Dispatch execution current-frame ms: "
+        f"{summary['dispatch_execution']['current_frame_cost_ms']:.4f}"
+    )
+    print(
+        "Dispatch execution pre-frame ms: "
+        f"{summary['dispatch_execution']['pre_frame_cost_ms']:.4f}"
+    )
+    print(
+        "Dispatch execution deferred ms: "
+        f"{summary['dispatch_execution']['deferred_cost_ms']:.4f}"
+    )
+    print(
+        "Dispatch execution memory relief MB: "
+        f"{summary['dispatch_execution']['memory_relief_mb']:.4f}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -500,6 +516,22 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Dispatch next-frame commands: "
         f"{result.dispatch_plan.next_frame_count}"
+    )
+    print(
+        "Dispatch execution current-frame ms: "
+        f"{result.dispatch_execution.current_frame_cost_ms:.4f}"
+    )
+    print(
+        "Dispatch execution pre-frame ms: "
+        f"{result.dispatch_execution.pre_frame_cost_ms:.4f}"
+    )
+    print(
+        "Dispatch execution deferred ms: "
+        f"{result.dispatch_execution.deferred_cost_ms:.4f}"
+    )
+    print(
+        "Dispatch execution memory relief MB: "
+        f"{result.dispatch_execution.memory_relief_mb:.4f}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

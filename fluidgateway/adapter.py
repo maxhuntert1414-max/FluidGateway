@@ -8,6 +8,7 @@ from typing import Any
 from .actuation import ActuationPlan, build_actuation_plan
 from .adaptive import AdaptiveExecutorLoop, build_adaptive_executor_loop
 from .admission import AdmissionPlan, build_admission_decision, build_admission_plan
+from .applier import DispatchExecutionReport, execute_dispatch_plan
 from .arbiter import BudgetArbitrationPlan, build_budget_arbitration
 from .budget import RuntimeBudgetEnvelope, build_runtime_budget_envelope
 from .control import FluidGatewayController
@@ -34,7 +35,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.30"
+ADAPTER_MODE = "runtime-adapter-session-v0.31"
 
 
 @dataclass
@@ -105,6 +106,7 @@ class AdapterSessionResult:
     budget_envelope: RuntimeBudgetEnvelope
     budget_arbitration: BudgetArbitrationPlan
     dispatch_plan: RuntimeDispatchPlan
+    dispatch_execution: DispatchExecutionReport
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -145,6 +147,7 @@ class AdapterSessionResult:
             "budget_envelope": self.budget_envelope.to_dict(),
             "budget_arbitration": self.budget_arbitration.to_dict(),
             "dispatch_plan": self.dispatch_plan.to_dict(),
+            "dispatch_execution": self.dispatch_execution.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -223,6 +226,10 @@ class RuntimeAdapterSession:
             execution_packet,
             budget_envelope,
         )
+        dispatch_plan = build_runtime_dispatch_plan(
+            budget_arbitration,
+            execution_packet,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -252,10 +259,8 @@ class RuntimeAdapterSession:
             adaptive_executor_loop=adaptive_executor_loop,
             budget_envelope=budget_envelope,
             budget_arbitration=budget_arbitration,
-            dispatch_plan=build_runtime_dispatch_plan(
-                budget_arbitration,
-                execution_packet,
-            ),
+            dispatch_plan=dispatch_plan,
+            dispatch_execution=execute_dispatch_plan(dispatch_plan),
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
