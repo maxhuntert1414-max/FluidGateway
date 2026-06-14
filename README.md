@@ -616,6 +616,27 @@ This still does not hook drivers or games. It gives the future manager a
 measured control loop: observe the frame, simulate dispatch, calibrate the next
 budget, and keep evidence attached to every decision.
 
+## Runtime Manager Directive
+
+The v0.33 runtime manager directive consumes `runtime_calibration` and
+`budget_envelope` and emits `runtime_manager`: the first closed-loop control
+contract for the next runtime cycle.
+
+It turns evidence into manager-facing directives:
+
+- next-frame budget after guardband;
+- hot-path budget for protected draw/present work;
+- copy-queue budget for late transfers;
+- pre-frame window for predictable RAM/VRAM traffic;
+- admission mode for current-frame work;
+- scheduler mode for aggressive or stable control;
+- per-layer memory actions for RAM, VRAM, shared, staging, and swapchain
+  residency.
+
+This is still not a driver hook or OS scheduler. It is the software-side shape
+of the manager FluidGateway is growing toward: measure waste, decide what should
+move, calibrate the result, and emit a concrete next-cycle control directive.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

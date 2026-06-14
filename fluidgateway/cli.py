@@ -434,6 +434,15 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime calibration max guardband ms: "
         f"{summary['runtime_calibration']['max_guardband_ms']:.4f}"
     )
+    print(f"Runtime manager profile: {summary['runtime_manager']['profile']}")
+    print(
+        "Runtime manager next frame budget ms: "
+        f"{summary['runtime_manager']['next_frame_budget_ms']:.4f}"
+    )
+    print(
+        "Runtime manager memory actions: "
+        f"{summary['runtime_manager']['memory_action_count']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -564,6 +573,15 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime calibration max guardband ms: "
         f"{result.runtime_calibration.max_guardband_ms:.4f}"
+    )
+    print(f"Runtime manager profile: {result.runtime_manager.profile}")
+    print(
+        "Runtime manager next frame budget ms: "
+        f"{result.runtime_manager.next_frame_budget_ms:.4f}"
+    )
+    print(
+        "Runtime manager memory actions: "
+        f"{result.runtime_manager.memory_action_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

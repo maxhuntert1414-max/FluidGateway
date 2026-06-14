@@ -27,6 +27,7 @@ from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
 from .live import LiveCommand, build_live_command
+from .manager import RuntimeManagerDirective, build_runtime_manager_directive
 from .packet import ExecutionPacket, build_execution_packet
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
 from .routing import MemoryRoutePlan, build_memory_route_plan
@@ -36,7 +37,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.32"
+ADAPTER_MODE = "runtime-adapter-session-v0.33"
 
 
 @dataclass
@@ -109,6 +110,7 @@ class AdapterSessionResult:
     dispatch_plan: RuntimeDispatchPlan
     dispatch_execution: DispatchExecutionReport
     runtime_calibration: RuntimeCalibrationReport
+    runtime_manager: RuntimeManagerDirective
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -151,6 +153,7 @@ class AdapterSessionResult:
             "dispatch_plan": self.dispatch_plan.to_dict(),
             "dispatch_execution": self.dispatch_execution.to_dict(),
             "runtime_calibration": self.runtime_calibration.to_dict(),
+            "runtime_manager": self.runtime_manager.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -239,6 +242,10 @@ class RuntimeAdapterSession:
             dispatch_execution,
             frames,
         )
+        runtime_manager = build_runtime_manager_directive(
+            runtime_calibration,
+            budget_envelope,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -271,6 +278,7 @@ class RuntimeAdapterSession:
             dispatch_plan=dispatch_plan,
             dispatch_execution=dispatch_execution,
             runtime_calibration=runtime_calibration,
+            runtime_manager=runtime_manager,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
