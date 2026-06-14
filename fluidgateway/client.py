@@ -21,6 +21,7 @@ from .executor import simulate_execution
 from .feedback import build_feedback_plan
 from .gateway import build_runtime_gateway_tick
 from .gateway_cycle import execute_runtime_gateway_tick
+from .gateway_feedback import build_runtime_gateway_feedback
 from .manager import build_runtime_manager_directive
 from .packet import build_execution_packet
 from .routing import build_memory_route_plan
@@ -28,7 +29,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.37"
+CLIENT_MODE = "runtime-event-client-v0.38"
 
 
 class RuntimeEventClient:
@@ -249,6 +250,10 @@ def summarize_client_responses(
     runtime_control_state = apply_runtime_control_packet(runtime_control_packet)
     runtime_gateway_tick = build_runtime_gateway_tick(runtime_control_state)
     runtime_gateway_cycle = execute_runtime_gateway_tick(runtime_gateway_tick)
+    runtime_gateway_feedback = build_runtime_gateway_feedback(
+        runtime_gateway_cycle,
+        runtime_calibration,
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -289,6 +294,7 @@ def summarize_client_responses(
         "runtime_control_state": runtime_control_state.to_dict(),
         "runtime_gateway_tick": runtime_gateway_tick.to_dict(),
         "runtime_gateway_cycle": runtime_gateway_cycle.to_dict(),
+        "runtime_gateway_feedback": runtime_gateway_feedback.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

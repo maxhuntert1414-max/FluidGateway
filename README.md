@@ -719,6 +719,29 @@ This still does not mutate processes, drivers, graphics APIs, or OS scheduling.
 Its job is to close the loop one step further: turn a planned tick into an
 auditable cycle result that can be compared with the next observed frame.
 
+## Runtime Gateway Feedback Delta
+
+The v0.38 runtime gateway feedback delta consumes `runtime_gateway_cycle` and
+`runtime_calibration`, then emits `runtime_gateway_feedback`: the first closed
+feedback signal between a simulated gateway cycle and observed frame evidence.
+
+It compares:
+
+- observed frame cost against the target frame budget;
+- planned current-frame cost after dispatch execution;
+- next-frame and GPU hot-path budgets protected by the gateway;
+- protected budget gaps that still need pressure management;
+- expected memory relief against relief applied by the cycle;
+- headroom reservations and observed-only memory lanes.
+
+The output proposes a next feedback action such as
+`continue-pressure-management`, `tighten-cycle-guardband`,
+`preserve-cycle-shape`, `monitor-headroom`, or `maintain-cycle`.
+
+This still does not control OS scheduling or GPU drivers. It makes the control
+loop auditable: observe, plan, simulate a gateway cycle, compare against frame
+evidence, and choose the next pressure-management posture.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

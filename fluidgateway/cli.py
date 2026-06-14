@@ -487,6 +487,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime gateway cycle memory relief MB: "
         f"{summary['runtime_gateway_cycle']['memory_relief_applied_mb']:.4f}"
     )
+    print(
+        "Runtime gateway feedback action: "
+        f"{summary['runtime_gateway_feedback']['feedback_action']}"
+    )
+    print(
+        "Runtime gateway feedback convergence: "
+        f"{summary['runtime_gateway_feedback']['convergence_status']}"
+    )
+    print(
+        "Runtime gateway feedback protected gap ms: "
+        f"{summary['runtime_gateway_feedback']['protected_gap_ms']:.4f}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -670,6 +682,18 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime gateway cycle memory relief MB: "
         f"{result.runtime_gateway_cycle.memory_relief_applied_mb:.4f}"
+    )
+    print(
+        "Runtime gateway feedback action: "
+        f"{result.runtime_gateway_feedback.feedback_action}"
+    )
+    print(
+        "Runtime gateway feedback convergence: "
+        f"{result.runtime_gateway_feedback.convergence_status}"
+    )
+    print(
+        "Runtime gateway feedback protected gap ms: "
+        f"{result.runtime_gateway_feedback.protected_gap_ms:.4f}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

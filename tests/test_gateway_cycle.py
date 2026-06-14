@@ -35,7 +35,7 @@ class RuntimeGatewayCycleTests(unittest.TestCase):
             if result["domain"] == "memory"
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.37")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.38")
         self.assertEqual(cycle["mode"], "runtime-gateway-cycle-v0.37")
         self.assertEqual(cycle["profile"], "aggressive")
         self.assertEqual(cycle["tick_policy"], "closed-loop-pressure-management")
@@ -88,7 +88,7 @@ class RuntimeGatewayCycleTests(unittest.TestCase):
         summary = summarize_client_responses(responses)
         cycle = summary["runtime_gateway_cycle"]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.37")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.38")
         self.assertEqual(cycle["mode"], "runtime-gateway-cycle-v0.37")
         self.assertEqual(cycle["profile"], "stable")
         self.assertEqual(cycle["tick_policy"], "stable-budget-guard")
