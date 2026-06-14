@@ -801,6 +801,28 @@ This is still an offline advisory loop. It is the first persisted bridge
 between runs: a future manager can now compare previous cycle pressure against
 new CPU/GPU/RAM/VRAM evidence instead of treating each replay as isolated.
 
+## Runtime State Transition
+
+The v0.42 runtime state transition consumes the previous
+`runtime_state_accumulator` and the newly produced accumulator, then emits
+`runtime_state_transition`.
+
+It reports:
+
+- whether this is a baseline or a resumed cycle;
+- previous and current cycle counts;
+- a pressure index for the previous and current states;
+- pressure delta and trend: `baseline`, `improving`, `worsening`, or `stable`;
+- transitions for profile, policy, convergence, drift, frame budget, copy
+  budget, pre-frame window, memory relief, and memory headroom;
+- a next advisory action such as `relax-after-pressure-relief`,
+  `tighten-after-pressure-regression`, or `preserve-runtime-state`.
+
+This gives the persisted runtime memory a first interpretation layer. It still
+does not schedule OS threads or GPU queues, but it can now tell whether the
+advisory gateway loop is moving toward less pressure or drifting back into
+waste.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

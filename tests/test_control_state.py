@@ -82,7 +82,7 @@ class RuntimeControlStateTests(unittest.TestCase):
         frame = state["frames"][0]
         memory = {layer["memory"]: layer for layer in state["memory_layers"]}
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.41")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.42")
         self.assertEqual(state["mode"], "runtime-control-state-v0.35")
         self.assertEqual(state["profile"], "stable")
         self.assertEqual(state["dispatch_action"], "preserve-dispatch-profile")

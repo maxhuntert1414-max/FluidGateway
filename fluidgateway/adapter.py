@@ -46,11 +46,15 @@ from .state_accumulator import (
     RuntimeStateAccumulator,
     build_runtime_state_accumulator,
 )
+from .state_transition import (
+    RuntimeStateTransition,
+    build_runtime_state_transition,
+)
 from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.41"
+ADAPTER_MODE = "runtime-adapter-session-v0.42"
 
 
 @dataclass
@@ -131,6 +135,7 @@ class AdapterSessionResult:
     runtime_gateway_feedback: RuntimeGatewayFeedbackDelta
     runtime_policy_update: RuntimePolicyUpdate
     runtime_state_accumulator: RuntimeStateAccumulator
+    runtime_state_transition: RuntimeStateTransition
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -181,6 +186,7 @@ class AdapterSessionResult:
             "runtime_gateway_feedback": self.runtime_gateway_feedback.to_dict(),
             "runtime_policy_update": self.runtime_policy_update.to_dict(),
             "runtime_state_accumulator": self.runtime_state_accumulator.to_dict(),
+            "runtime_state_transition": self.runtime_state_transition.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -289,6 +295,10 @@ class RuntimeAdapterSession:
             runtime_policy_update,
             previous=previous_state,
         )
+        runtime_state_transition = build_runtime_state_transition(
+            previous_state,
+            runtime_state_accumulator,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -329,6 +339,7 @@ class RuntimeAdapterSession:
             runtime_gateway_feedback=runtime_gateway_feedback,
             runtime_policy_update=runtime_policy_update,
             runtime_state_accumulator=runtime_state_accumulator,
+            runtime_state_transition=runtime_state_transition,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
