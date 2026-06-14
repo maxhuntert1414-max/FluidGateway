@@ -10,6 +10,7 @@ from .adaptive import build_adaptive_executor_loop
 from .admission import build_admission_plan
 from .arbiter import build_budget_arbitration
 from .budget import build_runtime_budget_envelope
+from .dispatch import build_runtime_dispatch_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 from .executor import simulate_execution
@@ -20,7 +21,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.29"
+CLIENT_MODE = "runtime-event-client-v0.30"
 
 
 class RuntimeEventClient:
@@ -224,6 +225,10 @@ def summarize_client_responses(
         execution_packet,
         budget_envelope,
     )
+    dispatch_plan = build_runtime_dispatch_plan(
+        budget_arbitration,
+        execution_packet,
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -256,6 +261,7 @@ def summarize_client_responses(
         "adaptive_executor_loop": adaptive_executor_loop.to_dict(),
         "budget_envelope": budget_envelope.to_dict(),
         "budget_arbitration": budget_arbitration.to_dict(),
+        "dispatch_plan": dispatch_plan.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

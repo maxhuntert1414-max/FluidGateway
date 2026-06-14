@@ -11,6 +11,7 @@ from .admission import AdmissionPlan, build_admission_decision, build_admission_
 from .arbiter import BudgetArbitrationPlan, build_budget_arbitration
 from .budget import RuntimeBudgetEnvelope, build_runtime_budget_envelope
 from .control import FluidGatewayController
+from .dispatch import RuntimeDispatchPlan, build_runtime_dispatch_plan
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
 from .executor import ExecutionSimulation, simulate_execution
@@ -33,7 +34,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.29"
+ADAPTER_MODE = "runtime-adapter-session-v0.30"
 
 
 @dataclass
@@ -103,6 +104,7 @@ class AdapterSessionResult:
     adaptive_executor_loop: AdaptiveExecutorLoop
     budget_envelope: RuntimeBudgetEnvelope
     budget_arbitration: BudgetArbitrationPlan
+    dispatch_plan: RuntimeDispatchPlan
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -142,6 +144,7 @@ class AdapterSessionResult:
             "adaptive_executor_loop": self.adaptive_executor_loop.to_dict(),
             "budget_envelope": self.budget_envelope.to_dict(),
             "budget_arbitration": self.budget_arbitration.to_dict(),
+            "dispatch_plan": self.dispatch_plan.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -216,6 +219,10 @@ class RuntimeAdapterSession:
             state_snapshot,
             self.policy_engine.memory_budgets_mb,
         )
+        budget_arbitration = build_budget_arbitration(
+            execution_packet,
+            budget_envelope,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -244,9 +251,10 @@ class RuntimeAdapterSession:
             execution_simulation=execution_simulation,
             adaptive_executor_loop=adaptive_executor_loop,
             budget_envelope=budget_envelope,
-            budget_arbitration=build_budget_arbitration(
+            budget_arbitration=budget_arbitration,
+            dispatch_plan=build_runtime_dispatch_plan(
+                budget_arbitration,
                 execution_packet,
-                budget_envelope,
             ),
             results=list(self.results),
             snapshot=self.controller.snapshot(),

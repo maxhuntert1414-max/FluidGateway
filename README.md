@@ -558,6 +558,23 @@ This is the first v0 layer that behaves like a scheduler/manager instead of only
 describing pressure. It still emits a JSON contract, but the contract now says
 which operations should move, stop, enter the hot path, or be pushed out.
 
+## Runtime Dispatch Plan
+
+The v0.30 runtime dispatch plan turns `budget_arbitration` into an ordered
+runtime-facing queue. Adapter and client summaries now include `dispatch_plan`
+commands grouped by phase:
+
+- `control`: drop redundant work before it reaches the runtime path;
+- `memory`: evict, reserve, or defer residency when RAM/VRAM/swapchain pressure
+  is too high;
+- `pre-frame`: run predictable transfers before draw-critical work;
+- `hot-path`: execute protected work that fits the budget envelope;
+- `next-frame`: defer or split work that would overrun the current frame.
+
+This is still a contract, not a kernel scheduler. But it is now shaped like an
+adapter execution queue: a future native layer can consume it phase by phase
+instead of reinterpreting diagnostics.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

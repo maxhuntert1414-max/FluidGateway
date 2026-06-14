@@ -389,6 +389,19 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Budget arbitration memory actions: "
         f"{summary['budget_arbitration']['memory_action_count']}"
     )
+    print(f"Dispatch commands: {summary['dispatch_plan']['command_count']}")
+    print(
+        "Dispatch pre-frame commands: "
+        f"{summary['dispatch_plan']['pre_frame_count']}"
+    )
+    print(
+        "Dispatch hot-path commands: "
+        f"{summary['dispatch_plan']['hot_path_count']}"
+    )
+    print(
+        "Dispatch next-frame commands: "
+        f"{summary['dispatch_plan']['next_frame_count']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -480,6 +493,13 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Budget arbitration memory actions: "
         f"{result.budget_arbitration.memory_action_count}"
+    )
+    print(f"Dispatch commands: {result.dispatch_plan.command_count}")
+    print(f"Dispatch pre-frame commands: {result.dispatch_plan.pre_frame_count}")
+    print(f"Dispatch hot-path commands: {result.dispatch_plan.hot_path_count}")
+    print(
+        "Dispatch next-frame commands: "
+        f"{result.dispatch_plan.next_frame_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
