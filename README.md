@@ -760,6 +760,26 @@ This still does not rewrite OS scheduling, driver state, or game memory. It is
 the first explicit updater in the loop: evidence becomes feedback, feedback
 becomes policy, and policy becomes the next manager input shape.
 
+## Runtime State Accumulator
+
+The v0.40 runtime state accumulator consumes `runtime_policy_update` and emits
+`runtime_state_accumulator`: a deterministic operational memory for the next
+gateway cycle.
+
+It carries forward:
+
+- current runtime profile and policy action;
+- accumulated cycle count;
+- frame budget, hot-path, copy-queue, and pre-frame window state;
+- frame admission and scheduler policy;
+- memory residency action, relief target, and headroom target;
+- active policy count and a stable state digest for automation.
+
+This still does not hook games, rewrite GPU queues, or change RAM/VRAM
+residency. It creates the stateful contract needed before a future runtime
+manager can compare the previous cycle against the next one and decide what to
+preserve, tighten, defer, or release.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

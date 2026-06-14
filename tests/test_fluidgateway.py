@@ -390,7 +390,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["events_sent"], 12)
         self.assertEqual(summary["resource_responses"], 5)
         self.assertEqual(summary["operation_responses"], 7)
@@ -429,7 +429,7 @@ class FluidGatewayTests(unittest.TestCase):
 
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-event-client-v0.39")
+            self.assertEqual(payload["mode"], "runtime-event-client-v0.40")
             self.assertEqual(payload["events_sent"], 12)
             self.assertEqual(payload["decision_count"], 4)
             self.assertEqual(payload["failed_responses"], 0)
@@ -444,7 +444,7 @@ class FluidGatewayTests(unittest.TestCase):
             if item["decision"] is not None
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(payload["session_id"], "demo-adapter")
         self.assertEqual(payload["events_processed"], 12)
         self.assertEqual(payload["lifecycle_events"], 4)
@@ -477,7 +477,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
             self.assertEqual(payload["snapshot"]["estimated_saved_mb"], 40)
 
     def test_runtime_event_server_accepts_adapter_lifecycle_events(self):
@@ -500,7 +500,7 @@ class FluidGatewayTests(unittest.TestCase):
             if response.get("event") == "operation"
             and response["result"]["decision"] is not None
         }
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["session_responses"], 2)
         self.assertEqual(summary["frame_responses"], 2)
         self.assertEqual(summary["decision_count"], 2)
@@ -522,7 +522,7 @@ class FluidGatewayTests(unittest.TestCase):
         frame = payload["frames"][0]
         action_ids = {action["id"] for action in payload["policy_actions"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(payload["session_id"], "policy-pressure")
         self.assertEqual(payload["policy_action_count"], 3)
         self.assertEqual(frame["frame"], 0)
@@ -550,7 +550,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
             self.assertEqual(payload["policy_action_count"], 3)
 
     def test_runtime_event_server_reports_policy_actions(self):
@@ -569,7 +569,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["policy_action_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -584,7 +584,7 @@ class FluidGatewayTests(unittest.TestCase):
             (item["resource_id"], item["action"]) for item in plan["actions"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(plan["mode"], "resource-lifetime-plan-v0.11")
         self.assertEqual(plan["plan_action_count"], 4)
         self.assertEqual(plan["estimated_reduced_transfer_mb"], 64)
@@ -611,7 +611,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
             self.assertEqual(payload["lifetime_plan"]["plan_action_count"], 4)
 
     def test_runtime_event_server_reports_lifetime_plan_delta(self):
@@ -630,7 +630,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["lifetime_plan_action_count"], 4)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -671,7 +671,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
             self.assertEqual(
                 payload["schedule_plan"]["estimated_latency_reduction_ms"],
                 4.2,
@@ -693,7 +693,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["schedule_step_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -733,7 +733,7 @@ class FluidGatewayTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+            self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
             self.assertEqual(payload["enforcement_plan"]["command_count"], 3)
 
     def test_runtime_event_server_reports_enforcement_commands(self):
@@ -752,7 +752,7 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["enforcement_command_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -766,7 +766,7 @@ class FluidGatewayTests(unittest.TestCase):
             for item in payload["results"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(payload["live_command_count"], 2)
         self.assertEqual(live_by_operation["upload_hero"], "prefetch_now")
         self.assertEqual(live_by_operation["draw_hero"], "execute_now")
@@ -801,7 +801,7 @@ class FluidGatewayTests(unittest.TestCase):
         operation_responses = [
             response for response in responses if response.get("event") == "operation"
         ]
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["live_command_count"], 2)
         self.assertEqual(
             [response["live_command"]["action"] for response in operation_responses],
@@ -874,7 +874,7 @@ class FluidGatewayTests(unittest.TestCase):
         payload = result.to_dict()
         snapshot = payload["state_snapshot"]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(snapshot["mode"], "live-state-snapshot-v0.15")
         self.assertIsNone(snapshot["current_frame"])
         self.assertFalse(snapshot["open_frame"])
@@ -906,7 +906,7 @@ class FluidGatewayTests(unittest.TestCase):
             response for response in responses if response.get("event") == "operation"
         ]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["state_response_count"], 1)
         self.assertEqual(summary["state_snapshot_count"], len(responses))
         self.assertEqual(
@@ -926,7 +926,7 @@ class FluidGatewayTests(unittest.TestCase):
         directives = payload["policy_loop_directives"]
         actions = {directive["action"] for directive in directives}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(payload["policy_loop_directive_count"], 3)
         self.assertIn("prefetch-before-critical-path", actions)
         self.assertIn("drain-copy-queue-before-draw", actions)
@@ -1015,7 +1015,7 @@ class FluidGatewayTests(unittest.TestCase):
 
         summary = summarize_client_responses(responses)
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["policy_loop_directive_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
 
@@ -1029,7 +1029,7 @@ class FluidGatewayTests(unittest.TestCase):
             for item in payload["results"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(payload["execution_gate_count"], 2)
         self.assertEqual(gates["upload_hero"]["mode"], "adaptive-execution-gate-v0.17")
         self.assertEqual(gates["upload_hero"]["action"], "prestage_before_draw")
@@ -1132,7 +1132,7 @@ class FluidGatewayTests(unittest.TestCase):
             response for response in responses if response.get("event") == "operation"
         ]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["execution_gate_count"], 2)
         self.assertEqual(
             operation_responses[0]["execution_gate"]["action"],
@@ -1147,7 +1147,7 @@ class FluidGatewayTests(unittest.TestCase):
         payload = result.to_dict()
         admission = payload["admission_plan"]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(admission["mode"], "adaptive-admission-controller-v0.18")
         self.assertEqual(admission["operation_count"], 2)
         self.assertEqual(admission["immediate_count"], 1)
@@ -1234,7 +1234,7 @@ class FluidGatewayTests(unittest.TestCase):
 
         summary = summarize_client_responses(responses)
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["admission_decision_count"], 2)
         self.assertEqual(summary["admission_plan"]["prefetch_count"], 1)
         self.assertEqual(summary["admission_plan"]["estimated_hot_path_cost_ms"], 3.2)
@@ -1247,7 +1247,7 @@ class FluidGatewayTests(unittest.TestCase):
         payload = result.to_dict()
         ledger = payload["efficiency_ledger"]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(ledger["mode"], "frame-efficiency-ledger-v0.19")
         self.assertEqual(ledger["operation_count"], 2)
         self.assertEqual(ledger["hot_path_cost_ms"], 3.2)
@@ -1333,7 +1333,7 @@ class FluidGatewayTests(unittest.TestCase):
 
         summary = summarize_client_responses(responses)
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["efficiency_impact_count"], 2)
         self.assertEqual(summary["efficiency_ledger"]["shifted_cost_ms"], 4.2)
         self.assertEqual(summary["efficiency_ledger"]["transfer_relief_mb"], 64)
@@ -1348,7 +1348,7 @@ class FluidGatewayTests(unittest.TestCase):
         frame = feedback["frames"][0]
         actions = {action["action"] for action in feedback["actions"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(feedback["mode"], "adaptive-feedback-controller-v0.20")
         self.assertEqual(feedback["frame_count"], 1)
         self.assertEqual(feedback["action_count"], 2)
@@ -1388,7 +1388,7 @@ class FluidGatewayTests(unittest.TestCase):
 
         summary = summarize_client_responses(responses)
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["feedback_plan"]["action_count"], 2)
         self.assertEqual(
             summary["feedback_plan"]["frames"][0]["suggested_copy_budget_ms"],
@@ -1404,7 +1404,7 @@ class FluidGatewayTests(unittest.TestCase):
         actuation = payload["actuation_plan"]
         commands = {command["command"]: command for command in actuation["commands"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(actuation["mode"], "runtime-actuation-plan-v0.21")
         self.assertEqual(actuation["command_count"], 2)
         self.assertEqual(commands["reserve_prefetch_window"]["value"], 4.2)
@@ -1443,7 +1443,7 @@ class FluidGatewayTests(unittest.TestCase):
             for command in summary["actuation_plan"]["commands"]
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(summary["actuation_plan"]["command_count"], 2)
         self.assertEqual(commands["reserve_prefetch_window"]["value"], 4.2)
         self.assertEqual(summary["failed_responses"], 0)
@@ -1455,7 +1455,7 @@ class FluidGatewayTests(unittest.TestCase):
         paths = {path["path"]: path for path in transit["paths"]}
         hops = {hop["operation_id"]: hop for hop in transit["hops"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(transit["mode"], "memory-transit-map-v0.22")
         self.assertEqual(transit["hop_count"], 7)
         self.assertEqual(transit["executed_hop_count"], 3)
@@ -1496,7 +1496,7 @@ class FluidGatewayTests(unittest.TestCase):
         transit = summary["memory_transit_map"]
         paths = {path["path"]: path for path in transit["paths"]}
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(transit["mode"], "memory-transit-map-v0.22")
         self.assertEqual(transit["hop_count"], 2)
         self.assertEqual(transit["executed_hop_count"], 2)
@@ -1511,7 +1511,7 @@ class FluidGatewayTests(unittest.TestCase):
             directive["operation_id"]: directive for directive in route["directives"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(route["mode"], "memory-route-plan-v0.23")
         self.assertEqual(route["directive_count"], 7)
         self.assertEqual(route["suppress_count"], 3)
@@ -1562,7 +1562,7 @@ class FluidGatewayTests(unittest.TestCase):
             directive["operation_id"]: directive for directive in route["directives"]
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(route["mode"], "memory-route-plan-v0.23")
         self.assertEqual(route["directive_count"], 2)
         self.assertEqual(route["prefetch_count"], 1)
@@ -1579,7 +1579,7 @@ class FluidGatewayTests(unittest.TestCase):
         slots = {slot["operation_id"]: slot for slot in plan["slots"]}
         frame = plan["frames"][0]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(plan["mode"], "frame-window-plan-v0.24")
         self.assertEqual(plan["slot_count"], 7)
         self.assertEqual(plan["frame_count"], 1)
@@ -1618,7 +1618,7 @@ class FluidGatewayTests(unittest.TestCase):
         plan = summary["frame_window_plan"]
         slots = {slot["operation_id"]: slot for slot in plan["slots"]}
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(plan["mode"], "frame-window-plan-v0.24")
         self.assertEqual(plan["slot_count"], 2)
         self.assertEqual(plan["pre_frame_count"], 1)
@@ -1634,7 +1634,7 @@ class FluidGatewayTests(unittest.TestCase):
             command["operation_id"]: command for command in packet["commands"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(packet["mode"], "runtime-execution-packet-v0.25")
         self.assertEqual(packet["command_count"], 7)
         self.assertEqual(packet["frame_count"], 1)
@@ -1680,7 +1680,7 @@ class FluidGatewayTests(unittest.TestCase):
             command["operation_id"]: command for command in packet["commands"]
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(packet["mode"], "runtime-execution-packet-v0.25")
         self.assertEqual(packet["command_count"], 2)
         self.assertEqual(packet["pre_frame_count"], 1)
@@ -1698,7 +1698,7 @@ class FluidGatewayTests(unittest.TestCase):
             result["operation_id"]: result for result in simulation["command_results"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(simulation["mode"], "runtime-execution-simulation-v0.26")
         self.assertEqual(simulation["command_count"], 7)
         self.assertEqual(simulation["applied_count"], 7)
@@ -1736,7 +1736,7 @@ class FluidGatewayTests(unittest.TestCase):
         summary = summarize_client_responses(responses)
         simulation = summary["execution_simulation"]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(simulation["mode"], "runtime-execution-simulation-v0.26")
         self.assertEqual(simulation["command_count"], 2)
         self.assertEqual(simulation["prestaged_cost_ms"], 4.2)
@@ -1754,7 +1754,7 @@ class FluidGatewayTests(unittest.TestCase):
         frame = loop["frames"][0]
         actions = {directive["action"] for directive in loop["directives"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(loop["mode"], "adaptive-executor-loop-v0.27")
         self.assertEqual(loop["frame_count"], 1)
         self.assertEqual(loop["over_budget_count"], 1)
@@ -1789,7 +1789,7 @@ class FluidGatewayTests(unittest.TestCase):
         frame = loop["frames"][0]
         actions = {directive["action"] for directive in loop["directives"]}
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(loop["mode"], "adaptive-executor-loop-v0.27")
         self.assertEqual(loop["frame_count"], 1)
         self.assertEqual(loop["within_budget_count"], 1)
@@ -1813,7 +1813,7 @@ class FluidGatewayTests(unittest.TestCase):
             layer["memory"]: layer for layer in envelope["memory_layers"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(envelope["mode"], "runtime-budget-envelope-v0.28")
         self.assertEqual(envelope["profile"], "aggressive")
         self.assertEqual(
@@ -1858,7 +1858,7 @@ class FluidGatewayTests(unittest.TestCase):
             layer["memory"]: layer for layer in envelope["memory_layers"]
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(envelope["mode"], "runtime-budget-envelope-v0.28")
         self.assertEqual(envelope["profile"], "stable")
         self.assertEqual(envelope["next_frame_policy"], "maintain-current-envelope")
@@ -1884,7 +1884,7 @@ class FluidGatewayTests(unittest.TestCase):
             action["memory"]: action for action in arbitration["memory_actions"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(arbitration["mode"], "runtime-budget-arbiter-v0.29")
         self.assertEqual(arbitration["command_count"], 3)
         self.assertEqual(arbitration["prestaged_count"], 1)
@@ -1932,7 +1932,7 @@ class FluidGatewayTests(unittest.TestCase):
             for command in arbitration["commands"]
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(arbitration["mode"], "runtime-budget-arbiter-v0.29")
         self.assertEqual(arbitration["command_count"], 2)
         self.assertEqual(arbitration["prestaged_count"], 1)
@@ -1963,7 +1963,7 @@ class FluidGatewayTests(unittest.TestCase):
             if command["memory"] is not None
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(dispatch["mode"], "runtime-dispatch-plan-v0.30")
         self.assertEqual(dispatch["command_count"], 6)
         self.assertEqual(dispatch["control_count"], 1)
@@ -2020,7 +2020,7 @@ class FluidGatewayTests(unittest.TestCase):
             if command["operation_id"] is not None
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(dispatch["mode"], "runtime-dispatch-plan-v0.30")
         self.assertEqual(dispatch["command_count"], 2)
         self.assertEqual(dispatch["pre_frame_count"], 1)
@@ -2043,7 +2043,7 @@ class FluidGatewayTests(unittest.TestCase):
             for step in execution["steps"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(execution["mode"], "runtime-dispatch-execution-v0.31")
         self.assertEqual(execution["step_count"], 6)
         self.assertEqual(execution["applied_count"], 1)
@@ -2095,7 +2095,7 @@ class FluidGatewayTests(unittest.TestCase):
             if step["operation_id"] is not None
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(execution["mode"], "runtime-dispatch-execution-v0.31")
         self.assertEqual(execution["step_count"], 2)
         self.assertEqual(execution["applied_count"], 1)
@@ -2117,7 +2117,7 @@ class FluidGatewayTests(unittest.TestCase):
         calibration = payload["runtime_calibration"]
         frame = calibration["frames"][0]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(calibration["mode"], "runtime-calibration-report-v0.32")
         self.assertEqual(calibration["frame_count"], 1)
         self.assertEqual(calibration["over_budget_observed_count"], 1)
@@ -2157,7 +2157,7 @@ class FluidGatewayTests(unittest.TestCase):
         calibration = summary["runtime_calibration"]
         frame = calibration["frames"][0]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(calibration["mode"], "runtime-calibration-report-v0.32")
         self.assertEqual(calibration["frame_count"], 1)
         self.assertEqual(calibration["over_budget_observed_count"], 0)
@@ -2182,7 +2182,7 @@ class FluidGatewayTests(unittest.TestCase):
             for directive in manager["memory_directives"]
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(manager["mode"], "runtime-manager-directive-v0.33")
         self.assertEqual(manager["profile"], "aggressive")
         self.assertEqual(
@@ -2235,7 +2235,7 @@ class FluidGatewayTests(unittest.TestCase):
             for directive in manager["memory_directives"]
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(manager["mode"], "runtime-manager-directive-v0.33")
         self.assertEqual(manager["profile"], "stable")
         self.assertEqual(manager["next_frame_policy"], "maintain-current-envelope")
@@ -2272,7 +2272,7 @@ class FluidGatewayTests(unittest.TestCase):
             if command["domain"] == "memory"
         }
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(packet["mode"], "runtime-control-packet-v0.34")
         self.assertEqual(packet["profile"], "aggressive")
         self.assertEqual(packet["dispatch_action"], "activate-dispatch-profile")
@@ -2366,7 +2366,7 @@ class FluidGatewayTests(unittest.TestCase):
             if command["domain"] == "memory"
         }
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(packet["mode"], "runtime-control-packet-v0.34")
         self.assertEqual(packet["profile"], "stable")
         self.assertEqual(packet["dispatch_action"], "preserve-dispatch-profile")

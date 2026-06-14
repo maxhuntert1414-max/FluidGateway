@@ -42,11 +42,15 @@ from .policy_update import RuntimePolicyUpdate, build_runtime_policy_update
 from .routing import MemoryRoutePlan, build_memory_route_plan
 from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
+from .state_accumulator import (
+    RuntimeStateAccumulator,
+    build_runtime_state_accumulator,
+)
 from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.39"
+ADAPTER_MODE = "runtime-adapter-session-v0.40"
 
 
 @dataclass
@@ -126,6 +130,7 @@ class AdapterSessionResult:
     runtime_gateway_cycle: RuntimeGatewayCycleReport
     runtime_gateway_feedback: RuntimeGatewayFeedbackDelta
     runtime_policy_update: RuntimePolicyUpdate
+    runtime_state_accumulator: RuntimeStateAccumulator
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -175,6 +180,7 @@ class AdapterSessionResult:
             "runtime_gateway_cycle": self.runtime_gateway_cycle.to_dict(),
             "runtime_gateway_feedback": self.runtime_gateway_feedback.to_dict(),
             "runtime_policy_update": self.runtime_policy_update.to_dict(),
+            "runtime_state_accumulator": self.runtime_state_accumulator.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -276,6 +282,9 @@ class RuntimeAdapterSession:
             runtime_calibration,
         )
         runtime_policy_update = build_runtime_policy_update(runtime_gateway_feedback)
+        runtime_state_accumulator = build_runtime_state_accumulator(
+            runtime_policy_update
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -315,6 +324,7 @@ class RuntimeAdapterSession:
             runtime_gateway_cycle=runtime_gateway_cycle,
             runtime_gateway_feedback=runtime_gateway_feedback,
             runtime_policy_update=runtime_policy_update,
+            runtime_state_accumulator=runtime_state_accumulator,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

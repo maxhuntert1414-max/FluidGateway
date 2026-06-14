@@ -511,6 +511,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime policy update next frame budget ms: "
         f"{summary['runtime_policy_update']['next_frame_budget_ms']:.4f}"
     )
+    print(
+        "Runtime state accumulator cycles: "
+        f"{summary['runtime_state_accumulator']['cycle_count']}"
+    )
+    print(
+        "Runtime state accumulator active policies: "
+        f"{summary['runtime_state_accumulator']['active_policy_count']}"
+    )
+    print(
+        "Runtime state accumulator digest: "
+        f"{summary['runtime_state_accumulator']['state_digest']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -718,6 +730,18 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime policy update next frame budget ms: "
         f"{result.runtime_policy_update.next_frame_budget_ms:.4f}"
+    )
+    print(
+        "Runtime state accumulator cycles: "
+        f"{result.runtime_state_accumulator.cycle_count}"
+    )
+    print(
+        "Runtime state accumulator active policies: "
+        f"{result.runtime_state_accumulator.active_policy_count}"
+    )
+    print(
+        "Runtime state accumulator digest: "
+        f"{result.runtime_state_accumulator.state_digest}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

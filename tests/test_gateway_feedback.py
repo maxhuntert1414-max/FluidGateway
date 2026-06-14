@@ -32,7 +32,7 @@ class RuntimeGatewayFeedbackTests(unittest.TestCase):
         feedback = payload["runtime_gateway_feedback"]
         frame = feedback["frame_feedbacks"][0]
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.40")
         self.assertEqual(feedback["mode"], "runtime-gateway-feedback-delta-v0.38")
         self.assertEqual(feedback["profile"], "aggressive")
         self.assertEqual(feedback["feedback_action"], "continue-pressure-management")
@@ -78,7 +78,7 @@ class RuntimeGatewayFeedbackTests(unittest.TestCase):
         feedback = summary["runtime_gateway_feedback"]
         frame = feedback["frame_feedbacks"][0]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.40")
         self.assertEqual(feedback["mode"], "runtime-gateway-feedback-delta-v0.38")
         self.assertEqual(feedback["profile"], "stable")
         self.assertEqual(feedback["feedback_action"], "preserve-cycle-shape")

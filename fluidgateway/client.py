@@ -26,11 +26,12 @@ from .manager import build_runtime_manager_directive
 from .packet import build_execution_packet
 from .policy_update import build_runtime_policy_update
 from .routing import build_memory_route_plan
+from .state_accumulator import build_runtime_state_accumulator
 from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.39"
+CLIENT_MODE = "runtime-event-client-v0.40"
 
 
 class RuntimeEventClient:
@@ -256,6 +257,7 @@ def summarize_client_responses(
         runtime_calibration,
     )
     runtime_policy_update = build_runtime_policy_update(runtime_gateway_feedback)
+    runtime_state_accumulator = build_runtime_state_accumulator(runtime_policy_update)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -298,6 +300,7 @@ def summarize_client_responses(
         "runtime_gateway_cycle": runtime_gateway_cycle.to_dict(),
         "runtime_gateway_feedback": runtime_gateway_feedback.to_dict(),
         "runtime_policy_update": runtime_policy_update.to_dict(),
+        "runtime_state_accumulator": runtime_state_accumulator.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }
