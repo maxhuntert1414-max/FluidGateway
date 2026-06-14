@@ -29,12 +29,13 @@ from .routing import build_memory_route_plan
 from .state_accumulator import build_runtime_state_accumulator
 from .state_transition import build_runtime_state_transition
 from .supervisor import build_runtime_supervisor_directive
+from .supervisor_execution import dry_run_runtime_supervisor_plan
 from .supervisor_plan import build_runtime_supervisor_plan
 from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.44"
+CLIENT_MODE = "runtime-event-client-v0.45"
 
 
 class RuntimeEventClient:
@@ -272,6 +273,9 @@ def summarize_client_responses(
     runtime_supervisor_plan = build_runtime_supervisor_plan(
         runtime_supervisor_directive
     )
+    runtime_supervisor_execution = dry_run_runtime_supervisor_plan(
+        runtime_supervisor_plan
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -318,6 +322,7 @@ def summarize_client_responses(
         "runtime_state_transition": runtime_state_transition.to_dict(),
         "runtime_supervisor_directive": runtime_supervisor_directive.to_dict(),
         "runtime_supervisor_plan": runtime_supervisor_plan.to_dict(),
+        "runtime_supervisor_execution": runtime_supervisor_execution.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

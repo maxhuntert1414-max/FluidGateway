@@ -866,6 +866,27 @@ This still does not execute OS scheduling or GPU queue changes. It is the first
 bridge from supervisor posture to command-shaped work that a future daemon,
 native scheduler, or engine adapter could consume.
 
+## Runtime Supervisor Execution Dry-Run
+
+The v0.45 runtime supervisor execution consumes `runtime_supervisor_plan` and
+emits `runtime_supervisor_execution`: a dry-run result for the command-shaped
+next-cycle work.
+
+It reports:
+
+- execution action for the plan;
+- whether the path is a dry-run;
+- `would_modify_system=false`;
+- `execution_guard=advisory-only`;
+- command executions with `would_apply`, `would_block`, simulated budget, memory
+  target, effect, and reason;
+- summary counts for scheduler, admission, memory, frame-budget, and guardband
+  executions.
+
+This still does not mutate CPU scheduling, GPU queues, RAM, VRAM, or game
+state. It creates the execution boundary that a future daemon/native backend
+can replace while keeping the same evidence trail.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

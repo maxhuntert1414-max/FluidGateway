@@ -16,32 +16,30 @@ from fluidgateway.server import create_runtime_event_server
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-class RuntimeStateTransitionTests(unittest.TestCase):
-    def test_runtime_state_transition_records_baseline_without_previous_state(self):
+class RuntimeSupervisorExecutionTests(unittest.TestCase):
+    def test_runtime_supervisor_execution_records_baseline_dry_run(self):
         result = replay_adapter_event_stream(
             FIXTURES / "adapter_budget_pressure_events.jsonl"
         )
         payload = result.to_dict()
-        state = payload["runtime_state_accumulator"]
-        transition = payload["runtime_state_transition"]
+        execution = payload["runtime_supervisor_execution"]
 
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
-        self.assertEqual(transition["mode"], "runtime-state-transition-v0.42")
-        self.assertFalse(transition["has_previous_state"])
-        self.assertIsNone(transition["previous_cycle_count"])
-        self.assertEqual(transition["current_cycle_count"], 1)
-        self.assertEqual(transition["cycle_delta"], 0)
-        self.assertEqual(transition["trend"], "baseline")
+        self.assertEqual(execution["mode"], "runtime-supervisor-execution-v0.45")
         self.assertEqual(
-            transition["transition_action"],
-            "establish-runtime-baseline",
+            execution["execution_action"],
+            "dry-run-observation-supervisor-commands",
         )
-        self.assertGreater(transition["current_pressure_index"], 0)
-        self.assertEqual(transition["pressure_delta"], 0)
-        self.assertEqual(transition["previous_state_digest"], None)
-        self.assertEqual(transition["current_state_digest"], state["state_digest"])
+        self.assertTrue(execution["dry_run"])
+        self.assertFalse(execution["would_modify_system"])
+        self.assertEqual(execution["execution_guard"], "advisory-only")
+        self.assertEqual(execution["command_count"], 5)
+        self.assertEqual(execution["would_apply_count"], 5)
+        self.assertEqual(execution["would_block_count"], 0)
+        self.assertEqual(execution["scheduler_execution_count"], 1)
+        self.assertEqual(execution["memory_execution_count"], 1)
 
-    def test_runtime_state_transition_detects_improving_pressure(self):
+    def test_runtime_supervisor_execution_relaxes_after_improvement(self):
         pressure = replay_adapter_event_stream(
             FIXTURES / "adapter_budget_pressure_events.jsonl"
         )
@@ -49,41 +47,49 @@ class RuntimeStateTransitionTests(unittest.TestCase):
             FIXTURES / "adapter_state_query_events.jsonl",
             previous_state=pressure.runtime_state_accumulator,
         )
-        transition = stable.to_dict()["runtime_state_transition"]
+        execution = stable.to_dict()["runtime_supervisor_execution"]
+        command_by_domain = {
+            command["domain"]: command for command in execution["command_executions"]
+        }
 
-        self.assertTrue(transition["has_previous_state"])
-        self.assertEqual(transition["previous_cycle_count"], 1)
-        self.assertEqual(transition["current_cycle_count"], 2)
-        self.assertEqual(transition["cycle_delta"], 1)
-        self.assertEqual(transition["trend"], "improving")
         self.assertEqual(
-            transition["transition_action"],
-            "relax-after-pressure-relief",
+            execution["execution_action"],
+            "dry-run-relaxed-supervisor-commands",
         )
-        self.assertLess(transition["pressure_delta"], 0)
-        self.assertEqual(transition["profile_transition"], "aggressive->stable")
-        self.assertEqual(transition["memory_relief_delta_mb"], -40)
-        self.assertEqual(transition["active_policy_delta"], -1)
+        self.assertEqual(execution["would_apply_count"], 5)
+        self.assertEqual(execution["would_block_count"], 0)
+        self.assertEqual(command_by_domain["scheduler"]["dry_run_status"], "would-apply")
+        self.assertEqual(
+            command_by_domain["scheduler"]["effect"],
+            "simulate-scheduler-posture",
+        )
+        self.assertEqual(command_by_domain["admission"]["simulated_budget_ms"], 1.2)
+        self.assertEqual(command_by_domain["memory"]["simulated_target_mb"], 0)
 
-    def test_runtime_state_transition_detects_worsening_pressure(self):
+    def test_runtime_supervisor_execution_marks_blocking_after_regression(self):
         stable = replay_adapter_event_stream(FIXTURES / "adapter_state_query_events.jsonl")
         pressure = replay_adapter_event_stream(
             FIXTURES / "adapter_budget_pressure_events.jsonl",
             previous_state=stable.runtime_state_accumulator,
         )
-        transition = pressure.to_dict()["runtime_state_transition"]
+        execution = pressure.to_dict()["runtime_supervisor_execution"]
+        blocking_domains = {
+            command["domain"]
+            for command in execution["command_executions"]
+            if command["would_block"]
+        }
 
-        self.assertEqual(transition["trend"], "worsening")
         self.assertEqual(
-            transition["transition_action"],
-            "tighten-after-pressure-regression",
+            execution["execution_action"],
+            "dry-run-tightened-supervisor-commands",
         )
-        self.assertGreater(transition["pressure_delta"], 0)
-        self.assertEqual(transition["profile_transition"], "stable->aggressive")
-        self.assertEqual(transition["memory_relief_delta_mb"], 40)
-        self.assertEqual(transition["active_policy_delta"], 1)
+        self.assertEqual(execution["would_apply_count"], 5)
+        self.assertEqual(execution["would_block_count"], 3)
+        self.assertEqual(blocking_domains, {"scheduler", "admission", "memory"})
+        self.assertFalse(execution["would_modify_system"])
+        self.assertEqual(execution["execution_guard"], "advisory-only")
 
-    def test_runtime_event_server_reports_baseline_state_transition(self):
+    def test_runtime_event_server_reports_baseline_supervisor_execution(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:
             server.timeout = 5
             host, port = server.server_address
@@ -99,15 +105,16 @@ class RuntimeStateTransitionTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        transition = summary["runtime_state_transition"]
+        execution = summary["runtime_supervisor_execution"]
 
         self.assertEqual(summary["mode"], "runtime-event-client-v0.45")
-        self.assertEqual(transition["mode"], "runtime-state-transition-v0.42")
-        self.assertEqual(transition["trend"], "baseline")
-        self.assertEqual(transition["transition_action"], "establish-runtime-baseline")
-        self.assertFalse(transition["has_previous_state"])
+        self.assertEqual(execution["mode"], "runtime-supervisor-execution-v0.45")
+        self.assertTrue(execution["dry_run"])
+        self.assertFalse(execution["would_modify_system"])
+        self.assertEqual(execution["command_count"], 5)
+        self.assertEqual(summary["failed_responses"], 0)
 
-    def test_runtime_run_adapter_cli_reports_improving_transition(self):
+    def test_runtime_run_adapter_cli_reports_relaxed_execution_dry_run(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp = Path(temp_dir)
             state_path = temp / "runtime-state.json"
@@ -156,15 +163,18 @@ class RuntimeStateTransitionTests(unittest.TestCase):
             )
             session = json.loads(second_out.read_text(encoding="utf-8"))
 
-        transition = session["runtime_state_transition"]
+        execution = session["runtime_supervisor_execution"]
         self.assertEqual(second.returncode, 0, second.stderr)
-        self.assertIn("Runtime state transition trend: improving", second.stdout)
         self.assertIn(
-            "Runtime state transition action: relax-after-pressure-relief",
+            "Runtime supervisor execution action: dry-run-relaxed-supervisor-commands",
             second.stdout,
         )
-        self.assertEqual(transition["trend"], "improving")
-        self.assertLess(transition["pressure_delta"], 0)
+        self.assertIn("Runtime supervisor execution guard: advisory-only", second.stdout)
+        self.assertEqual(
+            execution["execution_action"],
+            "dry-run-relaxed-supervisor-commands",
+        )
+        self.assertEqual(execution["would_apply_count"], 5)
 
 
 if __name__ == "__main__":

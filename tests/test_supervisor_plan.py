@@ -25,7 +25,7 @@ class RuntimeSupervisorPlanTests(unittest.TestCase):
         plan = payload["runtime_supervisor_plan"]
         commands = {command["domain"]: command for command in plan["commands"]}
 
-        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.44")
+        self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
         self.assertEqual(plan["mode"], "runtime-supervisor-plan-v0.44")
         self.assertEqual(plan["source_directive_action"], "establish-supervisor-baseline")
         self.assertEqual(plan["plan_action"], "observe-next-cycle")
@@ -99,7 +99,7 @@ class RuntimeSupervisorPlanTests(unittest.TestCase):
         summary = summarize_client_responses(responses)
         plan = summary["runtime_supervisor_plan"]
 
-        self.assertEqual(summary["mode"], "runtime-event-client-v0.44")
+        self.assertEqual(summary["mode"], "runtime-event-client-v0.45")
         self.assertEqual(plan["mode"], "runtime-supervisor-plan-v0.44")
         self.assertEqual(plan["plan_action"], "observe-next-cycle")
         self.assertEqual(plan["command_count"], 5)

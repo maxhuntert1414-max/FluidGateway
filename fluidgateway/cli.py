@@ -574,6 +574,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime supervisor plan blocking commands: "
         f"{summary['runtime_supervisor_plan']['blocking_command_count']}"
     )
+    print(
+        "Runtime supervisor execution action: "
+        f"{summary['runtime_supervisor_execution']['execution_action']}"
+    )
+    print(
+        "Runtime supervisor execution would apply: "
+        f"{summary['runtime_supervisor_execution']['would_apply_count']}"
+    )
+    print(
+        "Runtime supervisor execution guard: "
+        f"{summary['runtime_supervisor_execution']['execution_guard']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -836,6 +848,18 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime supervisor plan blocking commands: "
         f"{result.runtime_supervisor_plan.blocking_command_count}"
+    )
+    print(
+        "Runtime supervisor execution action: "
+        f"{result.runtime_supervisor_execution.execution_action}"
+    )
+    print(
+        "Runtime supervisor execution would apply: "
+        f"{result.runtime_supervisor_execution.would_apply_count}"
+    )
+    print(
+        "Runtime supervisor execution guard: "
+        f"{result.runtime_supervisor_execution.execution_guard}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
