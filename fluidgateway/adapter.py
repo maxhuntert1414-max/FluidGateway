@@ -26,6 +26,7 @@ from .efficiency import (
 )
 from .feedback import FeedbackPlan, build_feedback_plan
 from .gateway import RuntimeGatewayTick, build_runtime_gateway_tick
+from .gateway_cycle import RuntimeGatewayCycleReport, execute_runtime_gateway_tick
 from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
@@ -40,7 +41,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.36"
+ADAPTER_MODE = "runtime-adapter-session-v0.37"
 
 
 @dataclass
@@ -117,6 +118,7 @@ class AdapterSessionResult:
     runtime_control_packet: RuntimeControlPacket
     runtime_control_state: RuntimeControlState
     runtime_gateway_tick: RuntimeGatewayTick
+    runtime_gateway_cycle: RuntimeGatewayCycleReport
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -163,6 +165,7 @@ class AdapterSessionResult:
             "runtime_control_packet": self.runtime_control_packet.to_dict(),
             "runtime_control_state": self.runtime_control_state.to_dict(),
             "runtime_gateway_tick": self.runtime_gateway_tick.to_dict(),
+            "runtime_gateway_cycle": self.runtime_gateway_cycle.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -258,6 +261,7 @@ class RuntimeAdapterSession:
         runtime_control_packet = build_runtime_control_packet(runtime_manager)
         runtime_control_state = apply_runtime_control_packet(runtime_control_packet)
         runtime_gateway_tick = build_runtime_gateway_tick(runtime_control_state)
+        runtime_gateway_cycle = execute_runtime_gateway_tick(runtime_gateway_tick)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -294,6 +298,7 @@ class RuntimeAdapterSession:
             runtime_control_packet=runtime_control_packet,
             runtime_control_state=runtime_control_state,
             runtime_gateway_tick=runtime_gateway_tick,
+            runtime_gateway_cycle=runtime_gateway_cycle,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

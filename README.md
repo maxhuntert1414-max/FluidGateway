@@ -700,6 +700,25 @@ call a graphics driver. Its purpose is to make the future manager loop explicit:
 one tick receives evidence-backed state, protects the hot path, budgets copy
 traffic, gates late work, and plans memory pressure relief before the next frame.
 
+## Runtime Gateway Cycle Report
+
+The v0.37 runtime gateway cycle consumes `runtime_gateway_tick` and emits
+`runtime_gateway_cycle`: a dry-run execution report for the simulated manager
+cycle.
+
+It records what the gateway cycle would have applied or observed:
+
+- protected display-frame and GPU hot-path budget;
+- reserved CPU pre-frame window;
+- copy-queue budget or late-copy blocking;
+- admission and scheduler mode application;
+- memory residency relief, headroom reservation, or observation;
+- lane-level drift risk and a next-cycle action.
+
+This still does not mutate processes, drivers, graphics APIs, or OS scheduling.
+Its job is to close the loop one step further: turn a planned tick into an
+auditable cycle result that can be compared with the next observed frame.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
