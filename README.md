@@ -594,6 +594,28 @@ This is still dry-run execution, but it closes the loop from detection to an
 ordered queue and then to an applied effect model. It is the clearest v0 bridge
 between a diagnostic tool and a future runtime manager.
 
+## Runtime Calibration Report
+
+The v0.32 runtime calibration report consumes `dispatch_execution` plus observed
+frame stats and emits `runtime_calibration`: a next-cycle feedback report.
+
+It compares:
+
+- observed frame cost before runtime intervention;
+- planned current-frame cost after dispatch execution;
+- cost moved to pre-frame work;
+- cost deferred or split out of the current frame;
+- redundant cost removed before execution;
+- RAM/VRAM/swapchain pressure expected to be relieved.
+
+The report then proposes a guardband and an action such as
+`apply-dispatch-before-next-frame`, `tighten-dispatch-guardband`,
+`preserve-dispatch-shape`, or `monitor`.
+
+This still does not hook drivers or games. It gives the future manager a
+measured control loop: observe the frame, simulate dispatch, calibrate the next
+budget, and keep evidence attached to every decision.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

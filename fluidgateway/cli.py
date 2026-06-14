@@ -418,6 +418,22 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Dispatch execution memory relief MB: "
         f"{summary['dispatch_execution']['memory_relief_mb']:.4f}"
     )
+    print(
+        "Runtime calibration observed frame ms: "
+        f"{summary['runtime_calibration']['total_observed_frame_cost_ms']:.4f}"
+    )
+    print(
+        "Runtime calibration planned current-frame ms: "
+        f"{summary['runtime_calibration']['total_planned_current_frame_cost_ms']:.4f}"
+    )
+    print(
+        "Runtime calibration relief ms: "
+        f"{summary['runtime_calibration']['total_planned_frame_relief_ms']:.4f}"
+    )
+    print(
+        "Runtime calibration max guardband ms: "
+        f"{summary['runtime_calibration']['max_guardband_ms']:.4f}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -532,6 +548,22 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Dispatch execution memory relief MB: "
         f"{result.dispatch_execution.memory_relief_mb:.4f}"
+    )
+    print(
+        "Runtime calibration observed frame ms: "
+        f"{result.runtime_calibration.total_observed_frame_cost_ms:.4f}"
+    )
+    print(
+        "Runtime calibration planned current-frame ms: "
+        f"{result.runtime_calibration.total_planned_current_frame_cost_ms:.4f}"
+    )
+    print(
+        "Runtime calibration relief ms: "
+        f"{result.runtime_calibration.total_planned_frame_relief_ms:.4f}"
+    )
+    print(
+        "Runtime calibration max guardband ms: "
+        f"{result.runtime_calibration.max_guardband_ms:.4f}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

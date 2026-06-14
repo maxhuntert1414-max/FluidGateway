@@ -11,6 +11,7 @@ from .admission import build_admission_plan
 from .applier import execute_dispatch_plan
 from .arbiter import build_budget_arbitration
 from .budget import build_runtime_budget_envelope
+from .calibration import build_runtime_calibration
 from .dispatch import build_runtime_dispatch_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
@@ -22,7 +23,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.31"
+CLIENT_MODE = "runtime-event-client-v0.32"
 
 
 class RuntimeEventClient:
@@ -231,6 +232,10 @@ def summarize_client_responses(
         execution_packet,
     )
     dispatch_execution = execute_dispatch_plan(dispatch_plan)
+    runtime_calibration = build_runtime_calibration(
+        dispatch_execution,
+        frame_states_from_responses(frame_responses),
+    )
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -265,6 +270,7 @@ def summarize_client_responses(
         "budget_arbitration": budget_arbitration.to_dict(),
         "dispatch_plan": dispatch_plan.to_dict(),
         "dispatch_execution": dispatch_execution.to_dict(),
+        "runtime_calibration": runtime_calibration.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }
@@ -280,6 +286,19 @@ def frame_targets_from_responses(responses: list[dict[str, Any]]) -> dict[int, f
             continue
         targets[int(frame)] = float(target)
     return targets
+
+
+def frame_states_from_responses(responses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    states: dict[int, dict[str, Any]] = {}
+    for response in responses:
+        frame = response.get("frame")
+        state = response.get("frame_state")
+        if frame is None or not isinstance(state, dict):
+            continue
+        frame_state = dict(state)
+        frame_state["frame"] = int(frame)
+        states[int(frame)] = frame_state
+    return [states[key] for key in sorted(states)]
 
 
 def resources_from_responses(

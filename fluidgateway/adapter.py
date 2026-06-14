@@ -11,6 +11,7 @@ from .admission import AdmissionPlan, build_admission_decision, build_admission_
 from .applier import DispatchExecutionReport, execute_dispatch_plan
 from .arbiter import BudgetArbitrationPlan, build_budget_arbitration
 from .budget import RuntimeBudgetEnvelope, build_runtime_budget_envelope
+from .calibration import RuntimeCalibrationReport, build_runtime_calibration
 from .control import FluidGatewayController
 from .dispatch import RuntimeDispatchPlan, build_runtime_dispatch_plan
 from .enforcement import EnforcementPlan, build_enforcement_plan
@@ -35,7 +36,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.31"
+ADAPTER_MODE = "runtime-adapter-session-v0.32"
 
 
 @dataclass
@@ -107,6 +108,7 @@ class AdapterSessionResult:
     budget_arbitration: BudgetArbitrationPlan
     dispatch_plan: RuntimeDispatchPlan
     dispatch_execution: DispatchExecutionReport
+    runtime_calibration: RuntimeCalibrationReport
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -148,6 +150,7 @@ class AdapterSessionResult:
             "budget_arbitration": self.budget_arbitration.to_dict(),
             "dispatch_plan": self.dispatch_plan.to_dict(),
             "dispatch_execution": self.dispatch_execution.to_dict(),
+            "runtime_calibration": self.runtime_calibration.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -230,6 +233,12 @@ class RuntimeAdapterSession:
             budget_arbitration,
             execution_packet,
         )
+        dispatch_execution = execute_dispatch_plan(dispatch_plan)
+        frames = [self.frames[key] for key in sorted(self.frames)]
+        runtime_calibration = build_runtime_calibration(
+            dispatch_execution,
+            frames,
+        )
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -238,7 +247,7 @@ class RuntimeAdapterSession:
             resource_events=self.resource_events,
             operation_events=self.operation_events,
             released_resources=list(self.released_resources),
-            frames=[self.frames[key] for key in sorted(self.frames)],
+            frames=frames,
             policy_actions=list(self.policy_engine.actions),
             lifetime_plan=lifetime_plan,
             schedule_plan=schedule_plan,
@@ -260,7 +269,8 @@ class RuntimeAdapterSession:
             budget_envelope=budget_envelope,
             budget_arbitration=budget_arbitration,
             dispatch_plan=dispatch_plan,
-            dispatch_execution=execute_dispatch_plan(dispatch_plan),
+            dispatch_execution=dispatch_execution,
+            runtime_calibration=runtime_calibration,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
