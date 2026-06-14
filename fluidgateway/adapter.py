@@ -14,6 +14,7 @@ from .budget import RuntimeBudgetEnvelope, build_runtime_budget_envelope
 from .calibration import RuntimeCalibrationReport, build_runtime_calibration
 from .control import FluidGatewayController
 from .control_packet import RuntimeControlPacket, build_runtime_control_packet
+from .control_state import RuntimeControlState, apply_runtime_control_packet
 from .dispatch import RuntimeDispatchPlan, build_runtime_dispatch_plan
 from .enforcement import EnforcementPlan, build_enforcement_plan
 from .events import iter_jsonl, register_resource_event, submit_operation_event
@@ -38,7 +39,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.34"
+ADAPTER_MODE = "runtime-adapter-session-v0.35"
 
 
 @dataclass
@@ -113,6 +114,7 @@ class AdapterSessionResult:
     runtime_calibration: RuntimeCalibrationReport
     runtime_manager: RuntimeManagerDirective
     runtime_control_packet: RuntimeControlPacket
+    runtime_control_state: RuntimeControlState
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -157,6 +159,7 @@ class AdapterSessionResult:
             "runtime_calibration": self.runtime_calibration.to_dict(),
             "runtime_manager": self.runtime_manager.to_dict(),
             "runtime_control_packet": self.runtime_control_packet.to_dict(),
+            "runtime_control_state": self.runtime_control_state.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -250,6 +253,7 @@ class RuntimeAdapterSession:
             budget_envelope,
         )
         runtime_control_packet = build_runtime_control_packet(runtime_manager)
+        runtime_control_state = apply_runtime_control_packet(runtime_control_packet)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -284,6 +288,7 @@ class RuntimeAdapterSession:
             runtime_calibration=runtime_calibration,
             runtime_manager=runtime_manager,
             runtime_control_packet=runtime_control_packet,
+            runtime_control_state=runtime_control_state,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

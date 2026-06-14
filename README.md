@@ -658,6 +658,28 @@ The packet is still advisory. It does not mutate a process, hook a game, or call
 a driver. Its value is that the manager output is now shaped like a concrete
 runtime command stream rather than prose or loose recommendations.
 
+## Runtime Control State Dry Run
+
+The v0.35 runtime control state consumes `runtime_control_packet` and emits
+`runtime_control_state`: a dry-run view of what the next runtime state would look
+like if those packet commands were applied by an engine adapter or native
+runtime.
+
+It consolidates the command stream into:
+
+- per-frame next-frame, hot-path, copy-queue, and pre-frame budgets;
+- per-frame admission and scheduler modes;
+- active versus observational memory commands for RAM, VRAM, shared, staging,
+  and swapchain layers;
+- expected memory relief and reserved headroom by layer;
+- counts for applied frame budgets, queue budgets, scheduler modes, and memory
+  actions.
+
+This is still advisory and non-mutating. It is the first bridge from "ordered
+commands" to "manager state": the shape a future scheduler, game plugin, or
+native service could use to reduce friction between CPU, GPU, RAM, VRAM, queues,
+buffers, and frame presentation.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns
