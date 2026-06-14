@@ -463,6 +463,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime control state memory actions: "
         f"{summary['runtime_control_state']['memory_action_count']}"
     )
+    print(
+        "Runtime gateway tick policy: "
+        f"{summary['runtime_gateway_tick']['tick_policy']}"
+    )
+    print(
+        "Runtime gateway tick steps: "
+        f"{summary['runtime_gateway_tick']['step_count']}"
+    )
+    print(
+        "Runtime gateway tick memory active steps: "
+        f"{summary['runtime_gateway_tick']['memory_active_step_count']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -622,6 +634,18 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime control state memory actions: "
         f"{result.runtime_control_state.memory_action_count}"
+    )
+    print(
+        "Runtime gateway tick policy: "
+        f"{result.runtime_gateway_tick.tick_policy}"
+    )
+    print(
+        "Runtime gateway tick steps: "
+        f"{result.runtime_gateway_tick.step_count}"
+    )
+    print(
+        "Runtime gateway tick memory active steps: "
+        f"{result.runtime_gateway_tick.memory_active_step_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

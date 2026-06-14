@@ -19,6 +19,7 @@ from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
 from .executor import simulate_execution
 from .feedback import build_feedback_plan
+from .gateway import build_runtime_gateway_tick
 from .manager import build_runtime_manager_directive
 from .packet import build_execution_packet
 from .routing import build_memory_route_plan
@@ -26,7 +27,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.35"
+CLIENT_MODE = "runtime-event-client-v0.36"
 
 
 class RuntimeEventClient:
@@ -245,6 +246,7 @@ def summarize_client_responses(
     )
     runtime_control_packet = build_runtime_control_packet(runtime_manager)
     runtime_control_state = apply_runtime_control_packet(runtime_control_packet)
+    runtime_gateway_tick = build_runtime_gateway_tick(runtime_control_state)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -283,6 +285,7 @@ def summarize_client_responses(
         "runtime_manager": runtime_manager.to_dict(),
         "runtime_control_packet": runtime_control_packet.to_dict(),
         "runtime_control_state": runtime_control_state.to_dict(),
+        "runtime_gateway_tick": runtime_gateway_tick.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

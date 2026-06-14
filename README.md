@@ -680,6 +680,26 @@ commands" to "manager state": the shape a future scheduler, game plugin, or
 native service could use to reduce friction between CPU, GPU, RAM, VRAM, queues,
 buffers, and frame presentation.
 
+## Runtime Gateway Tick
+
+The v0.36 runtime gateway tick consumes `runtime_control_state` and emits
+`runtime_gateway_tick`: a simulated management cycle organized by runtime lanes.
+
+It turns consolidated control state into lane-level work:
+
+- display-frame budget protection;
+- GPU hot-path budget protection;
+- copy-queue gating or budgeting;
+- CPU pre-frame window reservation;
+- CPU admission mode application;
+- scheduler mode application;
+- RAM/VRAM/shared/staging/swapchain memory residency actions.
+
+This is still a dry run. It does not schedule OS threads, mutate game memory, or
+call a graphics driver. Its purpose is to make the future manager loop explicit:
+one tick receives evidence-backed state, protects the hot path, budgets copy
+traffic, gates late work, and plans memory pressure relief before the next frame.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

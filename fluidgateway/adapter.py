@@ -25,6 +25,7 @@ from .efficiency import (
     build_efficiency_ledger,
 )
 from .feedback import FeedbackPlan, build_feedback_plan
+from .gateway import RuntimeGatewayTick, build_runtime_gateway_tick
 from .gate import ExecutionGateDecision, build_execution_gate
 from .governor import GovernorDirective, LivePolicyGovernor
 from .lifetime import ResourceLifetimePlan, ResourceLifetimePlanner
@@ -39,7 +40,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.35"
+ADAPTER_MODE = "runtime-adapter-session-v0.36"
 
 
 @dataclass
@@ -115,6 +116,7 @@ class AdapterSessionResult:
     runtime_manager: RuntimeManagerDirective
     runtime_control_packet: RuntimeControlPacket
     runtime_control_state: RuntimeControlState
+    runtime_gateway_tick: RuntimeGatewayTick
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -160,6 +162,7 @@ class AdapterSessionResult:
             "runtime_manager": self.runtime_manager.to_dict(),
             "runtime_control_packet": self.runtime_control_packet.to_dict(),
             "runtime_control_state": self.runtime_control_state.to_dict(),
+            "runtime_gateway_tick": self.runtime_gateway_tick.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -254,6 +257,7 @@ class RuntimeAdapterSession:
         )
         runtime_control_packet = build_runtime_control_packet(runtime_manager)
         runtime_control_state = apply_runtime_control_packet(runtime_control_packet)
+        runtime_gateway_tick = build_runtime_gateway_tick(runtime_control_state)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -289,6 +293,7 @@ class RuntimeAdapterSession:
             runtime_manager=runtime_manager,
             runtime_control_packet=runtime_control_packet,
             runtime_control_state=runtime_control_state,
+            runtime_gateway_tick=runtime_gateway_tick,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )
