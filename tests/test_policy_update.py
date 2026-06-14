@@ -17,49 +17,53 @@ from fluidgateway.manager import (
     MemoryManagerDirective,
     RuntimeManagerDirective,
 )
+from fluidgateway.policy_update import build_runtime_policy_update
 from fluidgateway.server import create_runtime_event_server
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-class RuntimeGatewayFeedbackTests(unittest.TestCase):
-    def test_runtime_gateway_feedback_reports_pressure_delta(self):
+class RuntimePolicyUpdateTests(unittest.TestCase):
+    def test_runtime_policy_update_continues_pressure_policy(self):
         result = replay_adapter_event_stream(
             FIXTURES / "adapter_budget_pressure_events.jsonl"
         )
         payload = result.to_dict()
-        feedback = payload["runtime_gateway_feedback"]
-        frame = feedback["frame_feedbacks"][0]
+        update = payload["runtime_policy_update"]
+        frame = update["frame_updates"][0]
+        memory = update["memory_updates"][0]
 
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.39")
-        self.assertEqual(feedback["mode"], "runtime-gateway-feedback-delta-v0.38")
-        self.assertEqual(feedback["profile"], "aggressive")
-        self.assertEqual(feedback["feedback_action"], "continue-pressure-management")
-        self.assertEqual(feedback["convergence_status"], "diverging")
-        self.assertEqual(feedback["drift_risk"], "high")
-        self.assertEqual(feedback["confidence"], "medium")
-        self.assertEqual(feedback["frame_count"], 1)
-        self.assertEqual(feedback["memory_layer_count"], 3)
-        self.assertEqual(feedback["pressure_frame_count"], 1)
-        self.assertEqual(feedback["protected_gap_frame_count"], 1)
-        self.assertEqual(feedback["observed_frame_cost_ms"], 12.5)
-        self.assertEqual(feedback["target_frame_budget_ms"], 8.0)
-        self.assertEqual(feedback["planned_current_frame_cost_ms"], 0)
-        self.assertEqual(feedback["next_frame_budget_ms"], 6.0)
-        self.assertEqual(feedback["hot_path_budget_ms"], 6.0)
-        self.assertEqual(feedback["observed_over_budget_ms"], 4.5)
-        self.assertEqual(feedback["planned_over_budget_ms"], 0)
-        self.assertEqual(feedback["protected_gap_ms"], 6.5)
-        self.assertEqual(feedback["planned_frame_relief_ms"], 12.5)
-        self.assertEqual(feedback["memory_relief_expected_mb"], 40)
-        self.assertEqual(feedback["memory_relief_applied_mb"], 40)
-        self.assertEqual(feedback["memory_headroom_reserved_mb"], 0)
-        self.assertEqual(feedback["memory_delta_mb"], 0)
-        self.assertEqual(frame["feedback_action"], "continue-pressure-management")
-        self.assertEqual(frame["protected_gap_ms"], 6.5)
+        self.assertEqual(update["mode"], "runtime-policy-update-v0.39")
+        self.assertEqual(update["profile"], "aggressive")
+        self.assertEqual(update["next_profile"], "aggressive")
+        self.assertEqual(
+            update["source_feedback_action"],
+            "continue-pressure-management",
+        )
+        self.assertEqual(update["policy_action"], "continue-runtime-pressure-policy")
+        self.assertEqual(update["convergence_status"], "diverging")
+        self.assertEqual(update["drift_risk"], "high")
+        self.assertEqual(update["update_count"], 2)
+        self.assertEqual(update["frame_update_count"], 1)
+        self.assertEqual(update["memory_update_count"], 1)
+        self.assertEqual(update["active_update_count"], 2)
+        self.assertEqual(update["next_frame_budget_ms"], 6.0)
+        self.assertEqual(update["hot_path_budget_ms"], 6.0)
+        self.assertEqual(update["copy_queue_budget_ms"], 0)
+        self.assertEqual(update["pre_frame_window_ms"], 4.5)
+        self.assertEqual(update["memory_relief_target_mb"], 40)
+        self.assertEqual(update["memory_headroom_target_mb"], 0)
+        self.assertEqual(frame["action"], "continue-frame-pressure-management")
+        self.assertEqual(frame["admission_policy"], "prestage-and-defer-noncritical")
+        self.assertEqual(frame["scheduler_policy"], "closed-loop-aggressive")
+        self.assertEqual(frame["guardband_ms"], 1.625)
+        self.assertEqual(memory["action"], "continue-memory-relief")
+        self.assertEqual(memory["residency_policy"], "evict-or-defer-residency")
+        self.assertEqual(memory["relief_target_mb"], 40)
 
-    def test_runtime_event_server_reports_runtime_gateway_feedback(self):
+    def test_runtime_event_server_reports_runtime_policy_update(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:
             server.timeout = 5
             host, port = server.server_address
@@ -75,28 +79,30 @@ class RuntimeGatewayFeedbackTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
 
         summary = summarize_client_responses(responses)
-        feedback = summary["runtime_gateway_feedback"]
-        frame = feedback["frame_feedbacks"][0]
+        update = summary["runtime_policy_update"]
+        frame = update["frame_updates"][0]
+        memory = update["memory_updates"][0]
 
         self.assertEqual(summary["mode"], "runtime-event-client-v0.39")
-        self.assertEqual(feedback["mode"], "runtime-gateway-feedback-delta-v0.38")
-        self.assertEqual(feedback["profile"], "stable")
-        self.assertEqual(feedback["feedback_action"], "preserve-cycle-shape")
-        self.assertEqual(feedback["convergence_status"], "stable")
-        self.assertEqual(feedback["drift_risk"], "low")
-        self.assertEqual(feedback["pressure_frame_count"], 0)
-        self.assertEqual(feedback["protected_gap_frame_count"], 0)
-        self.assertEqual(feedback["observed_frame_cost_ms"], 7.4)
-        self.assertEqual(feedback["planned_current_frame_cost_ms"], 3.2)
-        self.assertEqual(feedback["next_frame_budget_ms"], 8)
-        self.assertEqual(feedback["observed_over_budget_ms"], 0)
-        self.assertEqual(feedback["planned_over_budget_ms"], 0)
-        self.assertEqual(feedback["protected_gap_ms"], 0)
-        self.assertEqual(feedback["memory_delta_mb"], 0)
-        self.assertEqual(frame["feedback_action"], "preserve-cycle-shape")
+        self.assertEqual(update["mode"], "runtime-policy-update-v0.39")
+        self.assertEqual(update["profile"], "stable")
+        self.assertEqual(update["next_profile"], "stable")
+        self.assertEqual(update["policy_action"], "preserve-runtime-cycle-policy")
+        self.assertEqual(update["convergence_status"], "stable")
+        self.assertEqual(update["drift_risk"], "low")
+        self.assertEqual(update["next_frame_budget_ms"], 8)
+        self.assertEqual(update["hot_path_budget_ms"], 8)
+        self.assertEqual(update["copy_queue_budget_ms"], 1.2)
+        self.assertEqual(update["pre_frame_window_ms"], 4.2)
+        self.assertEqual(update["memory_relief_target_mb"], 0)
+        self.assertEqual(update["memory_headroom_target_mb"], 0)
+        self.assertEqual(frame["action"], "preserve-cycle-shape")
+        self.assertEqual(frame["admission_policy"], "preserve-budgeted-hot-path")
+        self.assertEqual(frame["scheduler_policy"], "closed-loop-stable")
+        self.assertEqual(memory["action"], "hold-memory-residency")
         self.assertEqual(summary["failed_responses"], 0)
 
-    def test_runtime_gateway_feedback_covers_memory_headroom(self):
+    def test_runtime_policy_update_preserves_memory_headroom(self):
         manager = RuntimeManagerDirective(
             mode="runtime-manager-directive-v0.33",
             profile="stable",
@@ -194,20 +200,19 @@ class RuntimeGatewayFeedbackTests(unittest.TestCase):
         state = apply_runtime_control_packet(packet)
         tick = build_runtime_gateway_tick(state)
         cycle = execute_runtime_gateway_tick(tick)
-        feedback = build_runtime_gateway_feedback(cycle, calibration).to_dict()
+        feedback = build_runtime_gateway_feedback(cycle, calibration)
+        update = build_runtime_policy_update(feedback).to_dict()
+        memory = update["memory_updates"][0]
 
-        self.assertEqual(feedback["mode"], "runtime-gateway-feedback-delta-v0.38")
-        self.assertEqual(feedback["feedback_action"], "monitor-headroom")
-        self.assertEqual(feedback["convergence_status"], "watching-headroom")
-        self.assertEqual(feedback["drift_risk"], "medium")
-        self.assertEqual(feedback["memory_headroom_reserved_mb"], 15.0)
-        self.assertEqual(feedback["memory_relief_expected_mb"], 0)
-        self.assertEqual(feedback["memory_relief_applied_mb"], 0)
-        self.assertEqual(feedback["protected_gap_ms"], 0)
-        self.assertEqual(
-            feedback["frame_feedbacks"][0]["feedback_action"],
-            "monitor-cycle",
-        )
+        self.assertEqual(update["mode"], "runtime-policy-update-v0.39")
+        self.assertEqual(update["policy_action"], "preserve-memory-headroom-policy")
+        self.assertEqual(update["next_profile"], "stable")
+        self.assertEqual(update["memory_headroom_target_mb"], 15.0)
+        self.assertEqual(update["memory_relief_target_mb"], 0)
+        self.assertEqual(update["active_update_count"], 1)
+        self.assertEqual(memory["action"], "preserve-memory-headroom")
+        self.assertEqual(memory["residency_policy"], "reserve-headroom")
+        self.assertEqual(memory["headroom_target_mb"], 15.0)
 
 
 if __name__ == "__main__":

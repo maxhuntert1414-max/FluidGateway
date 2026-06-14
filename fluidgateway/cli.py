@@ -499,6 +499,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime gateway feedback protected gap ms: "
         f"{summary['runtime_gateway_feedback']['protected_gap_ms']:.4f}"
     )
+    print(
+        "Runtime policy update action: "
+        f"{summary['runtime_policy_update']['policy_action']}"
+    )
+    print(
+        "Runtime policy update next profile: "
+        f"{summary['runtime_policy_update']['next_profile']}"
+    )
+    print(
+        "Runtime policy update next frame budget ms: "
+        f"{summary['runtime_policy_update']['next_frame_budget_ms']:.4f}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -694,6 +706,18 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime gateway feedback protected gap ms: "
         f"{result.runtime_gateway_feedback.protected_gap_ms:.4f}"
+    )
+    print(
+        "Runtime policy update action: "
+        f"{result.runtime_policy_update.policy_action}"
+    )
+    print(
+        "Runtime policy update next profile: "
+        f"{result.runtime_policy_update.next_profile}"
+    )
+    print(
+        "Runtime policy update next frame budget ms: "
+        f"{result.runtime_policy_update.next_frame_budget_ms:.4f}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

@@ -742,6 +742,24 @@ This still does not control OS scheduling or GPU drivers. It makes the control
 loop auditable: observe, plan, simulate a gateway cycle, compare against frame
 evidence, and choose the next pressure-management posture.
 
+## Runtime Policy Update
+
+The v0.39 runtime policy update consumes `runtime_gateway_feedback` and emits
+`runtime_policy_update`: an advisory policy proposal for the next gateway cycle.
+
+It turns feedback into concrete next-cycle knobs:
+
+- next-frame and GPU hot-path budgets;
+- copy-queue budget or blocking posture;
+- pre-frame window size;
+- admission and scheduler policy;
+- memory relief targets or headroom reservation;
+- next profile, such as `aggressive` or `stable`.
+
+This still does not rewrite OS scheduling, driver state, or game memory. It is
+the first explicit updater in the loop: evidence becomes feedback, feedback
+becomes policy, and policy becomes the next manager input shape.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

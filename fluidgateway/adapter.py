@@ -38,6 +38,7 @@ from .live import LiveCommand, build_live_command
 from .manager import RuntimeManagerDirective, build_runtime_manager_directive
 from .packet import ExecutionPacket, build_execution_packet
 from .policy import DEFAULT_FRAME_BUDGET_MS, RuntimePolicyAction, RuntimePolicyEngine
+from .policy_update import RuntimePolicyUpdate, build_runtime_policy_update
 from .routing import MemoryRoutePlan, build_memory_route_plan
 from .scheduler import SchedulerPlan, simulate_scheduler
 from .state import LiveStateSnapshot, build_live_state_snapshot
@@ -45,7 +46,7 @@ from .transit import MemoryTransitMap, build_memory_transit_map
 from .windowing import FrameWindowPlan, build_frame_window_plan
 
 
-ADAPTER_MODE = "runtime-adapter-session-v0.38"
+ADAPTER_MODE = "runtime-adapter-session-v0.39"
 
 
 @dataclass
@@ -124,6 +125,7 @@ class AdapterSessionResult:
     runtime_gateway_tick: RuntimeGatewayTick
     runtime_gateway_cycle: RuntimeGatewayCycleReport
     runtime_gateway_feedback: RuntimeGatewayFeedbackDelta
+    runtime_policy_update: RuntimePolicyUpdate
     results: list[dict[str, Any]]
     snapshot: dict[str, Any]
 
@@ -172,6 +174,7 @@ class AdapterSessionResult:
             "runtime_gateway_tick": self.runtime_gateway_tick.to_dict(),
             "runtime_gateway_cycle": self.runtime_gateway_cycle.to_dict(),
             "runtime_gateway_feedback": self.runtime_gateway_feedback.to_dict(),
+            "runtime_policy_update": self.runtime_policy_update.to_dict(),
             "results": self.results,
             "snapshot": self.snapshot,
         }
@@ -272,6 +275,7 @@ class RuntimeAdapterSession:
             runtime_gateway_cycle,
             runtime_calibration,
         )
+        runtime_policy_update = build_runtime_policy_update(runtime_gateway_feedback)
         return AdapterSessionResult(
             mode=ADAPTER_MODE,
             session_id=self.session_id,
@@ -310,6 +314,7 @@ class RuntimeAdapterSession:
             runtime_gateway_tick=runtime_gateway_tick,
             runtime_gateway_cycle=runtime_gateway_cycle,
             runtime_gateway_feedback=runtime_gateway_feedback,
+            runtime_policy_update=runtime_policy_update,
             results=list(self.results),
             snapshot=self.controller.snapshot(),
         )

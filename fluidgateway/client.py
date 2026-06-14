@@ -24,12 +24,13 @@ from .gateway_cycle import execute_runtime_gateway_tick
 from .gateway_feedback import build_runtime_gateway_feedback
 from .manager import build_runtime_manager_directive
 from .packet import build_execution_packet
+from .policy_update import build_runtime_policy_update
 from .routing import build_memory_route_plan
 from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.38"
+CLIENT_MODE = "runtime-event-client-v0.39"
 
 
 class RuntimeEventClient:
@@ -254,6 +255,7 @@ def summarize_client_responses(
         runtime_gateway_cycle,
         runtime_calibration,
     )
+    runtime_policy_update = build_runtime_policy_update(runtime_gateway_feedback)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -295,6 +297,7 @@ def summarize_client_responses(
         "runtime_gateway_tick": runtime_gateway_tick.to_dict(),
         "runtime_gateway_cycle": runtime_gateway_cycle.to_dict(),
         "runtime_gateway_feedback": runtime_gateway_feedback.to_dict(),
+        "runtime_policy_update": runtime_policy_update.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }
