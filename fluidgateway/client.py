@@ -12,6 +12,7 @@ from .applier import execute_dispatch_plan
 from .arbiter import build_budget_arbitration
 from .budget import build_runtime_budget_envelope
 from .calibration import build_runtime_calibration
+from .control_packet import build_runtime_control_packet
 from .dispatch import build_runtime_dispatch_plan
 from .efficiency import build_efficiency_ledger
 from .events import iter_jsonl
@@ -24,7 +25,7 @@ from .transit import build_memory_transit_map
 from .windowing import build_frame_window_plan
 
 
-CLIENT_MODE = "runtime-event-client-v0.33"
+CLIENT_MODE = "runtime-event-client-v0.34"
 
 
 class RuntimeEventClient:
@@ -241,6 +242,7 @@ def summarize_client_responses(
         runtime_calibration,
         budget_envelope,
     )
+    runtime_control_packet = build_runtime_control_packet(runtime_manager)
     failed = [response for response in responses if not response.get("ok")]
     return {
         "mode": CLIENT_MODE,
@@ -277,6 +279,7 @@ def summarize_client_responses(
         "dispatch_execution": dispatch_execution.to_dict(),
         "runtime_calibration": runtime_calibration.to_dict(),
         "runtime_manager": runtime_manager.to_dict(),
+        "runtime_control_packet": runtime_control_packet.to_dict(),
         "failed_responses": len(failed),
         "responses": responses,
     }

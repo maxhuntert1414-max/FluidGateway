@@ -1,0 +1,55 @@
+{
+  "project": "FluidGateway",
+  "stark_pipeline": "STARK-PRODUCTIONS",
+  "current_slice": "v0.34-runtime-control-packet",
+  "key_decisions": [
+    {
+      "decision": "Build a runtime_control_packet after runtime_manager.",
+      "rationale": "runtime_manager decides next-cycle policy; runtime_control_packet should serialize that policy into ordered commands a future native runtime can consume."
+    },
+    {
+      "decision": "Keep v0.34 advisory and deterministic.",
+      "rationale": "The project is not yet a game hook, driver hook, or OS scheduler; every new layer must preserve that safety boundary."
+    }
+  ],
+  "handoffs": [
+    {
+      "from": "RESEARCHER",
+      "to": "PLANNER",
+      "summary": "Confirmed runtime_control_packet is aligned after runtime_manager and recommended using setting instead of per-command mode."
+    },
+    {
+      "from": "PLANNER",
+      "to": "CODER",
+      "summary": "Specified the v0.34 contract, integration sequence, pressure/stable test expectations, and QA gates."
+    },
+    {
+      "from": "REVIEWER",
+      "to": "DEBUGGER",
+      "summary": "Approved v0.34 with non-blocking recommendations: cover reserve/observe memory branches, align reserve command naming, and assert packet ordering."
+    },
+    {
+      "from": "DEBUGGER",
+      "to": "REVIEWER",
+      "summary": "Confirmed fixes for memory branch coverage, reserve_memory_headroom naming, and command order assertions."
+    },
+    {
+      "from": "REVIEWER",
+      "to": "META-ORCHESTRATOR",
+      "summary": "Final re-review approved v0.34 delivery with no blockers after 96 tests, diff check, version check, and JSON validation."
+    }
+  ],
+  "open_issues": [
+    "tests/test_fluidgateway.py is large and should be split in a future hygiene slice."
+  ],
+  "resolved_issues": [
+    "Added direct runtime_control_packet coverage for reserve-headroom and observe-residency.",
+    "Aligned reserve-headroom command serialization with reserve_memory_headroom.",
+    "Pinned runtime_control_packet command sequence and order in tests."
+  ],
+  "constraints": [
+    "Standard library only for runtime prototype code.",
+    "Do not claim real performance gains without native integration and measurement.",
+    "Keep JSON contracts explicit and test-covered."
+  ]
+}

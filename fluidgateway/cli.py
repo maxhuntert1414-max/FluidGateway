@@ -443,6 +443,18 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Runtime manager memory actions: "
         f"{summary['runtime_manager']['memory_action_count']}"
     )
+    print(
+        "Runtime control packet commands: "
+        f"{summary['runtime_control_packet']['command_count']}"
+    )
+    print(
+        "Runtime control packet active commands: "
+        f"{summary['runtime_control_packet']['active_command_count']}"
+    )
+    print(
+        "Runtime control packet memory commands: "
+        f"{summary['runtime_control_packet']['memory_command_count']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -582,6 +594,18 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Runtime manager memory actions: "
         f"{result.runtime_manager.memory_action_count}"
+    )
+    print(
+        "Runtime control packet commands: "
+        f"{result.runtime_control_packet.command_count}"
+    )
+    print(
+        "Runtime control packet active commands: "
+        f"{result.runtime_control_packet.active_command_count}"
+    )
+    print(
+        "Runtime control packet memory commands: "
+        f"{result.runtime_control_packet.memory_command_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")

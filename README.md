@@ -637,6 +637,27 @@ This is still not a driver hook or OS scheduler. It is the software-side shape
 of the manager FluidGateway is growing toward: measure waste, decide what should
 move, calibrate the result, and emit a concrete next-cycle control directive.
 
+## Runtime Control Packet
+
+The v0.34 runtime control packet consumes `runtime_manager` and emits
+`runtime_control_packet`: an ordered command packet for a future native runtime
+or engine adapter.
+
+It serializes manager decisions into explicit control commands:
+
+- set the next-frame budget;
+- set the protected hot-path budget;
+- set the copy-queue budget;
+- reserve the pre-frame work window;
+- set the admission mode;
+- set the scheduler mode;
+- hold, observe, reserve, evict, or defer memory residency per RAM/VRAM/shared/
+  staging/swapchain layer.
+
+The packet is still advisory. It does not mutate a process, hook a game, or call
+a driver. Its value is that the manager output is now shaped like a concrete
+runtime command stream rather than prose or loose recommendations.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

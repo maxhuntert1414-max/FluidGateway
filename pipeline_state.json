@@ -1,0 +1,41 @@
+{
+  "pipeline": "STARK-PRODUCTIONS",
+  "fallback_mode": false,
+  "current_stage": "v0.34-runtime-control-packet",
+  "active_roles": [
+    "RESEARCHER",
+    "PLANNER",
+    "CODER",
+    "REVIEWER",
+    "MANAGER",
+    "MEMORY"
+  ],
+  "inactive_roles": {
+    "DESIGNER": "No UI or visual asset scope in this slice.",
+    "TRANSFORMER": "No asset or format conversion scope in this slice.",
+    "DEBUGGER": "Activates only if review or verification finds issues."
+  },
+  "blockers": [],
+  "review_status": "approved",
+  "decisions": [
+    {
+      "id": "v0.34-scope",
+      "decision": "Translate runtime_manager directives into a runtime_control_packet command contract.",
+      "rationale": "This moves FluidGateway closer to an executable manager while staying software-side and safe."
+    },
+    {
+      "id": "v0.34-command-naming",
+      "decision": "Serialize reserve-headroom as reserve_memory_headroom in runtime_control_packet.",
+      "rationale": "This keeps the new control packet aligned with existing dispatch and dry-run execution command names."
+    }
+  ],
+  "quality_gates": [
+    "python -m unittest",
+    "python -m compileall fluidgateway tests",
+    "python -m fluidgateway --version",
+    "git diff --check",
+    "runtime adapter smoke",
+    "runtime TCP smoke",
+    "git ls-remote origin refs/heads/main"
+  ]
+}
