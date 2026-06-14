@@ -539,6 +539,25 @@ make the runtime behave more like a small governor: it can decide when to
 tighten hot-path admission, when to stop late copies, and when RAM/VRAM
 residency pressure should force eviction or deferral.
 
+## Runtime Budget Arbiter
+
+The v0.29 runtime budget arbiter consumes the `execution_packet` and
+`budget_envelope` and produces `budget_arbitration`: a command-by-command
+decision plan for the next runtime cycle.
+
+It can:
+
+- prestage predictable transfers before the frame;
+- drop work already classified as redundant waste;
+- admit protected hot-path work while it fits the envelope;
+- split or defer hot-path work that exceeds the frame budget;
+- request memory actions when RAM, VRAM, staging, shared, or swapchain residency
+  is near or over budget.
+
+This is the first v0 layer that behaves like a scheduler/manager instead of only
+describing pressure. It still emits a JSON contract, but the contract now says
+which operations should move, stop, enter the hot path, or be pushed out.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

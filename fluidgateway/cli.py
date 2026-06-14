@@ -381,6 +381,14 @@ def run_runtime_send_events(args: argparse.Namespace) -> int:
         "Budget envelope constrained memory layers: "
         f"{summary['budget_envelope']['constrained_memory_count']}"
     )
+    print(
+        "Budget arbitration deferred commands: "
+        f"{summary['budget_arbitration']['deferred_count']}"
+    )
+    print(
+        "Budget arbitration memory actions: "
+        f"{summary['budget_arbitration']['memory_action_count']}"
+    )
     print(f"Decisions: {decision_count}")
     print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
@@ -464,6 +472,14 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(
         "Budget envelope constrained memory layers: "
         f"{result.budget_envelope.constrained_memory_count}"
+    )
+    print(
+        "Budget arbitration deferred commands: "
+        f"{result.budget_arbitration.deferred_count}"
+    )
+    print(
+        "Budget arbitration memory actions: "
+        f"{result.budget_arbitration.memory_action_count}"
     )
     print(f"Live state open frame: {result.state_snapshot.open_frame}")
     print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
