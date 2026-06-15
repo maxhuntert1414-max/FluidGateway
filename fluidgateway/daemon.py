@@ -14,11 +14,15 @@ from .daemon_decision import (
     RuntimeDaemonDecisionPlan,
     build_runtime_daemon_decision_plan,
 )
+from .daemon_execution import (
+    RuntimeDaemonActionExecution,
+    dry_run_runtime_daemon_action_queue,
+)
 from .host import HostCapabilitySnapshot
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.49"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.50"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -93,11 +97,14 @@ class RuntimeDaemonReport:
     daemon_decision_risk_level: str
     daemon_action_queue_policy: str
     daemon_action_blocked_count: int
+    daemon_action_execution_policy: str
+    daemon_action_execution_blocked_count: int
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
     host_snapshot: HostCapabilitySnapshot | None
     daemon_decision_plan: RuntimeDaemonDecisionPlan
     daemon_action_queue: RuntimeDaemonActionQueue
+    daemon_action_execution: RuntimeDaemonActionExecution
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -128,6 +135,12 @@ class RuntimeDaemonReport:
             "daemon_decision_risk_level": self.daemon_decision_risk_level,
             "daemon_action_queue_policy": self.daemon_action_queue_policy,
             "daemon_action_blocked_count": self.daemon_action_blocked_count,
+            "daemon_action_execution_policy": (
+                self.daemon_action_execution_policy
+            ),
+            "daemon_action_execution_blocked_count": (
+                self.daemon_action_execution_blocked_count
+            ),
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
             "host_snapshot": self.host_snapshot.to_dict()
@@ -135,6 +148,7 @@ class RuntimeDaemonReport:
             else None,
             "daemon_decision_plan": self.daemon_decision_plan.to_dict(),
             "daemon_action_queue": self.daemon_action_queue.to_dict(),
+            "daemon_action_execution": self.daemon_action_execution.to_dict(),
         }
 
 
@@ -211,6 +225,7 @@ def run_runtime_daemon(
         total_would_block_count=total_would_block_count,
     )
     action_queue = build_runtime_daemon_action_queue(decision_plan)
+    action_execution = dry_run_runtime_daemon_action_queue(action_queue)
 
     return RuntimeDaemonReport(
         mode=DAEMON_MODE,
@@ -244,11 +259,14 @@ def run_runtime_daemon(
         daemon_decision_risk_level=decision_plan.risk_level,
         daemon_action_queue_policy=action_queue.queue_policy,
         daemon_action_blocked_count=action_queue.blocked_action_count,
+        daemon_action_execution_policy=action_execution.execution_policy,
+        daemon_action_execution_blocked_count=action_execution.blocked_count,
         cycles=cycles,
         final_state=previous_state,
         host_snapshot=host_snapshot,
         daemon_decision_plan=decision_plan,
         daemon_action_queue=action_queue,
+        daemon_action_execution=action_execution,
     )
 
 

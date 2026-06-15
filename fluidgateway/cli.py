@@ -947,6 +947,14 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
     print(f"Daemon decision risk: {report.daemon_decision_risk_level}")
     print(f"Daemon action queue policy: {report.daemon_action_queue_policy}")
     print(f"Daemon action blocked commands: {report.daemon_action_blocked_count}")
+    print(
+        "Daemon action execution policy: "
+        f"{report.daemon_action_execution_policy}"
+    )
+    print(
+        "Daemon action execution blocked: "
+        f"{report.daemon_action_execution_blocked_count}"
+    )
     print(f"Daemon would apply commands: {report.total_would_apply_count}")
     print(f"Daemon would block commands: {report.total_would_block_count}")
     print(f"Daemon guard: {report.execution_guard}")

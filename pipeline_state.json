@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.49-daemon-action-queue",
+  "current_stage": "v0.50-daemon-action-execution",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -47,6 +47,11 @@
       "id": "v0.49-daemon-action-queue",
       "decision": "Map daemon decisions into backend-shaped dry-run action queue entries.",
       "rationale": "A future native manager needs concrete CPU/GPU/RAM/VRAM action envelopes with safety status, backend requirements, and expected signals."
+    },
+    {
+      "id": "v0.50-daemon-action-execution",
+      "decision": "Execute queued daemon actions only through an advisory/read-only dry-run executor.",
+      "rationale": "The manager loop needs an execution contract now, while native scheduler, memory, GPU, VRAM, and privileged actions must remain blocked until a real backend and safety review exist."
     }
   ],
   "quality_gates": [
@@ -59,6 +64,7 @@
     "runtime daemon host snapshot smoke",
     "runtime daemon decision plan smoke",
     "runtime daemon action queue smoke",
+    "runtime daemon action execution smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }
