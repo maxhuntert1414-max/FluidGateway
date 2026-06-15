@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.47-host-capability-snapshot",
+  "current_slice": "v0.48-host-aware-daemon-decision-plan",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -22,6 +22,10 @@
     {
       "decision": "Attach host capability evidence to daemon dry-run reports.",
       "rationale": "CPU thread count, RAM pressure, GPU presence, and reported VRAM are required context for any future manager that tries to reduce friction across CPU/GPU/RAM/VRAM."
+    },
+    {
+      "decision": "Build daemon_decision_plan from host evidence and supervisor execution.",
+      "rationale": "This creates the first host-aware manager intent layer while preserving the advisory-only boundary."
     }
   ],
   "handoffs": [
@@ -54,6 +58,11 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.47 host capability snapshot, integrated it into run-daemon reports, added host and daemon tests, and verified with unittest plus CLI smoke."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.48 daemon decision plan, integrated it into daemon reports and CLI output, added direct decision tests, and verified with unittest plus CLI smoke."
     }
   ],
   "open_issues": [
@@ -65,7 +74,8 @@
     "Added required --state path and rejected state/report path collisions.",
     "Fixed extensionless --state paths so load/write use the same normalized JSON file.",
     "Added daemon tests for chaining, iterations, CLI output/state, required state, path conflict, normalized state loading, and invalid normalized state failure.",
-    "Added host capability snapshot with CPU, RAM, GPU, reported VRAM, host profile, telemetry confidence, and manager hint."
+    "Added host capability snapshot with CPU, RAM, GPU, reported VRAM, host profile, telemetry confidence, and manager hint.",
+    "Added daemon decision plan with telemetry, memory, GPU, scheduler, and safety advisory actions."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",

@@ -6,11 +6,15 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .adapter import replay_adapter_event_stream
+from .daemon_decision import (
+    RuntimeDaemonDecisionPlan,
+    build_runtime_daemon_decision_plan,
+)
 from .host import HostCapabilitySnapshot
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.47"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.48"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -81,9 +85,12 @@ class RuntimeDaemonReport:
     final_execution_action: str
     final_supervisor_action: str
     final_plan_action: str
+    daemon_decision_action: str
+    daemon_decision_risk_level: str
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
     host_snapshot: HostCapabilitySnapshot | None
+    daemon_decision_plan: RuntimeDaemonDecisionPlan
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -110,11 +117,14 @@ class RuntimeDaemonReport:
             "final_execution_action": self.final_execution_action,
             "final_supervisor_action": self.final_supervisor_action,
             "final_plan_action": self.final_plan_action,
+            "daemon_decision_action": self.daemon_decision_action,
+            "daemon_decision_risk_level": self.daemon_decision_risk_level,
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
             "host_snapshot": self.host_snapshot.to_dict()
             if self.host_snapshot is not None
             else None,
+            "daemon_decision_plan": self.daemon_decision_plan.to_dict(),
         }
 
 
@@ -176,6 +186,21 @@ def run_runtime_daemon(
     if last_result is None or previous_state is None:
         raise ValueError("Runtime daemon did not execute any cycles.")
 
+    final_execution_action = (
+        last_result.runtime_supervisor_execution.execution_action
+    )
+    final_supervisor_action = (
+        last_result.runtime_supervisor_directive.directive_action
+    )
+    total_would_block_count = sum(cycle.would_block_count for cycle in cycles)
+    decision_plan = build_runtime_daemon_decision_plan(
+        final_state=previous_state,
+        host_snapshot=host_snapshot,
+        final_execution_action=final_execution_action,
+        final_supervisor_action=final_supervisor_action,
+        total_would_block_count=total_would_block_count,
+    )
+
     return RuntimeDaemonReport(
         mode=DAEMON_MODE,
         dry_run=True,
@@ -200,15 +225,16 @@ def run_runtime_daemon(
         final_cycle_count=previous_state.cycle_count,
         final_state_digest=previous_state.state_digest,
         total_would_apply_count=sum(cycle.would_apply_count for cycle in cycles),
-        total_would_block_count=sum(cycle.would_block_count for cycle in cycles),
-        final_execution_action=last_result.runtime_supervisor_execution.execution_action,
-        final_supervisor_action=(
-            last_result.runtime_supervisor_directive.directive_action
-        ),
+        total_would_block_count=total_would_block_count,
+        final_execution_action=final_execution_action,
+        final_supervisor_action=final_supervisor_action,
         final_plan_action=last_result.runtime_supervisor_plan.plan_action,
+        daemon_decision_action=decision_plan.decision_action,
+        daemon_decision_risk_level=decision_plan.risk_level,
         cycles=cycles,
         final_state=previous_state,
         host_snapshot=host_snapshot,
+        daemon_decision_plan=decision_plan,
     )
 
 
