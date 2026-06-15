@@ -887,6 +887,40 @@ This still does not mutate CPU scheduling, GPU queues, RAM, VRAM, or game
 state. It creates the execution boundary that a future daemon/native backend
 can replace while keeping the same evidence trail.
 
+## Runtime Daemon Dry-Run Loop
+
+The v0.46 runtime daemon dry-run loop repeats adapter event streams while
+carrying `runtime_state_accumulator` across cycles:
+
+```powershell
+python -m fluidgateway runtime run-daemon `
+  --events tests/fixtures/adapter_budget_pressure_events.jsonl `
+  --events tests/fixtures/adapter_state_query_events.jsonl `
+  --state tmp/runtime-daemon-state.json `
+  --out tmp/runtime-daemon-report.json
+```
+
+`--events` can be repeated to model different cycles. `--iterations` sets the
+minimum cycle count; if it is larger than the number of supplied event streams,
+the last stream repeats. `--state` is required: FluidGateway loads it as the
+previous runtime memory when present and overwrites it with the final daemon
+state after the loop. `--state` and `--out` must resolve to different JSON
+paths.
+
+The daemon report includes:
+
+- `dry_run=true`;
+- `would_modify_system=false`;
+- `execution_guard=advisory-only`;
+- per-cycle transition trend, supervisor action, plan action, execution action,
+  apply/block counts, and state digest;
+- final accumulated runtime state for the next loop.
+
+This is still a local advisory loop. It does not run as a background service,
+change OS process scheduling, mutate GPU queues, pin RAM/VRAM, inject into a
+game, or touch drivers. It is the first durable loop shape that a future native
+manager can replace behind the same JSON contract.
+
 ## Supported Input
 
 FluidGateway v0 expects a PresentMon 2.x CSV. It works best when these columns

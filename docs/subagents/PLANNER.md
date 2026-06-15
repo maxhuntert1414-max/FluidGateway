@@ -2,39 +2,36 @@
 
 ## Role and Assignment
 
-PLANNER transformed the v0.34 research brief into an execution plan for the
-runtime-control-packet slice.
+PLANNER turned the v0.46 daemon dry-run brief into a small implementation
+contract and test matrix.
 
 ## Owned Domain
 
-- v0.34 feature contract
-- integration sequence
-- test expectations
-- QA gates
+- CLI contract for `runtime run-daemon`
+- JSON report schema expectations
+- State persistence edge cases
+- Test matrix and release criteria
 
 ## Output Summary
 
-The plan approved the following sequence:
-
-1. Add `fluidgateway/control_packet.py`.
-2. Build `runtime_control_packet` directly after `runtime_manager`.
-3. Serialize it in adapter and client summaries.
-4. Print command counts in the CLI.
-5. Document the new runtime section in the README.
-6. Add pressure and stable/TCP tests.
+Recommended `runtime run-daemon --events ... --state ... --out ...
+[--iterations N]`, with `--state` required. Multiple `--events` are processed in
+order; if `--iterations` is larger than the number of streams, the last stream
+repeats. Missing state starts fresh, invalid state fails before writes, and
+`--state`/`--out` must resolve to different JSON paths.
 
 ## Decisions Made
 
-- Command JSON uses `setting`, not `mode`, for admission/scheduler/memory action
-  values.
-- Pressure fixture should produce 9 total/active commands and 3 memory commands.
-- Stable fixture should produce 8 total commands, 6 active commands, and 2
-  inactive memory hold commands.
+- A daemon cycle equals one adapter replay with the previous accumulator passed
+  into the next replay.
+- `--state` is required so every daemon invocation has an explicit persistence
+  boundary.
+- State and report paths must be compared after JSON suffix normalization.
 
 ## Open Questions or Risks
 
-- Future native execution must add a separate safety boundary before any process
-  mutation or driver/game-facing action.
+- A future daemon service should define crash-safe write ordering if report and
+  state persistence become long-running operations.
 
 ## Direct File Edits
 

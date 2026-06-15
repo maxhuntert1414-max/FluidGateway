@@ -2,34 +2,36 @@
 
 ## Role and Assignment
 
-CODER implemented the v0.34 runtime-control-packet slice in the main workspace.
+CODER implemented the v0.46 runtime daemon dry-run loop in the main workspace.
 
 ## Owned Domain
 
-- `fluidgateway/control_packet.py`
-- `fluidgateway/adapter.py`
-- `fluidgateway/client.py`
+- `fluidgateway/daemon.py`
 - `fluidgateway/cli.py`
-- `tests/test_fluidgateway.py`
+- `tests/test_daemon.py`
 - `README.md`
 - package version metadata
 
 ## Output Summary
 
-Implemented `runtime_control_packet` as an ordered advisory command stream
-derived from `runtime_manager`.
+Implemented `RuntimeDaemonCycle`, `RuntimeDaemonReport`,
+`run_runtime_daemon`, and `write_runtime_daemon_report`. Added
+`python -m fluidgateway runtime run-daemon` with required `--state`, repeated
+`--events`, optional `--iterations`, normalized state/report path validation,
+state loading, final state writing, and CLI summary output.
 
 ## Decisions Made
 
-- Keep the packet deterministic and standard-library only.
-- Emit commands across four domains: `frame`, `queue`, `scheduler`, and
-  `memory`.
-- Count `hold_residency` and `observe_residency` as inactive control commands.
+- Keep the loop standard-library only.
+- Store the final accumulator inside the daemon report for automation and also
+  persist it as the next daemon state.
+- Normalize `--state` before loading and writing so extensionless paths behave
+  consistently.
 
 ## Open Questions or Risks
 
-- The packet is not a native executor; it is a contract for a future native
-  runtime or engine adapter.
+- `fluidgateway/cli.py` is large and should eventually be split by command
+  family.
 
 ## Direct File Edits
 

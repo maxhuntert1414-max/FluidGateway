@@ -1,55 +1,66 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.34-runtime-control-packet",
+  "current_slice": "v0.46-runtime-daemon-dry-run-loop",
   "key_decisions": [
     {
-      "decision": "Build a runtime_control_packet after runtime_manager.",
-      "rationale": "runtime_manager decides next-cycle policy; runtime_control_packet should serialize that policy into ordered commands a future native runtime can consume."
+      "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
+      "rationale": "The project needs a persistent advisory loop before any native scheduler, game adapter, or process manager can safely exist."
     },
     {
-      "decision": "Keep v0.34 advisory and deterministic.",
-      "rationale": "The project is not yet a game hook, driver hook, or OS scheduler; every new layer must preserve that safety boundary."
+      "decision": "Carry only RuntimeStateAccumulator across daemon cycles.",
+      "rationale": "Each adapter replay should remain isolated while the accumulated runtime state becomes the durable memory between cycles."
+    },
+    {
+      "decision": "Keep v0.46 advisory and deterministic.",
+      "rationale": "FluidGateway still must not modify CPU scheduling, GPU queues, RAM, VRAM, drivers, games, or OS state."
+    },
+    {
+      "decision": "Normalize --state paths before load and write.",
+      "rationale": "Extensionless state paths must load the same JSON file they write, and invalid normalized state must fail before report/state writes."
     }
   ],
   "handoffs": [
     {
       "from": "RESEARCHER",
       "to": "PLANNER",
-      "summary": "Confirmed runtime_control_packet is aligned after runtime_manager and recommended using setting instead of per-command mode."
+      "summary": "Confirmed replay_adapter_event_stream plus RuntimeStateAccumulator is the smallest safe daemon loop integration."
     },
     {
       "from": "PLANNER",
       "to": "CODER",
-      "summary": "Specified the v0.34 contract, integration sequence, pressure/stable test expectations, and QA gates."
+      "summary": "Specified run-daemon CLI, required state path, path conflict rejection, event stream ordering, repeat semantics, and edge-case tests."
+    },
+    {
+      "from": "CODER",
+      "to": "REVIEWER",
+      "summary": "Implemented daemon report dataclasses, CLI integration, docs, version bump, and daemon tests."
     },
     {
       "from": "REVIEWER",
-      "to": "DEBUGGER",
-      "summary": "Approved v0.34 with non-blocking recommendations: cover reserve/observe memory branches, align reserve command naming, and assert packet ordering."
-    },
-    {
-      "from": "DEBUGGER",
-      "to": "REVIEWER",
-      "summary": "Confirmed fixes for memory branch coverage, reserve_memory_headroom naming, and command order assertions."
+      "to": "CODER",
+      "summary": "Requested changes for extensionless --state load/write mismatch; CODER normalized state path and added regression tests."
     },
     {
       "from": "REVIEWER",
       "to": "META-ORCHESTRATOR",
-      "summary": "Final re-review approved v0.34 delivery with no blockers after 96 tests, diff check, version check, and JSON validation."
+      "summary": "Approved v0.46 after the normalization fix, daemon regression tests, full unittest, diff check, version check, and CLI smokes."
     }
   ],
   "open_issues": [
-    "tests/test_fluidgateway.py is large and should be split in a future hygiene slice."
+    "fluidgateway/cli.py is large and should be split by command family in a future hygiene slice.",
+    "Native execution requires a future safety review before any process, driver, game, RAM, or VRAM mutation."
   ],
   "resolved_issues": [
-    "Added direct runtime_control_packet coverage for reserve-headroom and observe-residency.",
-    "Aligned reserve-headroom command serialization with reserve_memory_headroom.",
-    "Pinned runtime_control_packet command sequence and order in tests."
+    "Added runtime daemon dry-run report with per-cycle transition and supervisor execution evidence.",
+    "Added required --state path and rejected state/report path collisions.",
+    "Fixed extensionless --state paths so load/write use the same normalized JSON file.",
+    "Added daemon tests for chaining, iterations, CLI output/state, required state, path conflict, normalized state loading, and invalid normalized state failure."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",
     "Do not claim real performance gains without native integration and measurement.",
-    "Keep JSON contracts explicit and test-covered."
+    "Keep JSON contracts explicit and test-covered.",
+    "Preserve dry_run=true, would_modify_system=false, and execution_guard=advisory-only until a separate native safety boundary exists."
   ]
 }

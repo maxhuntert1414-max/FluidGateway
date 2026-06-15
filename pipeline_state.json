@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.34-runtime-control-packet",
+  "current_stage": "v0.46-runtime-daemon-dry-run-loop",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -13,20 +13,25 @@
   "inactive_roles": {
     "DESIGNER": "No UI or visual asset scope in this slice.",
     "TRANSFORMER": "No asset or format conversion scope in this slice.",
-    "DEBUGGER": "Activates only if review or verification finds issues."
+    "DEBUGGER": "Reviewer issue was fixed directly by CODER; no separate debugger agent was needed."
   },
   "blockers": [],
   "review_status": "approved",
   "decisions": [
     {
-      "id": "v0.34-scope",
-      "decision": "Translate runtime_manager directives into a runtime_control_packet command contract.",
-      "rationale": "This moves FluidGateway closer to an executable manager while staying software-side and safe."
+      "id": "v0.46-scope",
+      "decision": "Add a local runtime daemon dry-run loop around adapter replays.",
+      "rationale": "This moves FluidGateway from isolated adapter sessions toward a persistent advisory manager loop while preserving the no-mutation boundary."
     },
     {
-      "id": "v0.34-command-naming",
-      "decision": "Serialize reserve-headroom as reserve_memory_headroom in runtime_control_packet.",
-      "rationale": "This keeps the new control packet aligned with existing dispatch and dry-run execution command names."
+      "id": "v0.46-state-contract",
+      "decision": "Require --state for run-daemon and normalize it before both load and write.",
+      "rationale": "The daemon must have an explicit persistence boundary and extensionless state paths must not ignore existing or invalid JSON state."
+    },
+    {
+      "id": "v0.46-path-safety",
+      "decision": "Reject daemon --state and --out when they resolve to the same JSON path.",
+      "rationale": "State and report writes have different schemas and must not overwrite each other."
     }
   ],
   "quality_gates": [
@@ -34,8 +39,8 @@
     "python -m compileall fluidgateway tests",
     "python -m fluidgateway --version",
     "git diff --check",
-    "runtime adapter smoke",
-    "runtime TCP smoke",
+    "runtime daemon two-stream smoke",
+    "runtime daemon extensionless state smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

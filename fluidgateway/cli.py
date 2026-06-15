@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from . import __version__
 from .adapter import replay_adapter_event_stream, write_adapter_session
@@ -12,6 +13,7 @@ from .client import (
     write_client_responses,
 )
 from .control import FluidGatewayController
+from .daemon import run_runtime_daemon, write_runtime_daemon_report
 from .events import replay_event_stream, write_event_replay
 from .parser import parse_presentmon_csv
 from .report import write_report
@@ -215,6 +217,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional path to write the next runtime_state_accumulator JSON.",
     )
     adapter.set_defaults(func=run_runtime_run_adapter)
+    daemon = runtime_subparsers.add_parser(
+        "run-daemon",
+        help="Run a persistent advisory runtime daemon loop locally.",
+    )
+    daemon.add_argument(
+        "--events",
+        action="append",
+        required=True,
+        help=(
+            "Path to a FluidGateway adapter lifecycle JSONL stream. Can be "
+            "repeated to replay different streams across daemon cycles."
+        ),
+    )
+    daemon.add_argument(
+        "--iterations",
+        type=int,
+        default=1,
+        help=(
+            "Minimum number of daemon cycles to run. If more --events streams "
+            "are supplied, all streams are consumed; the last stream repeats "
+            "when iterations is larger. Defaults to 1."
+        ),
+    )
+    daemon.add_argument(
+        "--state",
+        required=True,
+        help=(
+            "runtime_state_accumulator JSON path to load before the "
+            "loop and overwrite with the final daemon state."
+        ),
+    )
+    daemon.add_argument(
+        "--out",
+        required=True,
+        help="Path to the runtime daemon dry-run JSON report.",
+    )
+    daemon.set_defaults(func=run_runtime_run_daemon)
     serve = runtime_subparsers.add_parser(
         "serve-events",
         help="Serve a local TCP JSONL runtime decision endpoint.",
@@ -871,6 +910,45 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
     print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
     return 0
+
+
+def run_runtime_run_daemon(args: argparse.Namespace) -> int:
+    state_path = normalized_json_path(args.state)
+    output_path_arg = normalized_json_path(args.out)
+    if state_path == output_path_arg:
+        raise ValueError("Runtime daemon --state and --out must be different paths.")
+    initial_state = load_runtime_state_accumulator(state_path)
+    report = run_runtime_daemon(
+        args.events,
+        iterations=args.iterations,
+        initial_state=initial_state,
+    )
+    output_path = write_runtime_daemon_report(report, args.out)
+    state_output_path = write_runtime_state_accumulator(
+        report.final_state,
+        state_path,
+    )
+
+    print(f"FluidGateway runtime daemon dry-run written: {output_path}")
+    if initial_state is not None:
+        print(f"Runtime daemon previous state cycles: {initial_state.cycle_count}")
+    print(f"Runtime daemon state written: {state_output_path}")
+    print(f"Daemon cycles: {report.cycle_count}")
+    print(f"Daemon event streams: {report.events_stream_count}")
+    print(f"Daemon final cycle count: {report.final_cycle_count}")
+    print(f"Daemon final execution action: {report.final_execution_action}")
+    print(f"Daemon final supervisor action: {report.final_supervisor_action}")
+    print(f"Daemon would apply commands: {report.total_would_apply_count}")
+    print(f"Daemon would block commands: {report.total_would_block_count}")
+    print(f"Daemon guard: {report.execution_guard}")
+    return 0
+
+
+def normalized_json_path(value: str) -> Path:
+    path = Path(value)
+    if path.suffix.lower() != ".json":
+        path = path.with_suffix(".json")
+    return path.resolve()
 
 
 def run_runtime_serve_events(args: argparse.Namespace) -> int:

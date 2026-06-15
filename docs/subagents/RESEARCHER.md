@@ -2,46 +2,35 @@
 
 ## Role and Assignment
 
-RESEARCHER inspected the current FluidGateway runtime pipeline and assessed
-whether a v0.34 `runtime_control_packet` slice is aligned with the project.
+RESEARCHER inspected the v0.46 runtime daemon dry-run target and mapped the
+smallest safe integration points.
 
 ## Owned Domain
 
-- Existing pipeline shape from `execution_packet` through `runtime_manager`
-- Naming and contract risks
-- Integration and test-risk brief
+- Existing adapter, state accumulator, supervisor execution, and CLI seams
+- Runtime daemon invariants
+- Implementation risks and test evidence
 
 ## Output Summary
 
-The research brief confirmed that adding `runtime_control_packet` after
-`runtime_manager` is aligned with the current architecture:
-
-`execution_packet -> dispatch_plan -> dispatch_execution -> runtime_calibration -> runtime_manager -> runtime_control_packet`
-
-Recommended contract:
-
-- `RuntimeControlPacket`
-- `RuntimeControlCommand`
-- `build_runtime_control_packet(runtime_manager)`
-- `mode = runtime-control-packet-v0.34`
-- command domains: `frame`, `queue`, `scheduler`, `memory`
-- command counters and aggregate budget fields
+Confirmed that `replay_adapter_event_stream(path, previous_state=...)` is the
+right replay primitive, and that only `RuntimeStateAccumulator` should cross
+daemon cycles. Recommended a new `fluidgateway/daemon.py` module instead of
+inflating `adapter.py`, plus an aggregate dry-run report with per-cycle
+transition, supervisor, plan, execution, and state digest evidence.
 
 ## Decisions Made
 
-- Keep `runtime_control_packet` as an advisory command stream, not a game hook,
-  driver hook, or OS scheduler.
-- Use `runtime_control_packet` rather than `control_plane` to avoid competing
-  with existing `fluidgateway/control.py`.
-- Avoid a per-command JSON field named `mode`; use `setting` so it does not
-  conflict with packet-level `mode`.
+- Keep the daemon offline and advisory for v0.46.
+- Preserve `dry_run=true`, `would_modify_system=false`, and
+  `execution_guard=advisory-only`.
+- Treat repeated `--events` as ordered daemon cycles.
+- Add event counters and initial/final state evidence to the daemon report.
 
 ## Open Questions or Risks
 
-- `tests/test_fluidgateway.py` is large and should be split in a future hygiene
-  slice.
-- Stable scenarios still emit active frame/queue/scheduler commands; memory
-  `hold_residency` commands are counted as inactive by design.
+- Future native execution still needs a separate safety and permissions review.
+- The daemon is not a background service yet.
 
 ## Direct File Edits
 

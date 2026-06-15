@@ -2,37 +2,33 @@
 
 ## Role and Assignment
 
-REVIEWER audited the v0.34 runtime-control-packet slice before publication.
+REVIEWER audited the v0.46 runtime daemon dry-run loop before publication.
 
 ## Owned Domain
 
-- implementation correctness
-- contract consistency
-- test coverage
-- STARK trace completeness
-- release readiness for this slice
+- Correctness of daemon state persistence
+- CLI safety behavior
+- JSON report contract
+- Test coverage and release readiness
 
 ## Output Summary
 
-Initial review approved delivery with non-blocking recommendations:
-
-- cover `reserve-headroom` and `observe-residency` packet branches;
-- align reserve command naming with existing `reserve_memory_headroom`;
-- assert packet sequence and ordering.
-
-After fixes, REVIEWER performed a final re-review and approved final delivery.
+Initial review found a release blocker: extensionless `--state` paths were
+written as `.json` but loaded using the raw path, so persisted or invalid state
+could be ignored. CODER normalized the state path before both load and write and
+added regression tests for extensionless state loading plus invalid normalized
+state failure before writes.
 
 ## Decisions Made
 
-- No blocking correctness, contract, naming, integration, docs, or verification
-  issues remain for v0.34.
-- The advisory-only boundary is correctly documented and preserved.
+- The extensionless state normalization bug was blocking until fixed.
+- The dry-run/advisory-only boundary remains intact.
+- JSONL failures and invalid state should fail before final state persistence.
 
 ## Open Questions or Risks
 
-- `tests/test_fluidgateway.py` remains large and should be split in a future
-  hygiene slice.
-- Native execution requires future safety review.
+- `fluidgateway/cli.py` remains large and should be split by command family in a
+  future hygiene slice.
 
 ## Direct File Edits
 
