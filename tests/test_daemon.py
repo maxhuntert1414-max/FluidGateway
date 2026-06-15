@@ -26,7 +26,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         first = payload["cycles"][0]
         second = payload["cycles"][1]
 
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.48")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.49")
         self.assertTrue(payload["dry_run"])
         self.assertFalse(payload["would_modify_system"])
         self.assertEqual(payload["execution_guard"], "advisory-only")
@@ -43,6 +43,11 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertIsNone(payload["host_snapshot"])
         self.assertEqual(payload["daemon_decision_action"], "expand-daemon-telemetry")
         self.assertEqual(payload["daemon_decision_risk_level"], "high")
+        self.assertEqual(
+            payload["daemon_action_queue_policy"],
+            "run-readonly-telemetry-before-native-work",
+        )
+        self.assertEqual(payload["daemon_action_blocked_count"], 0)
         self.assertEqual(payload["final_cycle_count"], 2)
         self.assertEqual(payload["total_would_apply_count"], 10)
         self.assertEqual(payload["total_would_block_count"], 0)
@@ -80,6 +85,14 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(
             payload["daemon_decision_plan"]["actions"][0]["action"],
             "collect-host-telemetry",
+        )
+        self.assertEqual(
+            payload["daemon_action_queue"]["mode"],
+            "runtime-daemon-action-queue-v0.49",
+        )
+        self.assertEqual(
+            payload["daemon_action_queue"]["queue_policy"],
+            "run-readonly-telemetry-before-native-work",
         )
 
     def test_runtime_daemon_can_attach_host_capability_snapshot(self):
@@ -123,6 +136,8 @@ class RuntimeDaemonTests(unittest.TestCase):
             "continue-host-aware-supervisor-loop",
         )
         self.assertEqual(payload["daemon_decision_risk_level"], "medium")
+        self.assertEqual(payload["daemon_action_queue_policy"], "continue-advisory-loop")
+        self.assertEqual(payload["daemon_action_blocked_count"], 0)
 
     def test_runtime_daemon_repeats_last_events_stream_for_iterations(self):
         report = run_runtime_daemon(
@@ -162,7 +177,7 @@ class RuntimeDaemonTests(unittest.TestCase):
             payload = json.loads(written.read_text(encoding="utf-8"))
 
         self.assertEqual(written.suffix, ".json")
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.48")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.49")
         self.assertEqual(payload["cycle_count"], 1)
 
     def test_runtime_run_daemon_cli_writes_report_and_final_state(self):
@@ -197,12 +212,15 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Daemon cycles: 2", result.stdout)
         self.assertIn("Daemon guard: advisory-only", result.stdout)
-        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.48")
+        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.49")
         self.assertEqual(report["cycle_count"], 2)
         self.assertEqual(report["final_cycle_count"], 2)
         self.assertTrue(report["host_snapshot_loaded"])
         self.assertIsNotNone(report["host_snapshot"])
         self.assertIn("daemon_decision_plan", report)
+        self.assertIn("daemon_action_queue", report)
+        self.assertIn("Daemon action queue policy:", result.stdout)
+        self.assertIn("Daemon action blocked commands:", result.stdout)
         self.assertIn("Daemon decision action:", result.stdout)
         self.assertIn("Daemon decision risk:", result.stdout)
         self.assertIn("Daemon host profile:", result.stdout)

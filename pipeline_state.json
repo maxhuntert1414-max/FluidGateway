@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.48-host-aware-daemon-decision-plan",
+  "current_stage": "v0.49-daemon-action-queue",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -42,6 +42,11 @@
       "id": "v0.48-daemon-decision-plan",
       "decision": "Translate host and supervisor evidence into a dry-run daemon decision plan.",
       "rationale": "The project needs a manager-shaped intent layer before any native scheduler or RAM/VRAM residency action can be considered."
+    },
+    {
+      "id": "v0.49-daemon-action-queue",
+      "decision": "Map daemon decisions into backend-shaped dry-run action queue entries.",
+      "rationale": "A future native manager needs concrete CPU/GPU/RAM/VRAM action envelopes with safety status, backend requirements, and expected signals."
     }
   ],
   "quality_gates": [
@@ -53,6 +58,7 @@
     "runtime daemon extensionless state smoke",
     "runtime daemon host snapshot smoke",
     "runtime daemon decision plan smoke",
+    "runtime daemon action queue smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

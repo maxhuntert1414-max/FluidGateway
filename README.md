@@ -889,9 +889,9 @@ can replace while keeping the same evidence trail.
 
 ## Runtime Daemon Dry-Run Loop
 
-The v0.48 runtime daemon dry-run loop repeats adapter event streams while
+The v0.49 runtime daemon dry-run loop repeats adapter event streams while
 carrying `runtime_state_accumulator` across cycles and attaching a read-only
-`host_snapshot` plus a `daemon_decision_plan`:
+`host_snapshot`, a `daemon_decision_plan`, and a `daemon_action_queue`:
 
 ```powershell
 python -m fluidgateway runtime run-daemon `
@@ -920,6 +920,9 @@ The daemon report includes:
 - `daemon_decision_plan` with next-cycle advisory decisions such as
   `collect-host-telemetry`, `tighten-memory-residency-observation`,
   `allow-daemon-supervisor-loop`, and `hold-blocking-supervisor-commands`;
+- `daemon_action_queue`, which maps decisions to backend-shaped actions with
+  dry-run status, required native backend, required privilege, expected signal,
+  and safety boundary;
 - final accumulated runtime state for the next loop.
 
 This is still a local advisory loop. It does not run as a background service,
@@ -927,8 +930,11 @@ change OS process scheduling, mutate GPU queues, pin RAM/VRAM, inject into a
 game, or touch drivers. Host probing is observational: on Windows it uses
 read-only memory status and video-controller metadata. The decision plan is
 also dry-run: it promotes evidence into manager-shaped intent without applying
-that intent to the host. It is the first durable loop shape that a future native
-manager can replace behind the same JSON contract.
+that intent to the host. The action queue is the next bridge: read-only
+telemetry actions can be queued as advisory work, while anything that would
+require native memory, scheduler, GPU, or privileged host control is explicitly
+blocked before system mutation. It is the first durable loop shape that a
+future native manager can replace behind the same JSON contract.
 
 ## Supported Input
 

@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.48-host-aware-daemon-decision-plan",
+  "current_slice": "v0.49-daemon-action-queue",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -26,6 +26,10 @@
     {
       "decision": "Build daemon_decision_plan from host evidence and supervisor execution.",
       "rationale": "This creates the first host-aware manager intent layer while preserving the advisory-only boundary."
+    },
+    {
+      "decision": "Build daemon_action_queue from daemon_decision_plan.",
+      "rationale": "Backend-shaped queued actions make the future native boundary explicit: read-only telemetry can proceed, while scheduler, GPU, RAM, or VRAM mutation remains blocked until a native backend and safety review exist."
     }
   ],
   "handoffs": [
@@ -63,6 +67,11 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.48 daemon decision plan, integrated it into daemon reports and CLI output, added direct decision tests, and verified with unittest plus CLI smoke."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.49 daemon action queue, integrated it into daemon reports and CLI output, added action queue tests, and verified with unittest plus CLI smoke."
     }
   ],
   "open_issues": [
@@ -75,7 +84,8 @@
     "Fixed extensionless --state paths so load/write use the same normalized JSON file.",
     "Added daemon tests for chaining, iterations, CLI output/state, required state, path conflict, normalized state loading, and invalid normalized state failure.",
     "Added host capability snapshot with CPU, RAM, GPU, reported VRAM, host profile, telemetry confidence, and manager hint.",
-    "Added daemon decision plan with telemetry, memory, GPU, scheduler, and safety advisory actions."
+    "Added daemon decision plan with telemetry, memory, GPU, scheduler, and safety advisory actions.",
+    "Added daemon action queue with backend, dry-run status, native backend requirement, privilege requirement, expected signal, and safety boundary per queued action."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",
