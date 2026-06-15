@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.50-daemon-action-execution",
+  "current_stage": "v0.51-native-backend-preflight",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -52,6 +52,11 @@
       "id": "v0.50-daemon-action-execution",
       "decision": "Execute queued daemon actions only through an advisory/read-only dry-run executor.",
       "rationale": "The manager loop needs an execution contract now, while native scheduler, memory, GPU, VRAM, and privileged actions must remain blocked until a real backend and safety review exist."
+    },
+    {
+      "id": "v0.51-native-backend-preflight",
+      "decision": "Convert daemon action execution results into explicit native backend capability and safety requirements.",
+      "rationale": "Before a future manager can control CPU/GPU/RAM/VRAM, the project needs a testable contract for missing native backends, privilege gates, and safety-review blockers."
     }
   ],
   "quality_gates": [
@@ -65,6 +70,7 @@
     "runtime daemon decision plan smoke",
     "runtime daemon action queue smoke",
     "runtime daemon action execution smoke",
+    "runtime native backend preflight smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

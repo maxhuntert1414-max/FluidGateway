@@ -19,10 +19,14 @@ from .daemon_execution import (
     dry_run_runtime_daemon_action_queue,
 )
 from .host import HostCapabilitySnapshot
+from .native_backend import (
+    RuntimeNativeBackendPreflight,
+    build_runtime_native_backend_preflight,
+)
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.50"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.51"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -99,12 +103,16 @@ class RuntimeDaemonReport:
     daemon_action_blocked_count: int
     daemon_action_execution_policy: str
     daemon_action_execution_blocked_count: int
+    native_backend_policy: str
+    native_backend_blocked_count: int
+    native_promotion_allowed: bool
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
     host_snapshot: HostCapabilitySnapshot | None
     daemon_decision_plan: RuntimeDaemonDecisionPlan
     daemon_action_queue: RuntimeDaemonActionQueue
     daemon_action_execution: RuntimeDaemonActionExecution
+    native_backend_preflight: RuntimeNativeBackendPreflight
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -141,6 +149,9 @@ class RuntimeDaemonReport:
             "daemon_action_execution_blocked_count": (
                 self.daemon_action_execution_blocked_count
             ),
+            "native_backend_policy": self.native_backend_policy,
+            "native_backend_blocked_count": self.native_backend_blocked_count,
+            "native_promotion_allowed": self.native_promotion_allowed,
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
             "host_snapshot": self.host_snapshot.to_dict()
@@ -149,6 +160,9 @@ class RuntimeDaemonReport:
             "daemon_decision_plan": self.daemon_decision_plan.to_dict(),
             "daemon_action_queue": self.daemon_action_queue.to_dict(),
             "daemon_action_execution": self.daemon_action_execution.to_dict(),
+            "native_backend_preflight": (
+                self.native_backend_preflight.to_dict()
+            ),
         }
 
 
@@ -226,6 +240,10 @@ def run_runtime_daemon(
     )
     action_queue = build_runtime_daemon_action_queue(decision_plan)
     action_execution = dry_run_runtime_daemon_action_queue(action_queue)
+    native_backend_preflight = build_runtime_native_backend_preflight(
+        action_queue,
+        action_execution,
+    )
 
     return RuntimeDaemonReport(
         mode=DAEMON_MODE,
@@ -261,12 +279,20 @@ def run_runtime_daemon(
         daemon_action_blocked_count=action_queue.blocked_action_count,
         daemon_action_execution_policy=action_execution.execution_policy,
         daemon_action_execution_blocked_count=action_execution.blocked_count,
+        native_backend_policy=native_backend_preflight.backend_policy,
+        native_backend_blocked_count=(
+            native_backend_preflight.blocked_requirement_count
+        ),
+        native_promotion_allowed=(
+            native_backend_preflight.native_promotion_allowed
+        ),
         cycles=cycles,
         final_state=previous_state,
         host_snapshot=host_snapshot,
         daemon_decision_plan=decision_plan,
         daemon_action_queue=action_queue,
         daemon_action_execution=action_execution,
+        native_backend_preflight=native_backend_preflight,
     )
 
 

@@ -955,6 +955,12 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
         "Daemon action execution blocked: "
         f"{report.daemon_action_execution_blocked_count}"
     )
+    print(f"Native backend policy: {report.native_backend_policy}")
+    print(
+        "Native backend blocked requirements: "
+        f"{report.native_backend_blocked_count}"
+    )
+    print(f"Native promotion allowed: {report.native_promotion_allowed}")
     print(f"Daemon would apply commands: {report.total_would_apply_count}")
     print(f"Daemon would block commands: {report.total_would_block_count}")
     print(f"Daemon guard: {report.execution_guard}")
