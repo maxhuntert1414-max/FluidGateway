@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.46-runtime-daemon-dry-run-loop",
+  "current_stage": "v0.47-host-capability-snapshot",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -16,7 +16,7 @@
     "DEBUGGER": "Reviewer issue was fixed directly by CODER; no separate debugger agent was needed."
   },
   "blockers": [],
-  "review_status": "approved",
+  "review_status": "locally-verified",
   "decisions": [
     {
       "id": "v0.46-scope",
@@ -32,6 +32,11 @@
       "id": "v0.46-path-safety",
       "decision": "Reject daemon --state and --out when they resolve to the same JSON path.",
       "rationale": "State and report writes have different schemas and must not overwrite each other."
+    },
+    {
+      "id": "v0.47-host-capability-snapshot",
+      "decision": "Attach a read-only host capability snapshot to daemon dry-run reports.",
+      "rationale": "A future intelligent manager needs CPU, RAM, GPU, and VRAM context before it can make host-aware scheduling or memory-residency decisions."
     }
   ],
   "quality_gates": [
@@ -41,6 +46,7 @@
     "git diff --check",
     "runtime daemon two-stream smoke",
     "runtime daemon extensionless state smoke",
+    "runtime daemon host snapshot smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

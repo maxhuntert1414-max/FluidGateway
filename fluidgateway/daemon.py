@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .adapter import replay_adapter_event_stream
+from .host import HostCapabilitySnapshot
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.46"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.47"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -70,6 +71,9 @@ class RuntimeDaemonReport:
     operation_events: int
     initial_state_loaded: bool
     initial_state_digest: str | None
+    host_snapshot_loaded: bool
+    host_profile: str | None
+    host_manager_hint: str | None
     final_cycle_count: int
     final_state_digest: str
     total_would_apply_count: int
@@ -79,6 +83,7 @@ class RuntimeDaemonReport:
     final_plan_action: str
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
+    host_snapshot: HostCapabilitySnapshot | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -95,6 +100,9 @@ class RuntimeDaemonReport:
             "operation_events": self.operation_events,
             "initial_state_loaded": self.initial_state_loaded,
             "initial_state_digest": self.initial_state_digest,
+            "host_snapshot_loaded": self.host_snapshot_loaded,
+            "host_profile": self.host_profile,
+            "host_manager_hint": self.host_manager_hint,
             "final_cycle_count": self.final_cycle_count,
             "final_state_digest": self.final_state_digest,
             "total_would_apply_count": self.total_would_apply_count,
@@ -104,6 +112,9 @@ class RuntimeDaemonReport:
             "final_plan_action": self.final_plan_action,
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
+            "host_snapshot": self.host_snapshot.to_dict()
+            if self.host_snapshot is not None
+            else None,
         }
 
 
@@ -111,6 +122,7 @@ def run_runtime_daemon(
     events_paths: Sequence[str | Path],
     iterations: int = 1,
     initial_state: RuntimeStateAccumulator | None = None,
+    host_snapshot: HostCapabilitySnapshot | None = None,
 ) -> RuntimeDaemonReport:
     paths = [Path(path) for path in events_paths]
     if not paths:
@@ -180,6 +192,11 @@ def run_runtime_daemon(
         initial_state_digest=initial_state.state_digest
         if initial_state is not None
         else None,
+        host_snapshot_loaded=host_snapshot is not None,
+        host_profile=host_snapshot.host_profile if host_snapshot is not None else None,
+        host_manager_hint=host_snapshot.manager_hint
+        if host_snapshot is not None
+        else None,
         final_cycle_count=previous_state.cycle_count,
         final_state_digest=previous_state.state_digest,
         total_would_apply_count=sum(cycle.would_apply_count for cycle in cycles),
@@ -191,6 +208,7 @@ def run_runtime_daemon(
         final_plan_action=last_result.runtime_supervisor_plan.plan_action,
         cycles=cycles,
         final_state=previous_state,
+        host_snapshot=host_snapshot,
     )
 
 

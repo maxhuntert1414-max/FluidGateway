@@ -15,6 +15,7 @@ from .client import (
 from .control import FluidGatewayController
 from .daemon import run_runtime_daemon, write_runtime_daemon_report
 from .events import replay_event_stream, write_event_replay
+from .host import collect_host_capability_snapshot
 from .parser import parse_presentmon_csv
 from .report import write_report
 from .report import write_management_plan
@@ -918,10 +919,12 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
     if state_path == output_path_arg:
         raise ValueError("Runtime daemon --state and --out must be different paths.")
     initial_state = load_runtime_state_accumulator(state_path)
+    host_snapshot = collect_host_capability_snapshot()
     report = run_runtime_daemon(
         args.events,
         iterations=args.iterations,
         initial_state=initial_state,
+        host_snapshot=host_snapshot,
     )
     output_path = write_runtime_daemon_report(report, args.out)
     state_output_path = write_runtime_state_accumulator(
@@ -938,6 +941,8 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
     print(f"Daemon final cycle count: {report.final_cycle_count}")
     print(f"Daemon final execution action: {report.final_execution_action}")
     print(f"Daemon final supervisor action: {report.final_supervisor_action}")
+    print(f"Daemon host profile: {report.host_profile}")
+    print(f"Daemon host manager hint: {report.host_manager_hint}")
     print(f"Daemon would apply commands: {report.total_would_apply_count}")
     print(f"Daemon would block commands: {report.total_would_block_count}")
     print(f"Daemon guard: {report.execution_guard}")

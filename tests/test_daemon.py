@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from fluidgateway.daemon import run_runtime_daemon, write_runtime_daemon_report
+from fluidgateway.host import HostGpuCapability, build_host_capability_snapshot
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -25,7 +26,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         first = payload["cycles"][0]
         second = payload["cycles"][1]
 
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.46")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.47")
         self.assertTrue(payload["dry_run"])
         self.assertFalse(payload["would_modify_system"])
         self.assertEqual(payload["execution_guard"], "advisory-only")
@@ -36,6 +37,10 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(payload["operation_events"], 5)
         self.assertFalse(payload["initial_state_loaded"])
         self.assertIsNone(payload["initial_state_digest"])
+        self.assertFalse(payload["host_snapshot_loaded"])
+        self.assertIsNone(payload["host_profile"])
+        self.assertIsNone(payload["host_manager_hint"])
+        self.assertIsNone(payload["host_snapshot"])
         self.assertEqual(payload["final_cycle_count"], 2)
         self.assertEqual(payload["total_would_apply_count"], 10)
         self.assertEqual(payload["total_would_block_count"], 0)
@@ -66,6 +71,43 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(payload["final_state"]["cycle_count"], 2)
         self.assertEqual(payload["final_state"]["profile"], "stable")
         self.assertIn("cycle:2", payload["final_state_digest"])
+
+    def test_runtime_daemon_can_attach_host_capability_snapshot(self):
+        host = build_host_capability_snapshot(
+            os_name="Windows",
+            os_release="11",
+            os_version="test",
+            machine="AMD64",
+            processor="test-cpu",
+            python_version="3.13.0",
+            cpu_logical_count=16,
+            total_ram_mb=32768,
+            available_ram_mb=24576,
+            gpus=[
+                HostGpuCapability(
+                    name="Test GPU",
+                    adapter_ram_mb=8192,
+                    driver_version="1.2.3",
+                    source="test",
+                )
+            ],
+        )
+        report = run_runtime_daemon(
+            [FIXTURES / "adapter_state_query_events.jsonl"],
+            host_snapshot=host,
+        )
+        payload = report.to_dict()
+
+        self.assertTrue(payload["host_snapshot_loaded"])
+        self.assertEqual(payload["host_profile"], "balanced-gaming-host")
+        self.assertEqual(
+            payload["host_manager_hint"],
+            "allow-daemon-supervisor-loop",
+        )
+        self.assertEqual(
+            payload["host_snapshot"]["mode"],
+            "host-capability-snapshot-v0.47",
+        )
 
     def test_runtime_daemon_repeats_last_events_stream_for_iterations(self):
         report = run_runtime_daemon(
@@ -105,7 +147,7 @@ class RuntimeDaemonTests(unittest.TestCase):
             payload = json.loads(written.read_text(encoding="utf-8"))
 
         self.assertEqual(written.suffix, ".json")
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.46")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.47")
         self.assertEqual(payload["cycle_count"], 1)
 
     def test_runtime_run_daemon_cli_writes_report_and_final_state(self):
@@ -140,9 +182,13 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Daemon cycles: 2", result.stdout)
         self.assertIn("Daemon guard: advisory-only", result.stdout)
-        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.46")
+        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.47")
         self.assertEqual(report["cycle_count"], 2)
         self.assertEqual(report["final_cycle_count"], 2)
+        self.assertTrue(report["host_snapshot_loaded"])
+        self.assertIsNotNone(report["host_snapshot"])
+        self.assertIn("Daemon host profile:", result.stdout)
+        self.assertIn("Daemon host manager hint:", result.stdout)
         self.assertEqual(state["cycle_count"], 2)
         self.assertEqual(state["profile"], "stable")
 

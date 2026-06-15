@@ -889,8 +889,9 @@ can replace while keeping the same evidence trail.
 
 ## Runtime Daemon Dry-Run Loop
 
-The v0.46 runtime daemon dry-run loop repeats adapter event streams while
-carrying `runtime_state_accumulator` across cycles:
+The v0.47 runtime daemon dry-run loop repeats adapter event streams while
+carrying `runtime_state_accumulator` across cycles and attaching a read-only
+`host_snapshot`:
 
 ```powershell
 python -m fluidgateway runtime run-daemon `
@@ -914,12 +915,16 @@ The daemon report includes:
 - `execution_guard=advisory-only`;
 - per-cycle transition trend, supervisor action, plan action, execution action,
   apply/block counts, and state digest;
+- host CPU/RAM/GPU/VRAM capability evidence when the local OS exposes it;
+- `host_profile` and `host_manager_hint` for a future manager loop;
 - final accumulated runtime state for the next loop.
 
 This is still a local advisory loop. It does not run as a background service,
 change OS process scheduling, mutate GPU queues, pin RAM/VRAM, inject into a
-game, or touch drivers. It is the first durable loop shape that a future native
-manager can replace behind the same JSON contract.
+game, or touch drivers. Host probing is observational: on Windows it uses
+read-only memory status and video-controller metadata. It is the first durable
+loop shape that a future native manager can replace behind the same JSON
+contract.
 
 ## Supported Input
 

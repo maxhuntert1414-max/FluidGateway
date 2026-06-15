@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.46-runtime-daemon-dry-run-loop",
+  "current_slice": "v0.47-host-capability-snapshot",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -18,6 +18,10 @@
     {
       "decision": "Normalize --state paths before load and write.",
       "rationale": "Extensionless state paths must load the same JSON file they write, and invalid normalized state must fail before report/state writes."
+    },
+    {
+      "decision": "Attach host capability evidence to daemon dry-run reports.",
+      "rationale": "CPU thread count, RAM pressure, GPU presence, and reported VRAM are required context for any future manager that tries to reduce friction across CPU/GPU/RAM/VRAM."
     }
   ],
   "handoffs": [
@@ -45,6 +49,11 @@
       "from": "REVIEWER",
       "to": "META-ORCHESTRATOR",
       "summary": "Approved v0.46 after the normalization fix, daemon regression tests, full unittest, diff check, version check, and CLI smokes."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.47 host capability snapshot, integrated it into run-daemon reports, added host and daemon tests, and verified with unittest plus CLI smoke."
     }
   ],
   "open_issues": [
@@ -55,7 +64,8 @@
     "Added runtime daemon dry-run report with per-cycle transition and supervisor execution evidence.",
     "Added required --state path and rejected state/report path collisions.",
     "Fixed extensionless --state paths so load/write use the same normalized JSON file.",
-    "Added daemon tests for chaining, iterations, CLI output/state, required state, path conflict, normalized state loading, and invalid normalized state failure."
+    "Added daemon tests for chaining, iterations, CLI output/state, required state, path conflict, normalized state loading, and invalid normalized state failure.",
+    "Added host capability snapshot with CPU, RAM, GPU, reported VRAM, host profile, telemetry confidence, and manager hint."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",
