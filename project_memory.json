@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.53-daemon-control-plan",
+  "current_slice": "v0.54-daemon-control-execution",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -46,6 +46,10 @@
     {
       "decision": "Build daemon_control_plan from daemon_arbitration_plan and native_backend_preflight.",
       "rationale": "The gateway needs explicit control intents per telemetry, scheduler, safety, GPU, RAM, and VRAM surface before any native backend is allowed to mutate the host."
+    },
+    {
+      "decision": "Build daemon_control_execution from daemon_control_plan.",
+      "rationale": "The gateway needs dry-run execution outcomes per control surface so read-only/advisory control can proceed while native CPU/GPU/RAM/VRAM mutation remains blocked."
     }
   ],
   "handoffs": [
@@ -108,6 +112,11 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.53 daemon control plan, integrated it into daemon reports and CLI output, added control plan tests, and prepared verification gates."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.54 daemon control execution dry-run, integrated it into daemon reports and CLI output, added control execution tests, and prepared verification gates."
     }
   ],
   "open_issues": [
@@ -125,7 +134,8 @@
     "Added daemon action execution with read-only/advisory dry-run results and native/privileged action blocking.",
     "Added native backend preflight with explicit backend capability requirements, privilege blockers, safety-review blockers, and native promotion held false.",
     "Added daemon arbitration plan with pressure-aware lane ranking across telemetry, memory, GPU, scheduler, and safety.",
-    "Added daemon control plan with advisory control intents for telemetry, scheduler, safety, GPU, RAM, and VRAM surfaces."
+    "Added daemon control plan with advisory control intents for telemetry, scheduler, safety, GPU, RAM, and VRAM surfaces.",
+    "Added daemon control execution with read-only/advisory simulated outcomes and native control-surface blocking."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",

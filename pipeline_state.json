@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.53-daemon-control-plan",
+  "current_stage": "v0.54-daemon-control-execution",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -67,6 +67,11 @@
       "id": "v0.53-daemon-control-plan",
       "decision": "Map arbitrated daemon lanes to advisory control intents for CPU/GPU/RAM/VRAM-related surfaces.",
       "rationale": "The future gateway needs a stable control-surface contract before any native backend can safely alter scheduler, memory residency, GPU queues, or telemetry behavior."
+    },
+    {
+      "id": "v0.54-daemon-control-execution",
+      "decision": "Evaluate daemon control intents through an advisory/read-only dry-run executor.",
+      "rationale": "The manager needs simulated execution results for each control surface before any future native backend can safely apply CPU/GPU/RAM/VRAM changes."
     }
   ],
   "quality_gates": [
@@ -83,6 +88,7 @@
     "runtime native backend preflight smoke",
     "runtime daemon arbitration smoke",
     "runtime daemon control plan smoke",
+    "runtime daemon control execution smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }
