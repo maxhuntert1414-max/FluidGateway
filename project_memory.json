@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.52-daemon-arbitration-plan",
+  "current_slice": "v0.53-daemon-control-plan",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -42,6 +42,10 @@
     {
       "decision": "Build daemon_arbitration_plan from final runtime state, action execution, and native backend preflight.",
       "rationale": "The manager needs pressure-aware lane ordering across telemetry, memory, GPU, scheduler, and safety before a native backend can safely act."
+    },
+    {
+      "decision": "Build daemon_control_plan from daemon_arbitration_plan and native_backend_preflight.",
+      "rationale": "The gateway needs explicit control intents per telemetry, scheduler, safety, GPU, RAM, and VRAM surface before any native backend is allowed to mutate the host."
     }
   ],
   "handoffs": [
@@ -99,6 +103,11 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.52 daemon arbitration plan, integrated it into daemon reports and CLI output, added arbitration tests, and prepared verification gates."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.53 daemon control plan, integrated it into daemon reports and CLI output, added control plan tests, and prepared verification gates."
     }
   ],
   "open_issues": [
@@ -115,7 +124,8 @@
     "Added daemon action queue with backend, dry-run status, native backend requirement, privilege requirement, expected signal, and safety boundary per queued action.",
     "Added daemon action execution with read-only/advisory dry-run results and native/privileged action blocking.",
     "Added native backend preflight with explicit backend capability requirements, privilege blockers, safety-review blockers, and native promotion held false.",
-    "Added daemon arbitration plan with pressure-aware lane ranking across telemetry, memory, GPU, scheduler, and safety."
+    "Added daemon arbitration plan with pressure-aware lane ranking across telemetry, memory, GPU, scheduler, and safety.",
+    "Added daemon control plan with advisory control intents for telemetry, scheduler, safety, GPU, RAM, and VRAM surfaces."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",

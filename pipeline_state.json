@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.52-daemon-arbitration-plan",
+  "current_stage": "v0.53-daemon-control-plan",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -62,6 +62,11 @@
       "id": "v0.52-daemon-arbitration-plan",
       "decision": "Rank daemon decision lanes with pressure-aware advisory arbitration before native control exists.",
       "rationale": "An intelligent gateway needs a deterministic manager layer that chooses between telemetry, memory, GPU, scheduler, and safety lanes using evidence and preflight blockers."
+    },
+    {
+      "id": "v0.53-daemon-control-plan",
+      "decision": "Map arbitrated daemon lanes to advisory control intents for CPU/GPU/RAM/VRAM-related surfaces.",
+      "rationale": "The future gateway needs a stable control-surface contract before any native backend can safely alter scheduler, memory residency, GPU queues, or telemetry behavior."
     }
   ],
   "quality_gates": [
@@ -77,6 +82,7 @@
     "runtime daemon action execution smoke",
     "runtime native backend preflight smoke",
     "runtime daemon arbitration smoke",
+    "runtime daemon control plan smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

@@ -970,6 +970,9 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
         "Daemon arbitration pressure score: "
         f"{report.daemon_arbitration_pressure_score}"
     )
+    print(f"Daemon control policy: {report.daemon_control_policy}")
+    print(f"Daemon control ready intents: {report.daemon_control_ready_count}")
+    print(f"Daemon control blocked intents: {report.daemon_control_blocked_count}")
     print(f"Daemon would apply commands: {report.total_would_apply_count}")
     print(f"Daemon would block commands: {report.total_would_block_count}")
     print(f"Daemon guard: {report.execution_guard}")
