@@ -67,6 +67,13 @@ def daemon_summary_fields() -> tuple[tuple[str, str], ...]:
             "Native backend readiness high risk",
             "native_backend_readiness_high_risk_count",
         ),
+        ("Native backend gate policy", "native_backend_gate_policy"),
+        ("Native backend gate advance", "native_backend_gate_advance_count"),
+        ("Native backend gate blocked", "native_backend_gate_blocked_count"),
+        (
+            "Native backend gate native blocked",
+            "native_backend_gate_native_blocked_count",
+        ),
         ("Daemon would apply commands", "total_would_apply_count"),
         ("Daemon would block commands", "total_would_block_count"),
         ("Daemon guard", "execution_guard"),

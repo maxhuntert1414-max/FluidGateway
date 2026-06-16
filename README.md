@@ -890,13 +890,14 @@ can replace while keeping the same evidence trail.
 
 ## Runtime Daemon Dry-Run Loop
 
-The v0.57 runtime daemon dry-run loop repeats adapter event streams while
+The v0.58 runtime daemon dry-run loop repeats adapter event streams while
 carrying `runtime_state_accumulator` across cycles and attaching a read-only
 `host_snapshot`, a `daemon_decision_plan`, a `daemon_action_queue`, and a
 `daemon_action_execution` report, plus a `native_backend_preflight` contract
 and a `daemon_arbitration_plan`, a `daemon_control_plan`, and a
 `daemon_control_execution` report, followed by a `native_backend_manifest` and
-`native_backend_probe`, then a `native_backend_readiness` assessment:
+`native_backend_probe`, then a `native_backend_readiness` assessment and a
+`native_backend_gate` promotion decision:
 
 ```powershell
 python -m fluidgateway runtime run-daemon `
@@ -955,6 +956,9 @@ The daemon report includes:
   for continued observation/advisory looping, whether more read-only evidence is
   required, or whether native control remains blocked by backend, privilege, and
   safety-review requirements;
+- `native_backend_gate`, which turns readiness into an explicit promotion gate:
+  read-only observation and advisory loops may continue, while native CPU/GPU,
+  RAM, VRAM, scheduler, or host-control promotion remains blocked;
 - final accumulated runtime state for the next loop.
 
 This is still a local advisory loop. It does not run as a background service,
@@ -974,9 +978,10 @@ control; the control execution report shows the simulated outcome; the native
 backend manifest turns that outcome into an explicit load/hold contract for the
 future backend; the native backend probe binds safe surfaces to existing
 evidence; the native backend readiness report converts that evidence into a
-conservative readiness and risk policy. Native promotion remains `false` in
-v0.57. This is the first durable loop shape that a future native manager can
-replace behind the same JSON contract.
+conservative readiness and risk policy; the native backend gate converts that
+policy into an explicit allow/block decision for the next safe loop. Native
+promotion remains `false` in v0.58. This is the first durable loop shape that a
+future native manager can replace behind the same JSON contract.
 
 ## Supported Input
 

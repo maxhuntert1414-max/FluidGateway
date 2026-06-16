@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.57-native-backend-readiness",
+  "current_stage": "v0.58-native-backend-gate",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -87,6 +87,11 @@
       "id": "v0.57-native-backend-readiness",
       "decision": "Assess read-only/advisory probe evidence before any native backend promotion.",
       "rationale": "The gateway needs an explicit readiness and risk policy that separates safe observation from missing evidence and native CPU/GPU/RAM/VRAM control blockers."
+    },
+    {
+      "id": "v0.58-native-backend-gate",
+      "decision": "Gate native backend promotion from readiness evidence.",
+      "rationale": "The gateway needs a promotion decision that can advance safe read-only/advisory loops while keeping native CPU/GPU/RAM/VRAM control blocked until a real backend, privilege model, and safety review exist."
     }
   ],
   "quality_gates": [
@@ -107,6 +112,7 @@
     "runtime native backend manifest smoke",
     "runtime native backend probe smoke",
     "runtime native backend readiness smoke",
+    "runtime native backend gate smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

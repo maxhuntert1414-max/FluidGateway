@@ -26,7 +26,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         first = payload["cycles"][0]
         second = payload["cycles"][1]
 
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.57")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.58")
         self.assertTrue(payload["dry_run"])
         self.assertFalse(payload["would_modify_system"])
         self.assertEqual(payload["execution_guard"], "advisory-only")
@@ -90,6 +90,13 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(payload["native_backend_readiness_ready_count"], 0)
         self.assertEqual(payload["native_backend_readiness_blocked_count"], 0)
         self.assertEqual(payload["native_backend_readiness_high_risk_count"], 0)
+        self.assertEqual(
+            payload["native_backend_gate_policy"],
+            "collect-evidence-before-promotion",
+        )
+        self.assertEqual(payload["native_backend_gate_advance_count"], 0)
+        self.assertEqual(payload["native_backend_gate_blocked_count"], 1)
+        self.assertEqual(payload["native_backend_gate_native_blocked_count"], 0)
         self.assertEqual(payload["final_cycle_count"], 2)
         self.assertEqual(payload["total_would_apply_count"], 10)
         self.assertEqual(payload["total_would_block_count"], 0)
@@ -200,6 +207,14 @@ class RuntimeDaemonTests(unittest.TestCase):
             payload["native_backend_readiness"]["readiness_policy"],
             "collect-readonly-evidence",
         )
+        self.assertEqual(
+            payload["native_backend_gate"]["mode"],
+            "runtime-native-backend-gate-v0.58",
+        )
+        self.assertEqual(
+            payload["native_backend_gate"]["gate_policy"],
+            "collect-evidence-before-promotion",
+        )
 
     def test_runtime_daemon_can_attach_host_capability_snapshot(self):
         host = build_host_capability_snapshot(
@@ -285,6 +300,13 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(payload["native_backend_readiness_ready_count"], 1)
         self.assertEqual(payload["native_backend_readiness_blocked_count"], 0)
         self.assertEqual(payload["native_backend_readiness_high_risk_count"], 0)
+        self.assertEqual(
+            payload["native_backend_gate_policy"],
+            "advance-advisory-loop",
+        )
+        self.assertEqual(payload["native_backend_gate_advance_count"], 1)
+        self.assertEqual(payload["native_backend_gate_blocked_count"], 0)
+        self.assertEqual(payload["native_backend_gate_native_blocked_count"], 0)
 
     def test_runtime_daemon_repeats_last_events_stream_for_iterations(self):
         report = run_runtime_daemon(
@@ -324,7 +346,7 @@ class RuntimeDaemonTests(unittest.TestCase):
             payload = json.loads(written.read_text(encoding="utf-8"))
 
         self.assertEqual(written.suffix, ".json")
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.57")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.58")
         self.assertEqual(payload["cycle_count"], 1)
 
     def test_runtime_run_daemon_cli_writes_report_and_final_state(self):
@@ -359,7 +381,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Daemon cycles: 2", result.stdout)
         self.assertIn("Daemon guard: advisory-only", result.stdout)
-        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.57")
+        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.58")
         self.assertEqual(report["cycle_count"], 2)
         self.assertEqual(report["final_cycle_count"], 2)
         self.assertTrue(report["host_snapshot_loaded"])
@@ -374,6 +396,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertIn("native_backend_manifest", report)
         self.assertIn("native_backend_probe", report)
         self.assertIn("native_backend_readiness", report)
+        self.assertIn("native_backend_gate", report)
         self.assertIn("Daemon action queue policy:", result.stdout)
         self.assertIn("Daemon action blocked commands:", result.stdout)
         self.assertIn("Daemon action execution policy:", result.stdout)
@@ -400,6 +423,10 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertIn("Native backend readiness ready:", result.stdout)
         self.assertIn("Native backend readiness blocked:", result.stdout)
         self.assertIn("Native backend readiness high risk:", result.stdout)
+        self.assertIn("Native backend gate policy:", result.stdout)
+        self.assertIn("Native backend gate advance:", result.stdout)
+        self.assertIn("Native backend gate blocked:", result.stdout)
+        self.assertIn("Native backend gate native blocked:", result.stdout)
         self.assertIn("Daemon decision action:", result.stdout)
         self.assertIn("Daemon decision risk:", result.stdout)
         self.assertIn("Daemon host profile:", result.stdout)

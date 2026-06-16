@@ -43,6 +43,10 @@ from .native_backend_probe import (
     RuntimeNativeBackendProbeReport,
     run_runtime_native_backend_probe,
 )
+from .native_backend_gate import (
+    RuntimeNativeBackendGate,
+    build_runtime_native_backend_gate,
+)
 from .native_backend_readiness import (
     RuntimeNativeBackendReadinessReport,
     assess_runtime_native_backend_readiness,
@@ -50,7 +54,7 @@ from .native_backend_readiness import (
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.57"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.58"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -149,6 +153,10 @@ class RuntimeDaemonReport:
     native_backend_readiness_ready_count: int
     native_backend_readiness_blocked_count: int
     native_backend_readiness_high_risk_count: int
+    native_backend_gate_policy: str
+    native_backend_gate_advance_count: int
+    native_backend_gate_blocked_count: int
+    native_backend_gate_native_blocked_count: int
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
     host_snapshot: HostCapabilitySnapshot | None
@@ -162,6 +170,7 @@ class RuntimeDaemonReport:
     native_backend_manifest: RuntimeNativeBackendManifest
     native_backend_probe: RuntimeNativeBackendProbeReport
     native_backend_readiness: RuntimeNativeBackendReadinessReport
+    native_backend_gate: RuntimeNativeBackendGate
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -248,6 +257,16 @@ class RuntimeDaemonReport:
             "native_backend_readiness_high_risk_count": (
                 self.native_backend_readiness_high_risk_count
             ),
+            "native_backend_gate_policy": self.native_backend_gate_policy,
+            "native_backend_gate_advance_count": (
+                self.native_backend_gate_advance_count
+            ),
+            "native_backend_gate_blocked_count": (
+                self.native_backend_gate_blocked_count
+            ),
+            "native_backend_gate_native_blocked_count": (
+                self.native_backend_gate_native_blocked_count
+            ),
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
             "host_snapshot": self.host_snapshot.to_dict()
@@ -265,6 +284,7 @@ class RuntimeDaemonReport:
             "native_backend_manifest": self.native_backend_manifest.to_dict(),
             "native_backend_probe": self.native_backend_probe.to_dict(),
             "native_backend_readiness": self.native_backend_readiness.to_dict(),
+            "native_backend_gate": self.native_backend_gate.to_dict(),
         }
 
 
@@ -372,6 +392,9 @@ def run_runtime_daemon(
     native_backend_readiness = assess_runtime_native_backend_readiness(
         native_backend_probe,
     )
+    native_backend_gate = build_runtime_native_backend_gate(
+        native_backend_readiness,
+    )
 
     return RuntimeDaemonReport(
         mode=DAEMON_MODE,
@@ -450,6 +473,12 @@ def run_runtime_daemon(
         native_backend_readiness_high_risk_count=(
             native_backend_readiness.high_risk_count
         ),
+        native_backend_gate_policy=native_backend_gate.gate_policy,
+        native_backend_gate_advance_count=native_backend_gate.advance_count,
+        native_backend_gate_blocked_count=native_backend_gate.blocked_count,
+        native_backend_gate_native_blocked_count=(
+            native_backend_gate.native_blocked_count
+        ),
         cycles=cycles,
         final_state=previous_state,
         host_snapshot=host_snapshot,
@@ -463,6 +492,7 @@ def run_runtime_daemon(
         native_backend_manifest=native_backend_manifest,
         native_backend_probe=native_backend_probe,
         native_backend_readiness=native_backend_readiness,
+        native_backend_gate=native_backend_gate,
     )
 
 
