@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.59-presentmon-runtime-ingest",
+  "current_stage": "v0.60-presentmon-daemon-runner",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -97,6 +97,11 @@
       "id": "v0.59-presentmon-runtime-ingest",
       "decision": "Convert PresentMon management signals into daemon-consumable runtime adapter events.",
       "rationale": "The gateway needs a measured path from frame diagnostics into the persistent manager loop so real traces can drive advisory CPU/GPU/RAM/VRAM arbitration before native control exists."
+    },
+    {
+      "id": "v0.60-presentmon-daemon-runner",
+      "decision": "Run a PresentMon trace directly through runtime ingest and the daemon loop while preserving the generated event stream.",
+      "rationale": "The gateway needs an operational path from measured CSV traces to persistent manager decisions without manual multi-command stitching, while retaining JSONL evidence for audit and replay."
     }
   ],
   "quality_gates": [
@@ -119,6 +124,7 @@
     "runtime native backend readiness smoke",
     "runtime native backend gate smoke",
     "runtime presentmon ingest smoke",
+    "runtime presentmon daemon runner smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

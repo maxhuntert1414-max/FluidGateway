@@ -22,6 +22,7 @@ from .presentmon_runtime import (
     build_presentmon_runtime_event_stream,
     write_presentmon_runtime_events,
 )
+from .presentmon_daemon import run_presentmon_daemon
 from .report import write_report
 from .report import write_management_plan
 from .runtime import RuntimeManifest, load_manifest, optimize_manifest, write_runtime_plan
@@ -180,6 +181,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the generated FluidGateway adapter JSONL stream.",
     )
     ingest.set_defaults(func=run_runtime_ingest_presentmon)
+    presentmon_daemon = runtime_subparsers.add_parser(
+        "run-presentmon-daemon",
+        help="Analyze a PresentMon CSV and feed it directly into the runtime daemon.",
+    )
+    presentmon_daemon.add_argument(
+        "--presentmon",
+        required=True,
+        help="Path to a PresentMon 2.x CSV trace.",
+    )
+    presentmon_daemon.add_argument(
+        "--events-out",
+        required=True,
+        help="Path to write the generated adapter JSONL event stream.",
+    )
+    presentmon_daemon.add_argument(
+        "--state",
+        required=True,
+        help=(
+            "runtime_state_accumulator JSON path to load before the daemon "
+            "loop and overwrite with the final daemon state."
+        ),
+    )
+    presentmon_daemon.add_argument(
+        "--out",
+        required=True,
+        help="Path to the runtime daemon dry-run JSON report.",
+    )
+    presentmon_daemon.set_defaults(func=run_runtime_run_presentmon_daemon)
     send = runtime_subparsers.add_parser(
         "send-events",
         help="Send a JSONL runtime event stream to a running decision server.",
@@ -411,6 +440,46 @@ def run_runtime_ingest_presentmon(args: argparse.Namespace) -> int:
     print(f"Adapter events: {stream.event_count}")
     print(f"Runtime operations: {stream.operation_event_count}")
     print(f"Target frame budget ms: {stream.target_frame_ms:.4f}")
+    return 0
+
+
+def run_runtime_run_presentmon_daemon(args: argparse.Namespace) -> int:
+    state_path = normalized_json_path(args.state)
+    report_path = normalized_json_path(args.out)
+    events_path = normalized_jsonl_path(args.events_out)
+    if state_path == report_path:
+        raise ValueError(
+            "PresentMon daemon --state and --out must be different paths."
+        )
+    if events_path in {state_path, report_path}:
+        raise ValueError(
+            "PresentMon daemon --events-out must be different from --state and --out."
+        )
+    initial_state = load_runtime_state_accumulator(state_path)
+    host_snapshot = collect_host_capability_snapshot()
+    result = run_presentmon_daemon(
+        presentmon_path=args.presentmon,
+        events_output_path=events_path,
+        initial_state=initial_state,
+        host_snapshot=host_snapshot,
+    )
+    output_path = write_runtime_daemon_report(result.report, report_path)
+    state_output_path = write_runtime_state_accumulator(
+        result.report.final_state,
+        state_path,
+    )
+
+    print(f"FluidGateway PresentMon runtime events written: {result.events_path}")
+    print(f"PresentMon application: {result.event_stream.application}")
+    print(f"PresentMon findings: {result.event_stream.finding_count}")
+    print(f"PresentMon management actions: {result.event_stream.management_action_count}")
+    print(f"PresentMon adapter events: {result.event_stream.event_count}")
+    print_runtime_daemon_summary(
+        report=result.report,
+        output_path=output_path,
+        state_output_path=state_output_path,
+        initial_state=initial_state,
+    )
     return 0
 
 
@@ -980,6 +1049,13 @@ def normalized_json_path(value: str) -> Path:
     path = Path(value)
     if path.suffix.lower() != ".json":
         path = path.with_suffix(".json")
+    return path.resolve()
+
+
+def normalized_jsonl_path(value: str) -> Path:
+    path = Path(value)
+    if path.suffix.lower() != ".jsonl":
+        path = path.with_suffix(".jsonl")
     return path.resolve()
 
 

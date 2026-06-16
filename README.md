@@ -56,6 +56,7 @@ python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-p
 python -m fluidgateway runtime simulate-control --manifest pipeline.json --out control-snapshot.json
 python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out event-replay.json
 python -m fluidgateway runtime ingest-presentmon --presentmon trace.csv --out presentmon-events.jsonl
+python -m fluidgateway runtime run-presentmon-daemon --presentmon trace.csv --events-out presentmon-events.jsonl --state runtime-state.json --out runtime-daemon.json
 python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
 python -m fluidgateway runtime send-events --events runtime-events.jsonl --host 127.0.0.1 --port 8765 --out server-responses.json
 python -m fluidgateway runtime run-adapter --events adapter-events.jsonl --out adapter-session.json
@@ -98,6 +99,17 @@ python -m fluidgateway runtime ingest-presentmon `
 
 python -m fluidgateway runtime run-daemon `
   --events presentmon-events.jsonl `
+  --state runtime-state.json `
+  --out runtime-daemon.json
+```
+
+The v0.60 `runtime run-presentmon-daemon` command does the same bridge and the
+daemon pass in one step while still preserving the generated JSONL as evidence:
+
+```powershell
+python -m fluidgateway runtime run-presentmon-daemon `
+  --presentmon trace.csv `
+  --events-out presentmon-events.jsonl `
   --state runtime-state.json `
   --out runtime-daemon.json
 ```

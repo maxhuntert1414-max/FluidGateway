@@ -1,3 +1,3 @@
 """FluidGateway diagnostic engine."""
 
-__version__ = "0.59.0"
+__version__ = "0.60.0"
