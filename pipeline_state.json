@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.58-native-backend-gate",
+  "current_stage": "v0.59-presentmon-runtime-ingest",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -92,6 +92,11 @@
       "id": "v0.58-native-backend-gate",
       "decision": "Gate native backend promotion from readiness evidence.",
       "rationale": "The gateway needs a promotion decision that can advance safe read-only/advisory loops while keeping native CPU/GPU/RAM/VRAM control blocked until a real backend, privilege model, and safety review exist."
+    },
+    {
+      "id": "v0.59-presentmon-runtime-ingest",
+      "decision": "Convert PresentMon management signals into daemon-consumable runtime adapter events.",
+      "rationale": "The gateway needs a measured path from frame diagnostics into the persistent manager loop so real traces can drive advisory CPU/GPU/RAM/VRAM arbitration before native control exists."
     }
   ],
   "quality_gates": [
@@ -113,6 +118,7 @@
     "runtime native backend probe smoke",
     "runtime native backend readiness smoke",
     "runtime native backend gate smoke",
+    "runtime presentmon ingest smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

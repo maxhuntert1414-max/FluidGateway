@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.58-native-backend-gate",
+  "current_slice": "v0.59-presentmon-runtime-ingest",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -66,6 +66,10 @@
     {
       "decision": "Build native_backend_gate from native_backend_readiness.",
       "rationale": "The gateway needs an explicit promotion gate that advances safe read-only/advisory paths while blocking native CPU/GPU/RAM/VRAM control until a real backend and safety review exist."
+    },
+    {
+      "decision": "Build presentmon_runtime ingest from advisory management actions.",
+      "rationale": "The gateway needs real PresentMon diagnostics to feed the runtime adapter and daemon loop, otherwise the manager remains disconnected from measured frame-path waste."
     }
   ],
   "handoffs": [
@@ -153,12 +157,17 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.58 native backend gate, integrated it into daemon reports and CLI output, added gate tests, and prepared verification gates."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.59 PresentMon runtime ingest, added CLI bridge from CSV diagnostics to adapter JSONL, added daemon-consumption tests, and prepared verification gates."
     }
   ],
   "open_issues": [
     "fluidgateway/cli.py is large and should be split by command family in a future hygiene slice.",
     "Native execution requires a future safety review before any process, driver, game, RAM, or VRAM mutation.",
-    "A concrete native/control backend is still missing; v0.58 only gates safe read-only/advisory evidence and blocks native/control backend promotion."
+    "A concrete native/control backend is still missing; v0.59 can feed measured PresentMon-derived events into the manager, but native/control backend promotion remains blocked."
   ],
   "resolved_issues": [
     "Added runtime daemon dry-run report with per-cycle transition and supervisor execution evidence.",
@@ -176,7 +185,8 @@
     "Added native backend manifest with read-only/advisory ready entries and native RAM/VRAM backend load blockers.",
     "Added native backend probe with host snapshot signal binding and native RAM/VRAM probe blockers.",
     "Added native backend readiness with evidence scoring, risk classification, and native promotion held false.",
-    "Added native backend gate with safe read-only/advisory advancement and native CPU/GPU/RAM/VRAM promotion blocked."
+    "Added native backend gate with safe read-only/advisory advancement and native CPU/GPU/RAM/VRAM promotion blocked.",
+    "Added PresentMon runtime ingest so diagnostic management actions can become daemon-consumable adapter JSONL events."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",

@@ -18,6 +18,10 @@ from .daemon_cli import print_runtime_daemon_summary
 from .events import replay_event_stream, write_event_replay
 from .host import collect_host_capability_snapshot
 from .parser import parse_presentmon_csv
+from .presentmon_runtime import (
+    build_presentmon_runtime_event_stream,
+    write_presentmon_runtime_events,
+)
 from .report import write_report
 from .report import write_management_plan
 from .runtime import RuntimeManifest, load_manifest, optimize_manifest, write_runtime_plan
@@ -161,6 +165,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the event replay JSON output.",
     )
     replay.set_defaults(func=run_runtime_replay_events)
+    ingest = runtime_subparsers.add_parser(
+        "ingest-presentmon",
+        help="Convert a PresentMon CSV analysis into runtime adapter JSONL events.",
+    )
+    ingest.add_argument(
+        "--presentmon",
+        required=True,
+        help="Path to a PresentMon 2.x CSV trace.",
+    )
+    ingest.add_argument(
+        "--out",
+        required=True,
+        help="Path to the generated FluidGateway adapter JSONL stream.",
+    )
+    ingest.set_defaults(func=run_runtime_ingest_presentmon)
     send = runtime_subparsers.add_parser(
         "send-events",
         help="Send a JSONL runtime event stream to a running decision server.",
@@ -377,6 +396,21 @@ def run_runtime_replay_events(args: argparse.Namespace) -> int:
     print(f"Decisions: {len(snapshot['decisions'])}")
     print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
     print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
+    return 0
+
+
+def run_runtime_ingest_presentmon(args: argparse.Namespace) -> int:
+    trace = parse_presentmon_csv(args.presentmon)
+    report = analyze_trace(trace)
+    stream = build_presentmon_runtime_event_stream(report)
+    output_path = write_presentmon_runtime_events(stream, args.out)
+    print(f"FluidGateway PresentMon runtime events written: {output_path}")
+    print(f"Application: {stream.application}")
+    print(f"Findings: {stream.finding_count}")
+    print(f"Management actions: {stream.management_action_count}")
+    print(f"Adapter events: {stream.event_count}")
+    print(f"Runtime operations: {stream.operation_event_count}")
+    print(f"Target frame budget ms: {stream.target_frame_ms:.4f}")
     return 0
 
 

@@ -55,6 +55,7 @@ python -m fluidgateway history
 python -m fluidgateway runtime optimize --manifest pipeline.json --out runtime-plan.json
 python -m fluidgateway runtime simulate-control --manifest pipeline.json --out control-snapshot.json
 python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out event-replay.json
+python -m fluidgateway runtime ingest-presentmon --presentmon trace.csv --out presentmon-events.jsonl
 python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
 python -m fluidgateway runtime send-events --events runtime-events.jsonl --host 127.0.0.1 --port 8765 --out server-responses.json
 python -m fluidgateway runtime run-adapter --events adapter-events.jsonl --out adapter-session.json
@@ -66,6 +67,8 @@ The command writes:
 - `report.html`: human-readable diagnostic report.
 - `report.json`: structured report data next to the HTML file.
 - `management.json`: advisory management plan when using `manage`.
+- `presentmon-events.jsonl`: synthetic runtime adapter events when using
+  `runtime ingest-presentmon`.
 - `.fluidgateway/traces.json`: local trace registry when using `track`.
 
 ## Trace Tracking
@@ -82,6 +85,29 @@ This registry is the first dataset layer for the future intelligent gateway. It
 lets FluidGateway compare repeated runs, identify recurring waste patterns, and
 prepare for deeper telemetry sources such as RAM/VRAM residency, texture upload
 timing, staging buffer reuse, and API-level synchronization events.
+
+## PresentMon Runtime Ingest
+
+The v0.59 `runtime ingest-presentmon` command converts a PresentMon analysis
+into a FluidGateway adapter JSONL stream:
+
+```powershell
+python -m fluidgateway runtime ingest-presentmon `
+  --presentmon trace.csv `
+  --out presentmon-events.jsonl
+
+python -m fluidgateway runtime run-daemon `
+  --events presentmon-events.jsonl `
+  --state runtime-state.json `
+  --out runtime-daemon.json
+```
+
+This is the first bridge from measured frame-path symptoms into the persistent
+runtime manager loop. It maps advisory management actions to synthetic adapter
+events with frame budgets, resource pressure, queue pressure, and evidence
+metadata. The generated stream is still inferred from PresentMon: it does not
+prove internal engine cause, inspect real textures/buffers, or mutate RAM, VRAM,
+GPU queues, drivers, games, or OS scheduling.
 
 ## Runtime Optimizer Prototype
 
