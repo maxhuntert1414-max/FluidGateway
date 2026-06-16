@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.54-daemon-control-execution",
+  "current_stage": "v0.55-native-backend-manifest",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -72,6 +72,11 @@
       "id": "v0.54-daemon-control-execution",
       "decision": "Evaluate daemon control intents through an advisory/read-only dry-run executor.",
       "rationale": "The manager needs simulated execution results for each control surface before any future native backend can safely apply CPU/GPU/RAM/VRAM changes."
+    },
+    {
+      "id": "v0.55-native-backend-manifest",
+      "decision": "Declare the backend load contract for every daemon control execution step.",
+      "rationale": "A future native manager needs a stable manifest that separates read-only/advisory-ready surfaces from RAM/VRAM/GPU/native surfaces blocked by backend, privilege, and safety-review requirements."
     }
   ],
   "quality_gates": [
@@ -89,6 +94,7 @@
     "runtime daemon arbitration smoke",
     "runtime daemon control plan smoke",
     "runtime daemon control execution smoke",
+    "runtime native backend manifest smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

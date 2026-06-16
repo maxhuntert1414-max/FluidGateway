@@ -14,6 +14,7 @@ from .client import (
 )
 from .control import FluidGatewayController
 from .daemon import run_runtime_daemon, write_runtime_daemon_report
+from .daemon_cli import print_runtime_daemon_summary
 from .events import replay_event_stream, write_event_replay
 from .host import collect_host_capability_snapshot
 from .parser import parse_presentmon_csv
@@ -932,53 +933,12 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
         state_path,
     )
 
-    print(f"FluidGateway runtime daemon dry-run written: {output_path}")
-    if initial_state is not None:
-        print(f"Runtime daemon previous state cycles: {initial_state.cycle_count}")
-    print(f"Runtime daemon state written: {state_output_path}")
-    print(f"Daemon cycles: {report.cycle_count}")
-    print(f"Daemon event streams: {report.events_stream_count}")
-    print(f"Daemon final cycle count: {report.final_cycle_count}")
-    print(f"Daemon final execution action: {report.final_execution_action}")
-    print(f"Daemon final supervisor action: {report.final_supervisor_action}")
-    print(f"Daemon host profile: {report.host_profile}")
-    print(f"Daemon host manager hint: {report.host_manager_hint}")
-    print(f"Daemon decision action: {report.daemon_decision_action}")
-    print(f"Daemon decision risk: {report.daemon_decision_risk_level}")
-    print(f"Daemon action queue policy: {report.daemon_action_queue_policy}")
-    print(f"Daemon action blocked commands: {report.daemon_action_blocked_count}")
-    print(
-        "Daemon action execution policy: "
-        f"{report.daemon_action_execution_policy}"
+    print_runtime_daemon_summary(
+        report=report,
+        output_path=output_path,
+        state_output_path=state_output_path,
+        initial_state=initial_state,
     )
-    print(
-        "Daemon action execution blocked: "
-        f"{report.daemon_action_execution_blocked_count}"
-    )
-    print(f"Native backend policy: {report.native_backend_policy}")
-    print(
-        "Native backend blocked requirements: "
-        f"{report.native_backend_blocked_count}"
-    )
-    print(f"Native promotion allowed: {report.native_promotion_allowed}")
-    print(f"Daemon arbitration policy: {report.daemon_arbitration_policy}")
-    print(
-        "Daemon arbitration blocked lanes: "
-        f"{report.daemon_arbitration_blocked_count}"
-    )
-    print(
-        "Daemon arbitration pressure score: "
-        f"{report.daemon_arbitration_pressure_score}"
-    )
-    print(f"Daemon control policy: {report.daemon_control_policy}")
-    print(f"Daemon control ready intents: {report.daemon_control_ready_count}")
-    print(f"Daemon control blocked intents: {report.daemon_control_blocked_count}")
-    print("Daemon control execution policy:", report.daemon_control_execution_policy)
-    print("Daemon control execution executed:", report.daemon_control_execution_executed_count)
-    print("Daemon control execution blocked:", report.daemon_control_execution_blocked_count)
-    print(f"Daemon would apply commands: {report.total_would_apply_count}")
-    print(f"Daemon would block commands: {report.total_would_block_count}")
-    print(f"Daemon guard: {report.execution_guard}")
     return 0
 
 

@@ -58,6 +58,7 @@ python -m fluidgateway runtime replay-events --events runtime-events.jsonl --out
 python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
 python -m fluidgateway runtime send-events --events runtime-events.jsonl --host 127.0.0.1 --port 8765 --out server-responses.json
 python -m fluidgateway runtime run-adapter --events adapter-events.jsonl --out adapter-session.json
+python -m fluidgateway runtime run-daemon --events adapter-events.jsonl --state runtime-state.json --out runtime-daemon.json
 ```
 
 The command writes:
@@ -889,12 +890,12 @@ can replace while keeping the same evidence trail.
 
 ## Runtime Daemon Dry-Run Loop
 
-The v0.54 runtime daemon dry-run loop repeats adapter event streams while
+The v0.55 runtime daemon dry-run loop repeats adapter event streams while
 carrying `runtime_state_accumulator` across cycles and attaching a read-only
 `host_snapshot`, a `daemon_decision_plan`, a `daemon_action_queue`, and a
 `daemon_action_execution` report, plus a `native_backend_preflight` contract
 and a `daemon_arbitration_plan`, a `daemon_control_plan`, and a
-`daemon_control_execution` report:
+`daemon_control_execution` report, followed by a `native_backend_manifest`:
 
 ```powershell
 python -m fluidgateway runtime run-daemon `
@@ -942,6 +943,10 @@ The daemon report includes:
 - `daemon_control_execution`, which evaluates those control intents in dry-run:
   read-only and advisory surfaces are executed as simulated control steps,
   while native control surfaces remain blocked before host mutation;
+- `native_backend_manifest`, which declares which backend surface would satisfy
+  each control execution step, whether the backend is read-only/advisory/native,
+  whether it is loaded or held, and which privilege, safety-review, or native
+  backend blockers still prevent promotion;
 - final accumulated runtime state for the next loop.
 
 This is still a local advisory loop. It does not run as a background service,
@@ -957,9 +962,11 @@ VRAM, or privileged host control is explicitly blocked before system mutation
 and annotated with the missing backend requirements. The arbitration plan
 decides which lane should advance first under the advisory guard; the control
 plan maps that lane to the actual system surface a future backend would need to
-control; the control execution report shows the simulated outcome. Native
-promotion remains `false` in v0.54. This is the first durable loop shape that a
-future native manager can replace behind the same JSON contract.
+control; the control execution report shows the simulated outcome; the native
+backend manifest turns that outcome into an explicit load/hold contract for the
+future backend. Native promotion remains `false` in v0.55. This is the first
+durable loop shape that a future native manager can replace behind the same JSON
+contract.
 
 ## Supported Input
 
