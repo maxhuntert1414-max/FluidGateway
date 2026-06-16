@@ -57,6 +57,16 @@ def daemon_summary_fields() -> tuple[tuple[str, str], ...]:
         ("Native backend probe policy", "native_backend_probe_policy"),
         ("Native backend probe probed", "native_backend_probe_probed_count"),
         ("Native backend probe blocked", "native_backend_probe_blocked_count"),
+        ("Native backend readiness policy", "native_backend_readiness_policy"),
+        ("Native backend readiness ready", "native_backend_readiness_ready_count"),
+        (
+            "Native backend readiness blocked",
+            "native_backend_readiness_blocked_count",
+        ),
+        (
+            "Native backend readiness high risk",
+            "native_backend_readiness_high_risk_count",
+        ),
         ("Daemon would apply commands", "total_would_apply_count"),
         ("Daemon would block commands", "total_would_block_count"),
         ("Daemon guard", "execution_guard"),

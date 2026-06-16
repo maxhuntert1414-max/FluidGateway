@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.56-native-backend-probe",
+  "current_stage": "v0.57-native-backend-readiness",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -82,6 +82,11 @@
       "id": "v0.56-native-backend-probe",
       "decision": "Execute manifest-approved read-only/advisory probes against existing daemon and host evidence.",
       "rationale": "The gateway needs a concrete proof path from backend contract to CPU/RAM/GPU/VRAM signals while native or privileged host control remains blocked."
+    },
+    {
+      "id": "v0.57-native-backend-readiness",
+      "decision": "Assess read-only/advisory probe evidence before any native backend promotion.",
+      "rationale": "The gateway needs an explicit readiness and risk policy that separates safe observation from missing evidence and native CPU/GPU/RAM/VRAM control blockers."
     }
   ],
   "quality_gates": [
@@ -101,6 +106,7 @@
     "runtime daemon control execution smoke",
     "runtime native backend manifest smoke",
     "runtime native backend probe smoke",
+    "runtime native backend readiness smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }
