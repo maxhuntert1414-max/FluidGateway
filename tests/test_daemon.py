@@ -26,7 +26,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         first = payload["cycles"][0]
         second = payload["cycles"][1]
 
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.55")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.56")
         self.assertTrue(payload["dry_run"])
         self.assertFalse(payload["would_modify_system"])
         self.assertEqual(payload["execution_guard"], "advisory-only")
@@ -77,6 +77,12 @@ class RuntimeDaemonTests(unittest.TestCase):
         )
         self.assertEqual(payload["native_backend_manifest_ready_count"], 1)
         self.assertEqual(payload["native_backend_manifest_blocked_count"], 0)
+        self.assertEqual(
+            payload["native_backend_probe_policy"],
+            "hold-readonly-probe-for-host-snapshot",
+        )
+        self.assertEqual(payload["native_backend_probe_probed_count"], 0)
+        self.assertEqual(payload["native_backend_probe_blocked_count"], 1)
         self.assertEqual(payload["final_cycle_count"], 2)
         self.assertEqual(payload["total_would_apply_count"], 10)
         self.assertEqual(payload["total_would_block_count"], 0)
@@ -171,6 +177,14 @@ class RuntimeDaemonTests(unittest.TestCase):
             payload["native_backend_manifest"]["manifest_policy"],
             "readonly-probe-ready",
         )
+        self.assertEqual(
+            payload["native_backend_probe"]["mode"],
+            "runtime-native-backend-probe-v0.56",
+        )
+        self.assertEqual(
+            payload["native_backend_probe"]["probe_policy"],
+            "hold-readonly-probe-for-host-snapshot",
+        )
 
     def test_runtime_daemon_can_attach_host_capability_snapshot(self):
         host = build_host_capability_snapshot(
@@ -243,6 +257,12 @@ class RuntimeDaemonTests(unittest.TestCase):
         )
         self.assertEqual(payload["native_backend_manifest_ready_count"], 1)
         self.assertEqual(payload["native_backend_manifest_blocked_count"], 0)
+        self.assertEqual(
+            payload["native_backend_probe_policy"],
+            "advisory-probe-executed",
+        )
+        self.assertEqual(payload["native_backend_probe_probed_count"], 1)
+        self.assertEqual(payload["native_backend_probe_blocked_count"], 0)
 
     def test_runtime_daemon_repeats_last_events_stream_for_iterations(self):
         report = run_runtime_daemon(
@@ -282,7 +302,7 @@ class RuntimeDaemonTests(unittest.TestCase):
             payload = json.loads(written.read_text(encoding="utf-8"))
 
         self.assertEqual(written.suffix, ".json")
-        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.55")
+        self.assertEqual(payload["mode"], "runtime-daemon-dry-run-v0.56")
         self.assertEqual(payload["cycle_count"], 1)
 
     def test_runtime_run_daemon_cli_writes_report_and_final_state(self):
@@ -317,7 +337,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Daemon cycles: 2", result.stdout)
         self.assertIn("Daemon guard: advisory-only", result.stdout)
-        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.55")
+        self.assertEqual(report["mode"], "runtime-daemon-dry-run-v0.56")
         self.assertEqual(report["cycle_count"], 2)
         self.assertEqual(report["final_cycle_count"], 2)
         self.assertTrue(report["host_snapshot_loaded"])
@@ -330,6 +350,7 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertIn("daemon_control_plan", report)
         self.assertIn("daemon_control_execution", report)
         self.assertIn("native_backend_manifest", report)
+        self.assertIn("native_backend_probe", report)
         self.assertIn("Daemon action queue policy:", result.stdout)
         self.assertIn("Daemon action blocked commands:", result.stdout)
         self.assertIn("Daemon action execution policy:", result.stdout)
@@ -349,6 +370,9 @@ class RuntimeDaemonTests(unittest.TestCase):
         self.assertIn("Native backend manifest policy:", result.stdout)
         self.assertIn("Native backend manifest ready:", result.stdout)
         self.assertIn("Native backend manifest blocked:", result.stdout)
+        self.assertIn("Native backend probe policy:", result.stdout)
+        self.assertIn("Native backend probe probed:", result.stdout)
+        self.assertIn("Native backend probe blocked:", result.stdout)
         self.assertIn("Daemon decision action:", result.stdout)
         self.assertIn("Daemon decision risk:", result.stdout)
         self.assertIn("Daemon host profile:", result.stdout)

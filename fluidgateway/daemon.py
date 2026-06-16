@@ -39,10 +39,14 @@ from .native_backend_manifest import (
     RuntimeNativeBackendManifest,
     build_runtime_native_backend_manifest,
 )
+from .native_backend_probe import (
+    RuntimeNativeBackendProbeReport,
+    run_runtime_native_backend_probe,
+)
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.55"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.56"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -134,6 +138,9 @@ class RuntimeDaemonReport:
     native_backend_manifest_policy: str
     native_backend_manifest_ready_count: int
     native_backend_manifest_blocked_count: int
+    native_backend_probe_policy: str
+    native_backend_probe_probed_count: int
+    native_backend_probe_blocked_count: int
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
     host_snapshot: HostCapabilitySnapshot | None
@@ -145,6 +152,7 @@ class RuntimeDaemonReport:
     daemon_control_plan: RuntimeDaemonControlPlan
     daemon_control_execution: RuntimeDaemonControlExecution
     native_backend_manifest: RuntimeNativeBackendManifest
+    native_backend_probe: RuntimeNativeBackendProbeReport
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -212,6 +220,13 @@ class RuntimeDaemonReport:
             "native_backend_manifest_blocked_count": (
                 self.native_backend_manifest_blocked_count
             ),
+            "native_backend_probe_policy": self.native_backend_probe_policy,
+            "native_backend_probe_probed_count": (
+                self.native_backend_probe_probed_count
+            ),
+            "native_backend_probe_blocked_count": (
+                self.native_backend_probe_blocked_count
+            ),
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
             "host_snapshot": self.host_snapshot.to_dict()
@@ -227,6 +242,7 @@ class RuntimeDaemonReport:
             "daemon_control_plan": self.daemon_control_plan.to_dict(),
             "daemon_control_execution": self.daemon_control_execution.to_dict(),
             "native_backend_manifest": self.native_backend_manifest.to_dict(),
+            "native_backend_probe": self.native_backend_probe.to_dict(),
         }
 
 
@@ -327,6 +343,10 @@ def run_runtime_daemon(
         native_backend_preflight=native_backend_preflight,
         host_snapshot=host_snapshot,
     )
+    native_backend_probe = run_runtime_native_backend_probe(
+        manifest=native_backend_manifest,
+        host_snapshot=host_snapshot,
+    )
 
     return RuntimeDaemonReport(
         mode=DAEMON_MODE,
@@ -391,6 +411,9 @@ def run_runtime_daemon(
         ),
         native_backend_manifest_ready_count=native_backend_manifest.ready_count,
         native_backend_manifest_blocked_count=native_backend_manifest.blocked_count,
+        native_backend_probe_policy=native_backend_probe.probe_policy,
+        native_backend_probe_probed_count=native_backend_probe.probed_count,
+        native_backend_probe_blocked_count=native_backend_probe.blocked_count,
         cycles=cycles,
         final_state=previous_state,
         host_snapshot=host_snapshot,
@@ -402,6 +425,7 @@ def run_runtime_daemon(
         daemon_control_plan=daemon_control_plan,
         daemon_control_execution=daemon_control_execution,
         native_backend_manifest=native_backend_manifest,
+        native_backend_probe=native_backend_probe,
     )
 
 

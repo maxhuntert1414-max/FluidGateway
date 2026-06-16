@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.55-native-backend-manifest",
+  "current_stage": "v0.56-native-backend-probe",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -77,6 +77,11 @@
       "id": "v0.55-native-backend-manifest",
       "decision": "Declare the backend load contract for every daemon control execution step.",
       "rationale": "A future native manager needs a stable manifest that separates read-only/advisory-ready surfaces from RAM/VRAM/GPU/native surfaces blocked by backend, privilege, and safety-review requirements."
+    },
+    {
+      "id": "v0.56-native-backend-probe",
+      "decision": "Execute manifest-approved read-only/advisory probes against existing daemon and host evidence.",
+      "rationale": "The gateway needs a concrete proof path from backend contract to CPU/RAM/GPU/VRAM signals while native or privileged host control remains blocked."
     }
   ],
   "quality_gates": [
@@ -95,6 +100,7 @@
     "runtime daemon control plan smoke",
     "runtime daemon control execution smoke",
     "runtime native backend manifest smoke",
+    "runtime native backend probe smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.55-native-backend-manifest",
+  "current_slice": "v0.56-native-backend-probe",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -54,6 +54,10 @@
     {
       "decision": "Build native_backend_manifest from daemon_control_execution.",
       "rationale": "The gateway needs an explicit backend load/hold manifest so future native CPU/GPU/RAM/VRAM work can be added behind a tested safety boundary instead of implied by control output."
+    },
+    {
+      "decision": "Build native_backend_probe from native_backend_manifest.",
+      "rationale": "The gateway needs a read-only evidence binding step before native backend work can safely claim CPU/RAM/GPU/VRAM observability or control readiness."
     }
   ],
   "handoffs": [
@@ -126,12 +130,17 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.55 native backend manifest, integrated it into daemon reports and CLI output, added manifest tests, and prepared verification gates."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.56 native backend probe, integrated it into daemon reports and CLI output, added probe tests, and prepared verification gates."
     }
   ],
   "open_issues": [
     "fluidgateway/cli.py is large and should be split by command family in a future hygiene slice.",
     "Native execution requires a future safety review before any process, driver, game, RAM, or VRAM mutation.",
-    "A concrete native/read-only backend implementation is still missing; v0.55 only declares the load contract."
+    "A concrete native/control backend is still missing; v0.56 only probes safe read-only/advisory evidence."
   ],
   "resolved_issues": [
     "Added runtime daemon dry-run report with per-cycle transition and supervisor execution evidence.",
@@ -146,7 +155,8 @@
     "Added daemon arbitration plan with pressure-aware lane ranking across telemetry, memory, GPU, scheduler, and safety.",
     "Added daemon control plan with advisory control intents for telemetry, scheduler, safety, GPU, RAM, and VRAM surfaces.",
     "Added daemon control execution with read-only/advisory simulated outcomes and native control-surface blocking.",
-    "Added native backend manifest with read-only/advisory ready entries and native RAM/VRAM backend load blockers."
+    "Added native backend manifest with read-only/advisory ready entries and native RAM/VRAM backend load blockers.",
+    "Added native backend probe with host snapshot signal binding and native RAM/VRAM probe blockers."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",
