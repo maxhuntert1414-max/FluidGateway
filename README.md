@@ -889,10 +889,11 @@ can replace while keeping the same evidence trail.
 
 ## Runtime Daemon Dry-Run Loop
 
-The v0.51 runtime daemon dry-run loop repeats adapter event streams while
+The v0.52 runtime daemon dry-run loop repeats adapter event streams while
 carrying `runtime_state_accumulator` across cycles and attaching a read-only
 `host_snapshot`, a `daemon_decision_plan`, a `daemon_action_queue`, and a
-`daemon_action_execution` report, plus a `native_backend_preflight` contract:
+`daemon_action_execution` report, plus a `native_backend_preflight` contract
+and a `daemon_arbitration_plan`:
 
 ```powershell
 python -m fluidgateway runtime run-daemon `
@@ -931,6 +932,9 @@ The daemon report includes:
 - `native_backend_preflight`, which turns each queued action into explicit
   backend capability requirements, native backend blockers, privilege
   blockers, safety-review blockers, and native-promotion status;
+- `daemon_arbitration_plan`, which ranks advisory lanes across telemetry,
+  memory, GPU, scheduler, and safety using pressure score, preflight blockers,
+  and execution readiness;
 - final accumulated runtime state for the next loop.
 
 This is still a local advisory loop. It does not run as a background service,
@@ -938,13 +942,15 @@ change OS process scheduling, mutate GPU queues, pin RAM/VRAM, inject into a
 game, or touch drivers. Host probing is observational: on Windows it uses
 read-only memory status and video-controller metadata. The decision plan is
 also dry-run: it promotes evidence into manager-shaped intent without applying
-that intent to the host. The action queue, action execution, and native backend
-preflight layers are the next bridge: read-only telemetry actions can be queued
-and evaluated as dry-run work, while anything that would require native memory,
-scheduler, GPU, VRAM, or privileged host control is explicitly blocked before
-system mutation and annotated with the missing backend requirements. Native
-promotion remains `false` in v0.51. This is the first durable loop shape that a
-future native manager can replace behind the same JSON contract.
+that intent to the host. The action queue, action execution, native backend
+preflight, and daemon arbitration layers are the next bridge: read-only
+telemetry actions can be queued and evaluated as dry-run work, while anything
+that would require native memory, scheduler, GPU, VRAM, or privileged host
+control is explicitly blocked before system mutation and annotated with the
+missing backend requirements. The arbitration plan then decides which lane
+should advance first under the advisory guard. Native promotion remains
+`false` in v0.52. This is the first durable loop shape that a future native
+manager can replace behind the same JSON contract.
 
 ## Supported Input
 

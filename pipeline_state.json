@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.51-native-backend-preflight",
+  "current_stage": "v0.52-daemon-arbitration-plan",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -57,6 +57,11 @@
       "id": "v0.51-native-backend-preflight",
       "decision": "Convert daemon action execution results into explicit native backend capability and safety requirements.",
       "rationale": "Before a future manager can control CPU/GPU/RAM/VRAM, the project needs a testable contract for missing native backends, privilege gates, and safety-review blockers."
+    },
+    {
+      "id": "v0.52-daemon-arbitration-plan",
+      "decision": "Rank daemon decision lanes with pressure-aware advisory arbitration before native control exists.",
+      "rationale": "An intelligent gateway needs a deterministic manager layer that chooses between telemetry, memory, GPU, scheduler, and safety lanes using evidence and preflight blockers."
     }
   ],
   "quality_gates": [
@@ -71,6 +76,7 @@
     "runtime daemon action queue smoke",
     "runtime daemon action execution smoke",
     "runtime native backend preflight smoke",
+    "runtime daemon arbitration smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

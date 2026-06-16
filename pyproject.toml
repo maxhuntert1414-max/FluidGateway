@@ -1,6 +1,6 @@
 [project]
 name = "fluidgateway"
-version = "0.51.0"
+version = "0.52.0"
 description = "A diagnostic CLI for probable waste in CPU/GPU/display frame pipelines."
 readme = "README.md"
 requires-python = ">=3.10"

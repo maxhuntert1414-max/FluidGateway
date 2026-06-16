@@ -10,6 +10,10 @@ from .daemon_actions import (
     RuntimeDaemonActionQueue,
     build_runtime_daemon_action_queue,
 )
+from .daemon_arbitration import (
+    RuntimeDaemonArbitrationPlan,
+    build_runtime_daemon_arbitration_plan,
+)
 from .daemon_decision import (
     RuntimeDaemonDecisionPlan,
     build_runtime_daemon_decision_plan,
@@ -26,7 +30,7 @@ from .native_backend import (
 from .state_accumulator import RuntimeStateAccumulator
 
 
-DAEMON_MODE = "runtime-daemon-dry-run-v0.51"
+DAEMON_MODE = "runtime-daemon-dry-run-v0.52"
 DAEMON_EXECUTION_GUARD = "advisory-only"
 
 
@@ -106,6 +110,9 @@ class RuntimeDaemonReport:
     native_backend_policy: str
     native_backend_blocked_count: int
     native_promotion_allowed: bool
+    daemon_arbitration_policy: str
+    daemon_arbitration_blocked_count: int
+    daemon_arbitration_pressure_score: int
     cycles: list[RuntimeDaemonCycle]
     final_state: RuntimeStateAccumulator
     host_snapshot: HostCapabilitySnapshot | None
@@ -113,6 +120,7 @@ class RuntimeDaemonReport:
     daemon_action_queue: RuntimeDaemonActionQueue
     daemon_action_execution: RuntimeDaemonActionExecution
     native_backend_preflight: RuntimeNativeBackendPreflight
+    daemon_arbitration_plan: RuntimeDaemonArbitrationPlan
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -152,6 +160,13 @@ class RuntimeDaemonReport:
             "native_backend_policy": self.native_backend_policy,
             "native_backend_blocked_count": self.native_backend_blocked_count,
             "native_promotion_allowed": self.native_promotion_allowed,
+            "daemon_arbitration_policy": self.daemon_arbitration_policy,
+            "daemon_arbitration_blocked_count": (
+                self.daemon_arbitration_blocked_count
+            ),
+            "daemon_arbitration_pressure_score": (
+                self.daemon_arbitration_pressure_score
+            ),
             "cycles": [cycle.to_dict() for cycle in self.cycles],
             "final_state": self.final_state.to_dict(),
             "host_snapshot": self.host_snapshot.to_dict()
@@ -163,6 +178,7 @@ class RuntimeDaemonReport:
             "native_backend_preflight": (
                 self.native_backend_preflight.to_dict()
             ),
+            "daemon_arbitration_plan": self.daemon_arbitration_plan.to_dict(),
         }
 
 
@@ -244,6 +260,12 @@ def run_runtime_daemon(
         action_queue,
         action_execution,
     )
+    daemon_arbitration_plan = build_runtime_daemon_arbitration_plan(
+        final_state=previous_state,
+        decision_plan=decision_plan,
+        action_execution=action_execution,
+        native_backend_preflight=native_backend_preflight,
+    )
 
     return RuntimeDaemonReport(
         mode=DAEMON_MODE,
@@ -286,6 +308,11 @@ def run_runtime_daemon(
         native_promotion_allowed=(
             native_backend_preflight.native_promotion_allowed
         ),
+        daemon_arbitration_policy=daemon_arbitration_plan.arbitration_policy,
+        daemon_arbitration_blocked_count=(
+            daemon_arbitration_plan.blocked_lane_count
+        ),
+        daemon_arbitration_pressure_score=daemon_arbitration_plan.pressure_score,
         cycles=cycles,
         final_state=previous_state,
         host_snapshot=host_snapshot,
@@ -293,6 +320,7 @@ def run_runtime_daemon(
         daemon_action_queue=action_queue,
         daemon_action_execution=action_execution,
         native_backend_preflight=native_backend_preflight,
+        daemon_arbitration_plan=daemon_arbitration_plan,
     )
 
 

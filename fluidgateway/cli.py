@@ -961,6 +961,15 @@ def run_runtime_run_daemon(args: argparse.Namespace) -> int:
         f"{report.native_backend_blocked_count}"
     )
     print(f"Native promotion allowed: {report.native_promotion_allowed}")
+    print(f"Daemon arbitration policy: {report.daemon_arbitration_policy}")
+    print(
+        "Daemon arbitration blocked lanes: "
+        f"{report.daemon_arbitration_blocked_count}"
+    )
+    print(
+        "Daemon arbitration pressure score: "
+        f"{report.daemon_arbitration_pressure_score}"
+    )
     print(f"Daemon would apply commands: {report.total_would_apply_count}")
     print(f"Daemon would block commands: {report.total_would_block_count}")
     print(f"Daemon guard: {report.execution_guard}")
