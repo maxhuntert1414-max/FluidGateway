@@ -31,6 +31,13 @@ then compare buffer/texture bytes exactly, publish hashes, and verify rollback
 against a separate baseline. It does not enable optimization or injection in
 games.
 
+FluidRuntime v0.6 turns that experiment into a paired trace: alternating
+baseline/optimized order, excluded warmups, CPU and disjoint-guarded GPU timing,
+p50/p95 distributions, raw runs, and explicit blockers when evidence is too
+weak for a performance claim. The published
+[v0.6 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.6-copy-elision.md)
+keeps the owned-lab scope explicit and includes the raw traces.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
