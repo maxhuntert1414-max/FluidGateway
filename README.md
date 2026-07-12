@@ -114,6 +114,12 @@ python -m fluidgateway runtime run-presentmon-daemon `
   --out runtime-daemon.json
 ```
 
+In v0.61 the same command also writes an operational ledger next to the daemon
+report by default, for example `runtime-daemon.ledger.json`. Use `--ledger-out`
+to choose a different path. The ledger condenses the run into manager profile,
+waste pressure score, safe progress score, blocked native surfaces, and the next
+recommended step.
+
 This is the first bridge from measured frame-path symptoms into the persistent
 runtime manager loop. It maps advisory management actions to synthetic adapter
 events with frame budgets, resource pressure, queue pressure, and evidence

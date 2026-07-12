@@ -1,7 +1,7 @@
 {
   "project": "FluidGateway",
   "stark_pipeline": "STARK-PRODUCTIONS",
-  "current_slice": "v0.60-presentmon-daemon-runner",
+  "current_slice": "v0.61-presentmon-operational-ledger",
   "key_decisions": [
     {
       "decision": "Build a runtime daemon dry-run loop over adapter event streams.",
@@ -74,6 +74,14 @@
     {
       "decision": "Build presentmon_daemon runner from PresentMon ingest and runtime daemon.",
       "rationale": "The gateway needs a one-command measured-trace path into persistent manager decisions while preserving the generated adapter stream as replayable evidence."
+    },
+    {
+      "decision": "Build presentmon operational ledger from daemon runner output.",
+      "rationale": "The gateway needs a compact operational memory of each measured run: pressure, safe progress, native blockers, and next manager step."
+    },
+    {
+      "decision": "Extract runtime client and adapter summaries from fluidgateway/cli.py.",
+      "rationale": "The CLI should coordinate commands while presentation-only output belongs to a dedicated runtime summary module."
     }
   ],
   "handoffs": [
@@ -171,12 +179,21 @@
       "from": "CODER",
       "to": "LOCAL VERIFICATION",
       "summary": "Implemented v0.60 PresentMon daemon runner, added direct CSV-to-daemon CLI flow, preserved generated events, added tests, and prepared verification gates."
+    },
+    {
+      "from": "CODER",
+      "to": "LOCAL VERIFICATION",
+      "summary": "Implemented v0.61 PresentMon operational ledger, added ledger output to run-presentmon-daemon, added tests, and prepared verification gates."
+    },
+    {
+      "from": "REVIEWER",
+      "to": "CODER",
+      "summary": "Reviewed the runtime CLI hotspot and extracted client/adapter terminal summaries without changing public commands or JSON contracts."
     }
   ],
   "open_issues": [
-    "fluidgateway/cli.py is large and should be split by command family in a future hygiene slice.",
     "Native execution requires a future safety review before any process, driver, game, RAM, or VRAM mutation.",
-    "A concrete native/control backend is still missing; v0.60 can run measured PresentMon traces through the daemon, but native/control backend promotion remains blocked."
+    "A concrete native/control backend is still missing; v0.61 can summarize measured daemon runs into an operational ledger, but native/control backend promotion remains blocked."
   ],
   "resolved_issues": [
     "Added runtime daemon dry-run report with per-cycle transition and supervisor execution evidence.",
@@ -196,7 +213,9 @@
     "Added native backend readiness with evidence scoring, risk classification, and native promotion held false.",
     "Added native backend gate with safe read-only/advisory advancement and native CPU/GPU/RAM/VRAM promotion blocked.",
     "Added PresentMon runtime ingest so diagnostic management actions can become daemon-consumable adapter JSONL events.",
-    "Added PresentMon daemon runner so a measured CSV can generate replayable events, daemon report, and persisted state in one flow."
+    "Added PresentMon daemon runner so a measured CSV can generate replayable events, daemon report, and persisted state in one flow.",
+    "Added PresentMon operational ledger with pressure score, safe progress, native blockers, and next-step recommendation.",
+    "Reduced fluidgateway/cli.py from more than 1100 lines to about 640 by extracting runtime client and adapter terminal summaries."
   ],
   "constraints": [
     "Standard library only for runtime prototype code.",

@@ -1,7 +1,7 @@
 {
   "pipeline": "STARK-PRODUCTIONS",
   "fallback_mode": false,
-  "current_stage": "v0.60-presentmon-daemon-runner",
+  "current_stage": "v0.61-presentmon-operational-ledger",
   "active_roles": [
     "RESEARCHER",
     "PLANNER",
@@ -102,6 +102,16 @@
       "id": "v0.60-presentmon-daemon-runner",
       "decision": "Run a PresentMon trace directly through runtime ingest and the daemon loop while preserving the generated event stream.",
       "rationale": "The gateway needs an operational path from measured CSV traces to persistent manager decisions without manual multi-command stitching, while retaining JSONL evidence for audit and replay."
+    },
+    {
+      "id": "v0.61-presentmon-operational-ledger",
+      "decision": "Summarize a measured PresentMon daemon run into a compact operational ledger.",
+      "rationale": "The gateway needs a small decision surface that explains pressure, safe progress, native blockers, and the next manager step after each measured run."
+    },
+    {
+      "id": "v0.61-runtime-cli-summary-extraction",
+      "decision": "Move runtime client and adapter terminal summaries out of the main CLI module.",
+      "rationale": "The public CLI behavior stays stable while command orchestration is separated from hundreds of lines of presentation-only output."
     }
   ],
   "quality_gates": [
@@ -125,6 +135,7 @@
     "runtime native backend gate smoke",
     "runtime presentmon ingest smoke",
     "runtime presentmon daemon runner smoke",
+    "runtime presentmon operational ledger smoke",
     "git ls-remote origin refs/heads/main"
   ]
 }

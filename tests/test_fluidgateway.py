@@ -408,7 +408,8 @@ class FluidGatewayTests(unittest.TestCase):
                 thread = threading.Thread(target=server.handle_request)
                 thread.start()
 
-                with redirect_stdout(StringIO()):
+                stdout = StringIO()
+                with redirect_stdout(stdout):
                     status = main(
                         [
                             "runtime",
@@ -433,6 +434,9 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertEqual(payload["events_sent"], 12)
             self.assertEqual(payload["decision_count"], 4)
             self.assertEqual(payload["failed_responses"], 0)
+            self.assertIn("Events sent: 12", stdout.getvalue())
+            self.assertIn("Decisions: 4", stdout.getvalue())
+            self.assertIn("Failed responses: 0", stdout.getvalue())
 
     def test_adapter_session_replays_lifecycle_stream(self):
         result = replay_adapter_event_stream(FIXTURES / "adapter_session_events.jsonl")
@@ -464,7 +468,8 @@ class FluidGatewayTests(unittest.TestCase):
     def test_runtime_run_adapter_command_writes_session_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "adapter-session.json"
-            with redirect_stdout(StringIO()):
+            stdout = StringIO()
+            with redirect_stdout(stdout):
                 status = main(
                     [
                         "runtime",
@@ -479,6 +484,9 @@ class FluidGatewayTests(unittest.TestCase):
             payload = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
             self.assertEqual(payload["snapshot"]["estimated_saved_mb"], 40)
+            self.assertIn("Events processed: 12", stdout.getvalue())
+            self.assertIn("Runtime manager profile:", stdout.getvalue())
+            self.assertIn("Estimated saved MB moved/allocated: 40.0000", stdout.getvalue())
 
     def test_runtime_event_server_accepts_adapter_lifecycle_events(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:

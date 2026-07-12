@@ -9,7 +9,6 @@ from .adapter import replay_adapter_event_stream, write_adapter_session
 from .analyzer import analyze_trace
 from .client import (
     RuntimeEventClient,
-    summarize_client_responses,
     write_client_responses,
 )
 from .control import FluidGatewayController
@@ -23,9 +22,14 @@ from .presentmon_runtime import (
     write_presentmon_runtime_events,
 )
 from .presentmon_daemon import run_presentmon_daemon
+from .presentmon_ledger import write_presentmon_operational_ledger
 from .report import write_report
 from .report import write_management_plan
 from .runtime import RuntimeManifest, load_manifest, optimize_manifest, write_runtime_plan
+from .runtime_cli_summary import (
+    print_runtime_adapter_summary,
+    print_runtime_client_summary,
+)
 from .server import serve_runtime_events
 from .state_accumulator import (
     load_runtime_state_accumulator,
@@ -207,6 +211,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         required=True,
         help="Path to the runtime daemon dry-run JSON report.",
+    )
+    presentmon_daemon.add_argument(
+        "--ledger-out",
+        help=(
+            "Optional path to write a compact operational ledger. Defaults to "
+            "<out>.ledger.json."
+        ),
     )
     presentmon_daemon.set_defaults(func=run_runtime_run_presentmon_daemon)
     send = runtime_subparsers.add_parser(
@@ -447,13 +458,22 @@ def run_runtime_run_presentmon_daemon(args: argparse.Namespace) -> int:
     state_path = normalized_json_path(args.state)
     report_path = normalized_json_path(args.out)
     events_path = normalized_jsonl_path(args.events_out)
+    ledger_path = (
+        normalized_json_path(args.ledger_out)
+        if args.ledger_out
+        else default_ledger_path(report_path)
+    )
     if state_path == report_path:
         raise ValueError(
             "PresentMon daemon --state and --out must be different paths."
         )
-    if events_path in {state_path, report_path}:
+    if events_path in {state_path, report_path, ledger_path}:
         raise ValueError(
-            "PresentMon daemon --events-out must be different from --state and --out."
+            "PresentMon daemon --events-out must be different from --state, --out, and --ledger-out."
+        )
+    if ledger_path in {state_path, report_path}:
+        raise ValueError(
+            "PresentMon daemon --ledger-out must be different from --state and --out."
         )
     initial_state = load_runtime_state_accumulator(state_path)
     host_snapshot = collect_host_capability_snapshot()
@@ -464,6 +484,10 @@ def run_runtime_run_presentmon_daemon(args: argparse.Namespace) -> int:
         host_snapshot=host_snapshot,
     )
     output_path = write_runtime_daemon_report(result.report, report_path)
+    ledger_output_path = write_presentmon_operational_ledger(
+        result.operational_ledger,
+        ledger_path,
+    )
     state_output_path = write_runtime_state_accumulator(
         result.report.final_state,
         state_path,
@@ -474,6 +498,19 @@ def run_runtime_run_presentmon_daemon(args: argparse.Namespace) -> int:
     print(f"PresentMon findings: {result.event_stream.finding_count}")
     print(f"PresentMon management actions: {result.event_stream.management_action_count}")
     print(f"PresentMon adapter events: {result.event_stream.event_count}")
+    print(f"PresentMon operational ledger written: {ledger_output_path}")
+    print(
+        "PresentMon ledger recommendation: "
+        f"{result.operational_ledger.recommended_next_step}"
+    )
+    print(
+        "PresentMon ledger waste pressure score: "
+        f"{result.operational_ledger.waste_pressure_score}"
+    )
+    print(
+        "PresentMon ledger safe progress score: "
+        f"{result.operational_ledger.safe_progress_score:.4f}"
+    )
     print_runtime_daemon_summary(
         report=result.report,
         output_path=output_path,
@@ -482,258 +519,15 @@ def run_runtime_run_presentmon_daemon(args: argparse.Namespace) -> int:
     )
     return 0
 
-
 def run_runtime_send_events(args: argparse.Namespace) -> int:
     with RuntimeEventClient(args.host, args.port, args.timeout) as client:
         responses = client.send_jsonl(args.events)
     output_path = write_client_responses(responses, args.out)
-    summary = summarize_client_responses(responses)
-    operation_responses = [
-        response for response in responses if response.get("event") == "operation"
-    ]
-    decision_count = sum(
-        1
-        for response in operation_responses
-        if response.get("result", {}).get("decision") is not None
+    failed_responses = print_runtime_client_summary(
+        responses=responses,
+        output_path=output_path,
     )
-    state_response_count = sum(
-        1 for response in responses if response.get("event") == "state"
-    )
-    state_snapshot_count = sum(
-        1 for response in responses if response.get("state_snapshot")
-    )
-    policy_loop_directive_count = sum(
-        len(response.get("policy_loop_directives") or [])
-        for response in responses
-    )
-    execution_gate_count = sum(
-        1 for response in responses if response.get("execution_gate")
-    )
-    admission_decision_count = sum(
-        1 for response in responses if response.get("admission_decision")
-    )
-    efficiency_impact_count = sum(
-        1 for response in responses if response.get("efficiency_impact")
-    )
-    failed_responses = sum(1 for response in responses if not response.get("ok"))
-    print(f"FluidGateway server responses written: {output_path}")
-    print(f"Events sent: {len(responses)}")
-    print(f"Operation responses: {len(operation_responses)}")
-    print(f"State responses: {state_response_count}")
-    print(f"State snapshots: {state_snapshot_count}")
-    print(f"Policy loop directives: {policy_loop_directive_count}")
-    print(f"Execution gates: {execution_gate_count}")
-    print(f"Admission decisions: {admission_decision_count}")
-    print(f"Efficiency impacts: {efficiency_impact_count}")
-    print(f"Actuation commands: {summary['actuation_plan']['command_count']}")
-    print(f"Memory transit hops: {summary['memory_transit_map']['hop_count']}")
-    print(f"Memory route directives: {summary['memory_route_plan']['directive_count']}")
-    print(f"Frame window slots: {summary['frame_window_plan']['slot_count']}")
-    print(f"Execution packet commands: {summary['execution_packet']['command_count']}")
-    print(
-        "Execution simulated hot-path after ms: "
-        f"{summary['execution_simulation']['hot_path_after_ms']:.4f}"
-    )
-    print(f"Adaptive executor profile: {summary['adaptive_executor_loop']['profile']}")
-    print(f"Budget envelope policy: {summary['budget_envelope']['next_frame_policy']}")
-    print(
-        "Budget envelope constrained memory layers: "
-        f"{summary['budget_envelope']['constrained_memory_count']}"
-    )
-    print(
-        "Budget arbitration deferred commands: "
-        f"{summary['budget_arbitration']['deferred_count']}"
-    )
-    print(
-        "Budget arbitration memory actions: "
-        f"{summary['budget_arbitration']['memory_action_count']}"
-    )
-    print(f"Dispatch commands: {summary['dispatch_plan']['command_count']}")
-    print(
-        "Dispatch pre-frame commands: "
-        f"{summary['dispatch_plan']['pre_frame_count']}"
-    )
-    print(
-        "Dispatch hot-path commands: "
-        f"{summary['dispatch_plan']['hot_path_count']}"
-    )
-    print(
-        "Dispatch next-frame commands: "
-        f"{summary['dispatch_plan']['next_frame_count']}"
-    )
-    print(
-        "Dispatch execution current-frame ms: "
-        f"{summary['dispatch_execution']['current_frame_cost_ms']:.4f}"
-    )
-    print(
-        "Dispatch execution pre-frame ms: "
-        f"{summary['dispatch_execution']['pre_frame_cost_ms']:.4f}"
-    )
-    print(
-        "Dispatch execution deferred ms: "
-        f"{summary['dispatch_execution']['deferred_cost_ms']:.4f}"
-    )
-    print(
-        "Dispatch execution memory relief MB: "
-        f"{summary['dispatch_execution']['memory_relief_mb']:.4f}"
-    )
-    print(
-        "Runtime calibration observed frame ms: "
-        f"{summary['runtime_calibration']['total_observed_frame_cost_ms']:.4f}"
-    )
-    print(
-        "Runtime calibration planned current-frame ms: "
-        f"{summary['runtime_calibration']['total_planned_current_frame_cost_ms']:.4f}"
-    )
-    print(
-        "Runtime calibration relief ms: "
-        f"{summary['runtime_calibration']['total_planned_frame_relief_ms']:.4f}"
-    )
-    print(
-        "Runtime calibration max guardband ms: "
-        f"{summary['runtime_calibration']['max_guardband_ms']:.4f}"
-    )
-    print(f"Runtime manager profile: {summary['runtime_manager']['profile']}")
-    print(
-        "Runtime manager next frame budget ms: "
-        f"{summary['runtime_manager']['next_frame_budget_ms']:.4f}"
-    )
-    print(
-        "Runtime manager memory actions: "
-        f"{summary['runtime_manager']['memory_action_count']}"
-    )
-    print(
-        "Runtime control packet commands: "
-        f"{summary['runtime_control_packet']['command_count']}"
-    )
-    print(
-        "Runtime control packet active commands: "
-        f"{summary['runtime_control_packet']['active_command_count']}"
-    )
-    print(
-        "Runtime control packet memory commands: "
-        f"{summary['runtime_control_packet']['memory_command_count']}"
-    )
-    print(
-        "Runtime control state frame budgets: "
-        f"{summary['runtime_control_state']['applied_frame_budget_count']}"
-    )
-    print(
-        "Runtime control state memory actions: "
-        f"{summary['runtime_control_state']['memory_action_count']}"
-    )
-    print(
-        "Runtime gateway tick policy: "
-        f"{summary['runtime_gateway_tick']['tick_policy']}"
-    )
-    print(
-        "Runtime gateway tick steps: "
-        f"{summary['runtime_gateway_tick']['step_count']}"
-    )
-    print(
-        "Runtime gateway tick memory active steps: "
-        f"{summary['runtime_gateway_tick']['memory_active_step_count']}"
-    )
-    print(
-        "Runtime gateway cycle next action: "
-        f"{summary['runtime_gateway_cycle']['next_cycle_action']}"
-    )
-    print(
-        "Runtime gateway cycle drift risk: "
-        f"{summary['runtime_gateway_cycle']['drift_risk']}"
-    )
-    print(
-        "Runtime gateway cycle memory relief MB: "
-        f"{summary['runtime_gateway_cycle']['memory_relief_applied_mb']:.4f}"
-    )
-    print(
-        "Runtime gateway feedback action: "
-        f"{summary['runtime_gateway_feedback']['feedback_action']}"
-    )
-    print(
-        "Runtime gateway feedback convergence: "
-        f"{summary['runtime_gateway_feedback']['convergence_status']}"
-    )
-    print(
-        "Runtime gateway feedback protected gap ms: "
-        f"{summary['runtime_gateway_feedback']['protected_gap_ms']:.4f}"
-    )
-    print(
-        "Runtime policy update action: "
-        f"{summary['runtime_policy_update']['policy_action']}"
-    )
-    print(
-        "Runtime policy update next profile: "
-        f"{summary['runtime_policy_update']['next_profile']}"
-    )
-    print(
-        "Runtime policy update next frame budget ms: "
-        f"{summary['runtime_policy_update']['next_frame_budget_ms']:.4f}"
-    )
-    print(
-        "Runtime state accumulator cycles: "
-        f"{summary['runtime_state_accumulator']['cycle_count']}"
-    )
-    print(
-        "Runtime state accumulator active policies: "
-        f"{summary['runtime_state_accumulator']['active_policy_count']}"
-    )
-    print(
-        "Runtime state accumulator digest: "
-        f"{summary['runtime_state_accumulator']['state_digest']}"
-    )
-    print(
-        "Runtime state transition trend: "
-        f"{summary['runtime_state_transition']['trend']}"
-    )
-    print(
-        "Runtime state transition action: "
-        f"{summary['runtime_state_transition']['transition_action']}"
-    )
-    print(
-        "Runtime state transition pressure delta: "
-        f"{summary['runtime_state_transition']['pressure_delta']:.4f}"
-    )
-    print(
-        "Runtime supervisor directive action: "
-        f"{summary['runtime_supervisor_directive']['directive_action']}"
-    )
-    print(
-        "Runtime supervisor scheduler posture: "
-        f"{summary['runtime_supervisor_directive']['scheduler_posture']}"
-    )
-    print(
-        "Runtime supervisor memory posture: "
-        f"{summary['runtime_supervisor_directive']['memory_posture']}"
-    )
-    print(
-        "Runtime supervisor plan action: "
-        f"{summary['runtime_supervisor_plan']['plan_action']}"
-    )
-    print(
-        "Runtime supervisor plan commands: "
-        f"{summary['runtime_supervisor_plan']['command_count']}"
-    )
-    print(
-        "Runtime supervisor plan blocking commands: "
-        f"{summary['runtime_supervisor_plan']['blocking_command_count']}"
-    )
-    print(
-        "Runtime supervisor execution action: "
-        f"{summary['runtime_supervisor_execution']['execution_action']}"
-    )
-    print(
-        "Runtime supervisor execution would apply: "
-        f"{summary['runtime_supervisor_execution']['would_apply_count']}"
-    )
-    print(
-        "Runtime supervisor execution guard: "
-        f"{summary['runtime_supervisor_execution']['execution_guard']}"
-    )
-    print(f"Decisions: {decision_count}")
-    print(f"Failed responses: {failed_responses}")
     return 1 if failed_responses else 0
-
 
 def run_runtime_run_adapter(args: argparse.Namespace) -> int:
     previous_state = (
@@ -747,273 +541,12 @@ def run_runtime_run_adapter(args: argparse.Namespace) -> int:
             result.runtime_state_accumulator,
             args.state_out,
         )
-    snapshot = result.snapshot
-    print(f"FluidGateway adapter session written: {output_path}")
-    if previous_state is not None:
-        print(f"Runtime previous state cycles: {previous_state.cycle_count}")
-    if state_output_path is not None:
-        print(f"Runtime state accumulator written: {state_output_path}")
-    print(f"Events processed: {result.events_processed}")
-    print(f"Frames observed: {len(result.frames)}")
-    print(f"Operation events: {result.operation_events}")
-    print(f"Decisions: {len(snapshot['decisions'])}")
-    print(f"Policy actions: {len(result.policy_actions)}")
-    print(f"Lifetime plan actions: {result.lifetime_plan.plan_action_count}")
-    print(f"Scheduled steps: {result.schedule_plan.scheduled_step_count}")
-    print(f"Enforcement commands: {result.enforcement_plan.command_count}")
-    print(f"Live commands: {len(result.live_commands)}")
-    print(f"Policy loop directives: {len(result.policy_loop_directives)}")
-    print(f"Execution gates: {len(result.execution_gates)}")
-    print(f"Admission operations: {result.admission_plan.operation_count}")
-    print(
-        "Admission hot-path cost ms: "
-        f"{result.admission_plan.estimated_hot_path_cost_ms:.4f}"
+    print_runtime_adapter_summary(
+        result=result,
+        output_path=output_path,
+        previous_state=previous_state,
+        state_output_path=state_output_path,
     )
-    print(
-        "Admission avoided cost ms: "
-        f"{result.admission_plan.estimated_avoided_cost_ms:.4f}"
-    )
-    print(
-        "Efficiency relief cost ms: "
-        f"{result.efficiency_ledger.relief_cost_ms:.4f}"
-    )
-    print(
-        "Efficiency transfer relief MB: "
-        f"{result.efficiency_ledger.transfer_relief_mb:.4f}"
-    )
-    print(f"Feedback actions: {result.feedback_plan.action_count}")
-    if result.feedback_plan.frames:
-        print(
-            "Feedback next copy budget ms: "
-            f"{result.feedback_plan.frames[0].suggested_copy_budget_ms:.4f}"
-        )
-    print(f"Actuation commands: {result.actuation_plan.command_count}")
-    print(
-        "Actuation copy budget ms: "
-        f"{result.actuation_plan.total_copy_budget_ms:.4f}"
-    )
-    print(f"Memory transit hops: {result.memory_transit_map.hop_count}")
-    print(
-        "Memory avoided transfer MB: "
-        f"{result.memory_transit_map.avoided_transfer_mb:.4f}"
-    )
-    print(f"Memory route directives: {result.memory_route_plan.directive_count}")
-    print(
-        "Memory route saved MB: "
-        f"{result.memory_route_plan.estimated_saved_mb:.4f}"
-    )
-    print(f"Frame window slots: {result.frame_window_plan.slot_count}")
-    print(f"Frame pre-frame slots: {result.frame_window_plan.pre_frame_count}")
-    print(f"Execution packet commands: {result.execution_packet.command_count}")
-    print(
-        "Execution packet saved MB: "
-        f"{result.execution_packet.estimated_saved_mb:.4f}"
-    )
-    print(
-        "Execution simulated hot-path before ms: "
-        f"{result.execution_simulation.hot_path_before_ms:.4f}"
-    )
-    print(
-        "Execution simulated hot-path after ms: "
-        f"{result.execution_simulation.hot_path_after_ms:.4f}"
-    )
-    print(f"Adaptive executor profile: {result.adaptive_executor_loop.profile}")
-    print(
-        "Adaptive executor over-budget frames: "
-        f"{result.adaptive_executor_loop.over_budget_count}"
-    )
-    print(f"Budget envelope policy: {result.budget_envelope.next_frame_policy}")
-    print(
-        "Budget envelope constrained memory layers: "
-        f"{result.budget_envelope.constrained_memory_count}"
-    )
-    print(
-        "Budget arbitration deferred commands: "
-        f"{result.budget_arbitration.deferred_count}"
-    )
-    print(
-        "Budget arbitration memory actions: "
-        f"{result.budget_arbitration.memory_action_count}"
-    )
-    print(f"Dispatch commands: {result.dispatch_plan.command_count}")
-    print(f"Dispatch pre-frame commands: {result.dispatch_plan.pre_frame_count}")
-    print(f"Dispatch hot-path commands: {result.dispatch_plan.hot_path_count}")
-    print(
-        "Dispatch next-frame commands: "
-        f"{result.dispatch_plan.next_frame_count}"
-    )
-    print(
-        "Dispatch execution current-frame ms: "
-        f"{result.dispatch_execution.current_frame_cost_ms:.4f}"
-    )
-    print(
-        "Dispatch execution pre-frame ms: "
-        f"{result.dispatch_execution.pre_frame_cost_ms:.4f}"
-    )
-    print(
-        "Dispatch execution deferred ms: "
-        f"{result.dispatch_execution.deferred_cost_ms:.4f}"
-    )
-    print(
-        "Dispatch execution memory relief MB: "
-        f"{result.dispatch_execution.memory_relief_mb:.4f}"
-    )
-    print(
-        "Runtime calibration observed frame ms: "
-        f"{result.runtime_calibration.total_observed_frame_cost_ms:.4f}"
-    )
-    print(
-        "Runtime calibration planned current-frame ms: "
-        f"{result.runtime_calibration.total_planned_current_frame_cost_ms:.4f}"
-    )
-    print(
-        "Runtime calibration relief ms: "
-        f"{result.runtime_calibration.total_planned_frame_relief_ms:.4f}"
-    )
-    print(
-        "Runtime calibration max guardband ms: "
-        f"{result.runtime_calibration.max_guardband_ms:.4f}"
-    )
-    print(f"Runtime manager profile: {result.runtime_manager.profile}")
-    print(
-        "Runtime manager next frame budget ms: "
-        f"{result.runtime_manager.next_frame_budget_ms:.4f}"
-    )
-    print(
-        "Runtime manager memory actions: "
-        f"{result.runtime_manager.memory_action_count}"
-    )
-    print(
-        "Runtime control packet commands: "
-        f"{result.runtime_control_packet.command_count}"
-    )
-    print(
-        "Runtime control packet active commands: "
-        f"{result.runtime_control_packet.active_command_count}"
-    )
-    print(
-        "Runtime control packet memory commands: "
-        f"{result.runtime_control_packet.memory_command_count}"
-    )
-    print(
-        "Runtime control state frame budgets: "
-        f"{result.runtime_control_state.applied_frame_budget_count}"
-    )
-    print(
-        "Runtime control state memory actions: "
-        f"{result.runtime_control_state.memory_action_count}"
-    )
-    print(
-        "Runtime gateway tick policy: "
-        f"{result.runtime_gateway_tick.tick_policy}"
-    )
-    print(
-        "Runtime gateway tick steps: "
-        f"{result.runtime_gateway_tick.step_count}"
-    )
-    print(
-        "Runtime gateway tick memory active steps: "
-        f"{result.runtime_gateway_tick.memory_active_step_count}"
-    )
-    print(
-        "Runtime gateway cycle next action: "
-        f"{result.runtime_gateway_cycle.next_cycle_action}"
-    )
-    print(
-        "Runtime gateway cycle drift risk: "
-        f"{result.runtime_gateway_cycle.drift_risk}"
-    )
-    print(
-        "Runtime gateway cycle memory relief MB: "
-        f"{result.runtime_gateway_cycle.memory_relief_applied_mb:.4f}"
-    )
-    print(
-        "Runtime gateway feedback action: "
-        f"{result.runtime_gateway_feedback.feedback_action}"
-    )
-    print(
-        "Runtime gateway feedback convergence: "
-        f"{result.runtime_gateway_feedback.convergence_status}"
-    )
-    print(
-        "Runtime gateway feedback protected gap ms: "
-        f"{result.runtime_gateway_feedback.protected_gap_ms:.4f}"
-    )
-    print(
-        "Runtime policy update action: "
-        f"{result.runtime_policy_update.policy_action}"
-    )
-    print(
-        "Runtime policy update next profile: "
-        f"{result.runtime_policy_update.next_profile}"
-    )
-    print(
-        "Runtime policy update next frame budget ms: "
-        f"{result.runtime_policy_update.next_frame_budget_ms:.4f}"
-    )
-    print(
-        "Runtime state accumulator cycles: "
-        f"{result.runtime_state_accumulator.cycle_count}"
-    )
-    print(
-        "Runtime state accumulator active policies: "
-        f"{result.runtime_state_accumulator.active_policy_count}"
-    )
-    print(
-        "Runtime state accumulator digest: "
-        f"{result.runtime_state_accumulator.state_digest}"
-    )
-    print(f"Runtime state transition trend: {result.runtime_state_transition.trend}")
-    print(
-        "Runtime state transition action: "
-        f"{result.runtime_state_transition.transition_action}"
-    )
-    print(
-        "Runtime state transition pressure delta: "
-        f"{result.runtime_state_transition.pressure_delta:.4f}"
-    )
-    print(
-        "Runtime supervisor directive action: "
-        f"{result.runtime_supervisor_directive.directive_action}"
-    )
-    print(
-        "Runtime supervisor scheduler posture: "
-        f"{result.runtime_supervisor_directive.scheduler_posture}"
-    )
-    print(
-        "Runtime supervisor memory posture: "
-        f"{result.runtime_supervisor_directive.memory_posture}"
-    )
-    print(f"Runtime supervisor plan action: {result.runtime_supervisor_plan.plan_action}")
-    print(
-        "Runtime supervisor plan commands: "
-        f"{result.runtime_supervisor_plan.command_count}"
-    )
-    print(
-        "Runtime supervisor plan blocking commands: "
-        f"{result.runtime_supervisor_plan.blocking_command_count}"
-    )
-    print(
-        "Runtime supervisor execution action: "
-        f"{result.runtime_supervisor_execution.execution_action}"
-    )
-    print(
-        "Runtime supervisor execution would apply: "
-        f"{result.runtime_supervisor_execution.would_apply_count}"
-    )
-    print(
-        "Runtime supervisor execution guard: "
-        f"{result.runtime_supervisor_execution.execution_guard}"
-    )
-    print(f"Live state open frame: {result.state_snapshot.open_frame}")
-    print(f"Live state active resources: {result.state_snapshot.active_resource_count}")
-    print(
-        "Estimated critical-path reduction ms: "
-        f"{result.schedule_plan.estimated_latency_reduction_ms:.4f}"
-    )
-    print(f"Released resources: {len(result.released_resources)}")
-    print(f"Estimated saved ms: {snapshot['estimated_saved_ms']:.4f}")
-    print(f"Estimated saved MB moved/allocated: {snapshot['estimated_saved_mb']:.4f}")
     return 0
 
 
@@ -1057,6 +590,10 @@ def normalized_jsonl_path(value: str) -> Path:
     if path.suffix.lower() != ".jsonl":
         path = path.with_suffix(".jsonl")
     return path.resolve()
+
+
+def default_ledger_path(report_path: Path) -> Path:
+    return report_path.with_name(f"{report_path.stem}.ledger.json")
 
 
 def run_runtime_serve_events(args: argparse.Namespace) -> int:

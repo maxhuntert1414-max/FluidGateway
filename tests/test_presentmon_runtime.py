@@ -128,9 +128,20 @@ class PresentMonRuntimeEventTests(unittest.TestCase):
                 for line in result.events_path.read_text(encoding="utf-8").splitlines()
             ]
 
-        self.assertEqual(result.mode, "presentmon-daemon-run-v0.60")
+        self.assertEqual(result.mode, "presentmon-daemon-run-v0.61")
         self.assertEqual(result.events_path.suffix, ".jsonl")
         self.assertEqual(result.event_stream.application, "BubbleGame.exe")
+        self.assertEqual(
+            result.operational_ledger.mode,
+            "presentmon-operational-ledger-v0.61",
+        )
+        self.assertEqual(
+            result.operational_ledger.recommended_next_step,
+            "continue-safe-manager-loop-and-build-native-backend",
+        )
+        self.assertEqual(result.operational_ledger.waste_pressure_score, 85)
+        self.assertEqual(result.operational_ledger.safe_progress_score, 50.0)
+        self.assertEqual(result.operational_ledger.native_blocker_score, 50.0)
         self.assertEqual(len(events), 12)
         self.assertEqual(events[0]["mode"], "presentmon-runtime-event-ingest-v0.59")
         self.assertEqual(payload["events_processed"], 12)
@@ -148,6 +159,7 @@ class PresentMonRuntimeEventTests(unittest.TestCase):
             events_path = temp / "events.jsonl"
             state_path = temp / "state.json"
             report_path = temp / "report.json"
+            ledger_path = temp / "report.ledger.json"
             with redirect_stdout(StringIO()) as stdout:
                 status = main(
                     [
@@ -169,15 +181,27 @@ class PresentMonRuntimeEventTests(unittest.TestCase):
             ]
             state = json.loads(state_path.read_text(encoding="utf-8"))
             report = json.loads(report_path.read_text(encoding="utf-8"))
+            ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
 
         self.assertEqual(status, 0)
         self.assertIn("PresentMon application: BubbleGame.exe", stdout.getvalue())
+        self.assertIn("PresentMon operational ledger written:", stdout.getvalue())
+        self.assertIn(
+            "PresentMon ledger recommendation: "
+            "continue-safe-manager-loop-and-build-native-backend",
+            stdout.getvalue(),
+        )
         self.assertIn("Daemon cycles: 1", stdout.getvalue())
         self.assertEqual(events[0]["mode"], "presentmon-runtime-event-ingest-v0.59")
         self.assertEqual(state["profile"], "aggressive")
         self.assertEqual(report["cycle_count"], 1)
         self.assertEqual(report["events_processed"], 12)
         self.assertIn("native_backend_gate", report)
+        self.assertEqual(ledger["mode"], "presentmon-operational-ledger-v0.61")
+        self.assertEqual(ledger["manager_profile"], "aggressive")
+        self.assertTrue(ledger["safe_control_surfaces"])
+        self.assertEqual(ledger["native_blocked_surfaces"], ["ram-vram"])
+        self.assertFalse(ledger["native_promotion_allowed"])
 
     def test_runtime_run_presentmon_daemon_rejects_output_path_collision(self):
         with tempfile.TemporaryDirectory() as temp_dir:
