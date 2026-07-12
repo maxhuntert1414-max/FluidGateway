@@ -19,6 +19,12 @@ runtime prototypes for modeling early CPU/GPU/RAM/VRAM decisions.
 > The initial promise is to find probable waste in the frame path, not to
 > automatically increase FPS.
 
+The native live-observation and future actuation work now lives in
+[FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime). FluidGateway
+remains the diagnostic, evidence, policy-modeling, and operational-ledger half
+of the project; FluidRuntime consumes that evidence alongside live Windows,
+memory, GPU, and D3D11 telemetry.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
