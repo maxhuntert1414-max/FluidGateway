@@ -25,6 +25,12 @@ remains the diagnostic, evidence, policy-modeling, and operational-ledger half
 of the project; FluidRuntime consumes that evidence alongside live Windows,
 memory, GPU, and D3D11 telemetry.
 
+FluidRuntime v0.5 also contains a first controlled actuation experiment: it can
+skip one redundant D3D11 resource copy only inside its owned deterministic lab,
+then compare buffer/texture bytes exactly, publish hashes, and verify rollback
+against a separate baseline. It does not enable optimization or injection in
+games.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
