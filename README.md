@@ -38,6 +38,13 @@ weak for a performance claim. The published
 [v0.6 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.6-copy-elision.md)
 keeps the owned-lab scope explicit and includes the raw traces.
 
+FluidRuntime v0.7 adds the next safety layer: cooperative resource retirement,
+monotonic resource IDs, bounded pointer-reuse detection, and managed
+active/retired-state reconstruction. Its
+[lifecycle evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.7-resource-lifecycle.md)
+remains limited to the owned D3D11 target; automatic COM destruction and
+external-process actuation are not claimed.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
