@@ -3,10 +3,24 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from .models import NUMERIC_COLUMNS, FrameSample, TraceData
+from .models import EXPECTED_COLUMNS, NUMERIC_COLUMNS, FrameSample, TraceData
 
 
 NA_VALUES = {"", "na", "n/a", "nan", "null", "none", "-"}
+
+COLUMN_ALIASES = {column.casefold(): column for column in EXPECTED_COLUMNS}
+COLUMN_ALIASES.update(
+    {
+        "runtime": "PresentRuntime",
+        "msbetweendisplaychange": "DisplayedTime",
+        "msuntilrendercomplete": "MsRenderPresentLatency",
+    }
+)
+
+
+def canonical_column_name(column: str) -> str:
+    stripped = column.strip()
+    return COLUMN_ALIASES.get(stripped.casefold(), stripped)
 
 
 def parse_number(value: str | None) -> float | None:
@@ -34,15 +48,32 @@ def parse_presentmon_csv(path: str | Path) -> TraceData:
         if not reader.fieldnames:
             raise ValueError(f"{csv_path} does not look like a CSV with headers.")
 
-        columns = [column.strip() for column in reader.fieldnames if column]
+        columns = list(
+            dict.fromkeys(
+                canonical_column_name(column)
+                for column in reader.fieldnames
+                if column and column.strip()
+            )
+        )
         frames: list[FrameSample] = []
 
         for row in reader:
-            normalized = {
+            source = {
                 (key or "").strip(): (value or "").strip()
                 for key, value in row.items()
                 if key is not None
             }
+            normalized = dict(source)
+            for key, value in source.items():
+                normalized.setdefault(canonical_column_name(key), value)
+
+            has_native_displayed_time = any(
+                key.casefold() == "displayedtime" for key in source
+            )
+            dropped = parse_number(source.get("Dropped"))
+            if not has_native_displayed_time and dropped not in (None, 0):
+                normalized["DisplayedTime"] = "NA"
+
             values = {
                 column: parse_number(normalized.get(column))
                 for column in NUMERIC_COLUMNS

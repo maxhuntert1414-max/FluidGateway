@@ -1,0 +1,7 @@
+Application,ProcessID,Runtime,SyncInterval,Dropped,PresentMode,msInPresentAPI,msBetweenPresents,AllowsTearing,msUntilRenderComplete,msUntilDisplayed,msBetweenDisplayChange
+LegacyGame.exe,42,DXGI,1,0,Composed: Copy with GPU GDI,0.55,16.4,0,5.1,21.4,16.7
+LegacyGame.exe,42,DXGI,1,1,Composed: Copy with GPU GDI,0.62,16.8,0,5.4,0,0
+LegacyGame.exe,42,DXGI,1,0,Composed: Copy with GPU GDI,0.58,16.6,0,5.2,22.0,16.7
+LegacyGame.exe,42,DXGI,1,0,Composed: Copy with GPU GDI,0.57,16.7,0,5.3,21.8,16.7
+LegacyGame.exe,42,DXGI,1,1,Composed: Copy with GPU GDI,0.64,16.5,0,5.5,0,0
+LegacyGame.exe,42,DXGI,1,0,Composed: Copy with GPU GDI,0.56,16.9,0,5.2,21.6,16.7

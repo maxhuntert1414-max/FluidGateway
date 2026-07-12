@@ -45,6 +45,23 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertEqual(parse_number("12.5 ms"), 12.5)
         self.assertEqual(parse_number("12,5"), 12.5)
 
+    def test_legacy_presentmon_columns_are_canonicalized(self):
+        trace = parse_presentmon_csv(FIXTURES / "legacy_presentmon.csv")
+        report = analyze_trace(trace)
+
+        self.assertEqual(trace.frames[0].present_runtime, "DXGI")
+        self.assertEqual(trace.frames[0].number("MsBetweenPresents"), 16.4)
+        self.assertIsNone(trace.frames[1].number("DisplayedTime"))
+        self.assertNotIn("PresentRuntime", report.summary.missing_columns)
+        self.assertNotIn("MsBetweenPresents", report.summary.missing_columns)
+        self.assertNotIn("MsInPresentAPI", report.summary.missing_columns)
+        self.assertNotIn("MsUntilDisplayed", report.summary.missing_columns)
+        self.assertNotIn("MsRenderPresentLatency", report.summary.missing_columns)
+        self.assertNotIn("DisplayedTime", report.summary.missing_columns)
+        self.assertIsNotNone(report.summary.duration_ms)
+        self.assertIsNotNone(report.summary.approx_fps)
+        self.assert_has_finding(report, "undisplayed-frames")
+
     def test_clean_trace_has_no_medium_or_worse_findings(self):
         report = self.analyze_fixture("clean.csv")
         severe = [finding for finding in report.findings if finding.score >= 45]
