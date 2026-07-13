@@ -45,6 +45,13 @@ active/retired-state reconstruction. Its
 remains limited to the owned D3D11 target; automatic COM destruction and
 external-process actuation are not claimed.
 
+FluidRuntime v0.7.1 adds opt-in automatic destruction observation for returned
+D3D11 Buffer/Texture2D interfaces, 64-cycle churn validation, dynamic Release
+slot rollback, and a zero-hook cooperative fallback. The published
+[automatic-destruction evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.7.1-automatic-destruction.md)
+also records an inconclusive AMD performance result and blocks the positive
+claim instead of generalizing a favorable median.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
