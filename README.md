@@ -52,6 +52,15 @@ slot rollback, and a zero-hook cooperative fallback. The published
 also records an inconclusive AMD performance result and blocks the positive
 claim instead of generalizing a favorable median.
 
+FluidRuntime v0.7.2 adds ABI-v4 subresource indices, per-mip generations, and
+exact `CopySubresourceRegion` identity. Its owned workload observes eight
+regional copies and classifies three exact unchanged repeats while forwarding
+all eight. The published
+[subresource-provenance evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.7.2-subresource-provenance.md)
+includes WARP, fallback, concurrent-detach, and RX 580 traces. The hardware run
+supports only a narrow GPU-workload improvement; its CPU timing regressed, so it
+does not establish better frame time, FPS, or game-wide efficiency.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
