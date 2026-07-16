@@ -61,6 +61,15 @@ includes WARP, fallback, concurrent-detach, and RX 580 traces. The hardware run
 supports only a narrow GPU-workload improvement; its CPU timing regressed, so it
 does not establish better frame time, FPS, or game-wide efficiency.
 
+FluidRuntime v0.7.3 adds ABI-v5 events for exact Texture2D mip writes observed
+through `ClearRenderTargetView` and `ClearUnorderedAccessViewFloat`. The owned
+workload proves that an RTV clear on mip 0 preserves mip-1 provenance while a
+UAV clear on mip 1 invalidates the next mip-1 repeat. Its
+[GPU-view write evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.7.3-gpu-view-writes.md)
+contains WARP, fallback, concurrent-detach, and 22 RX 580 runs. All correctness
+gates passed, but the positive performance claim was blocked because GPU p95
+regressed; this release advances trustworthy observation, not an FPS promise.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
