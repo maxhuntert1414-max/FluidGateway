@@ -70,6 +70,15 @@ contains WARP, fallback, concurrent-detach, and 22 RX 580 runs. All correctness
 gates passed, but the positive performance claim was blocked because GPU p95
 regressed; this release advances trustworthy observation, not an FPS promise.
 
+FluidRuntime v0.8.0 adds the first managed-to-native actuation path. Its .NET
+`manager-lab` publishes one short-lived shared-memory policy epoch to an owned
+D3D11 target; the native hook validates and acknowledges it, then may spend a
+one-action budget on the already-proven redundant `CopyResource`. The published
+[managed control-plane evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.8.0-managed-control-plane.md)
+records successful WARP and RX 580 correctness runs. The RX 580 timing regressed,
+so the performance gate blocked the claim. CPU scheduling, RAM/VRAM residency,
+presentation changes, external attach, and game support remain disabled.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
@@ -83,7 +92,7 @@ input for a future runtime controller. The goal is to eventually coordinate:
 - frame pacing stability;
 - zero-copy or lower-copy presentation routes.
 
-In v0.2 this is still advisory. The tool generates a management plan that says
+FluidGateway-side management remains advisory. The tool generates a plan that says
 which policies a future gateway/scheduler should apply and why. Direct RAM/VRAM
 control requires additional telemetry beyond PresentMon.
 
