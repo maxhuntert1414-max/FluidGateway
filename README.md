@@ -79,6 +79,17 @@ records successful WARP and RX 580 correctness runs. The RX 580 timing regressed
 so the performance gate blocked the claim. CPU scheduling, RAM/VRAM residency,
 presentation changes, external attach, and game support remain disabled.
 
+FluidRuntime v0.9.0 turns the one-copy experiment into a bounded sustained
+intervention. A managed policy can spend up to 128 actions on proven unchanged
+repeats in a 4 MiB owned D3D11 buffer workload. The default optimized run skips
+128 copies, avoids 512 MiB of logical GPU copy traffic, preserves exact readback
+hashes, and restores original dispatch. The published
+[sustained copy-elision evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.9.0-sustained-copy-elision.md)
+includes a deterministic 320-process negative policy matrix plus WARP and RX
+580 paired traces. The RX 580 GPU-workload gate passed, while CPU timing showed
+a small regression; this is not an FPS, frame-time, external-game, RAM/VRAM, or
+general efficiency claim.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
