@@ -1,14 +1,14 @@
 [project]
 name = "fluidgateway"
 version = "0.62.0"
-description = "A diagnostic CLI for probable waste in CPU/GPU/display frame pipelines."
+description = "An evidence-driven gateway for finding waste across CPU, GPU, memory, and frame pipelines."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
   { name = "FluidGateway contributors" }
 ]
-keywords = ["presentmon", "gpu", "dx12", "performance", "frame-pacing"]
+keywords = ["presentmon", "gpu", "cpu", "ram", "vram", "runtime", "performance", "frame-pacing"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
