@@ -95,6 +95,17 @@ includes a deterministic 320-process negative policy matrix plus WARP and RX
 a small regression; this is not an FPS, frame-time, external-game, RAM/VRAM, or
 general efficiency claim.
 
+FluidRuntime v0.10.0 separates the API-visible readback direction from generic
+GPU copies. A dedicated action can skip only proven unchanged
+`D3D11_USAGE_DEFAULT -> D3D11_USAGE_STAGING + D3D11_CPU_ACCESS_READ` repeats in
+the owned target. Baselines forward all 65 readback copies; optimized runs
+forward one, skip 64, and still map and compare all 4 MiB 65 times. The
+[readback-elision evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.10.0-readback-elision.md)
+contains WARP, a 320-process negative matrix, and 22 RX 580 runs. The scoped
+CPU/GPU interval gate passed with 10/10 paired wins. This does not prove physical
+VRAM placement, PCIe byte reduction, residency control, or external-game
+support.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor

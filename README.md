@@ -10,7 +10,7 @@ GPU, RAM, VRAM, graphics resources, and frame presentation.**
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f)](LICENSE)
-[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.9.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.9.0)
+[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.10.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.10.0)
 
 [Quick Start](#quick-start) | [Evidence](#measured-actuation) |
 [Architecture](#architecture) | [Roadmap](#roadmap) |
@@ -38,7 +38,7 @@ The public promise today is precise:
 | Component | Role | Current state |
 | --- | --- | --- |
 | **FluidGateway v0.62.0** | PresentMon analysis, policy modeling, runtime protocols, operational ledger | Usable diagnostic CLI; management remains advisory |
-| **[FluidRuntime v0.9.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, cooperative D3D11 hook, managed-to-native control | Controlled actuation proven in an owned, opt-in laboratory |
+| **[FluidRuntime v0.10.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, cooperative D3D11 hook, managed-to-native control | Generic copy and readback actuation proven in an owned, opt-in laboratory |
 | External game integration | Allowlisted observation and future reversible control | Not implemented |
 | CPU scheduler and RAM/VRAM residency backends | Deeper system-level efficiency management | Research roadmap |
 
@@ -62,39 +62,44 @@ technical next steps without pretending that inference is internal-cause proof.
 | Runtime event protocol | JSONL replay, TCP decision server, lifecycle adapter, persisted manager state | Local prototype |
 | PresentMon-to-daemon bridge | Operational ledger and repeated advisory control cycles | Dry run |
 | Native copy-path intervention | Bounded D3D11 copy elision through FluidRuntime | Owned target only |
+| Native readback intervention | Bounded `DEFAULT -> STAGING + CPU_READ` elision through FluidRuntime | Owned target only |
 
 FluidGateway has no third-party runtime dependencies. The Python v0.62.0 suite
 currently contains 199 tests and runs on Python 3.10 and 3.13 in GitHub Actions.
 
 ## Measured Actuation
 
-FluidRuntime v0.9.0 is the first release that demonstrates sustained, measurable
-interference rather than only diagnosis.
+FluidRuntime v0.10.0 adds the first direction-specific memory-path intervention
+rather than treating every resource copy as the same operation.
 
 In an owned D3D11 workload on an AMD Radeon RX 580:
 
 | Signal | Baseline | Optimized |
 | --- | ---: | ---: |
-| Whole-resource copies observed | 135 | 135 |
-| Whole-resource copies forwarded | 135 | 7 |
-| Proven redundant copies skipped | 0 | 128 |
-| Logical copy traffic avoided | 0 | 536,870,912 bytes |
-| GPU workload p95 | 27.473 ms | 0.357 ms |
-| Measured GPU pair wins | 0/10 | 10/10 |
+| Readback copies observed | 65 | 65 |
+| CPU read maps completed | 65 | 65 |
+| Readback copies forwarded | 65 | 1 |
+| Proven redundant readback copies skipped | 0 | 64 |
+| Logical copy traffic avoided | 0 | 268,435,456 bytes |
+| CPU workload p95 | 575.245 ms | 442.803 ms |
+| GPU timestamp interval p95 | 558.646 ms | 427.419 ms |
+| Measured CPU/GPU pair wins | 0/10 | 10/10 |
 
-Every measured run required exact source/destination readback hashes, complete
-event and snapshot agreement, adapter identity, valid GPU timestamps, and
-restored dispatch after detach. A 320-process Release/Debug policy matrix also
-proved valid, rejected, expired, and no-opt-in behavior.
+Every measured run retained all 65 maps and required exact expected, first,
+final, source, and destination hashes; complete event/snapshot agreement;
+adapter identity; valid GPU timestamps; and restored dispatch after detach. A
+320-process Release/Debug policy matrix also proved valid, rejected, expired,
+and no-opt-in behavior.
 
 This is a deliberately narrow
-`owned-d3d11-sustained-copy-elision-gpu-workload-only` result. CPU timing
-regressed slightly, and 512 MiB of logical removed calls does not mean 512 MiB
-of physical PCIe traffic. The project does **not** claim higher game FPS, lower
-end-to-end frame time, lower power, or support for external games from this
-experiment.
+`owned-d3d11-default-to-staging-readback-workload-only` result. D3D11 usage
+classes do not prove physical RAM/VRAM placement, and 256 MiB of logical removed
+calls does not mean 256 MiB of physical PCIe traffic. The GPU number is a
+timestamp interval around the workload, not a GPU-busy hardware counter. The
+project does **not** claim higher game FPS, lower power, or external-game support
+from this experiment.
 
-[Read the evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.9.0/docs/evidence/v0.9.0-sustained-copy-elision.md)
+[Read the evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.10.0/docs/evidence/v0.10.0-readback-elision.md)
 
 ## Architecture
 
@@ -192,6 +197,9 @@ driver cause.
 - [x] Advisory CPU/GPU/RAM/VRAM policy and persistent daemon contracts.
 - [x] Cooperative D3D11 observation with shared-memory telemetry.
 - [x] Bounded managed-to-native copy elision with hardware evidence.
+- [x] Direction-specific D3D11 readback elision with per-map equivalence and
+  hardware evidence.
+- [ ] Prototype the opposite `RAM -> GPU` upload direction in the owned lab.
 - [ ] Harden provenance for aliases, shader writes, fences, deferred contexts,
   and synchronization.
 - [ ] Add explicit allowlisted external observation for authorized,
@@ -213,8 +221,8 @@ reproducible evidence, narrow claim, then the next layer of authority.
   protocol and feature history preserved from the original long-form README.
 - [`FluidRuntime`](https://github.com/maxhuntert1414-max/FluidRuntime): native
   observation, actuation, evidence, and rollback companion.
-- [`FluidRuntime v0.9.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.9.0/docs/evidence/v0.9.0-sustained-copy-elision.md): raw policy,
-  WARP, and RX 580 results.
+- [`FluidRuntime v0.10.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.10.0/docs/evidence/v0.10.0-readback-elision.md): raw policy,
+  WARP, and RX 580 readback results.
 
 ## Contributing
 
