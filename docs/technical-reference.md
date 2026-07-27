@@ -106,6 +106,18 @@ CPU/GPU interval gate passed with 10/10 paired wins. This does not prove physica
 VRAM placement, PCIe byte reduction, residency control, or external-game
 support.
 
+FluidRuntime v0.11.0 proves the opposite API-visible upload direction. A third
+action bit can skip only trusted unchanged
+`D3D11_USAGE_STAGING + D3D11_CPU_ACCESS_WRITE -> D3D11_USAGE_DEFAULT` repeats
+in the owned target. Baselines forward all 65 uploads; optimized runs forward
+one and skip 64 after one successful 4 MiB write map/unmap. The
+[upload-elision evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/evidence/v0.11.0-upload-elision.md)
+contains ring ABI 8/snapshot ABI 11 accounting, a 320-process negative matrix,
+WARP evidence, and 22 RX 580 runs. GPU won all 10 measured pairs while all CPU
+submission pairs stayed inside the declared +1 ms / +10% overhead envelope.
+This is not physical RAM-to-VRAM, PCIe, residency, FPS, or CPU-acceleration
+evidence.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
