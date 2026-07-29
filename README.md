@@ -10,7 +10,7 @@ GPU, RAM, VRAM, graphics resources, and frame presentation.**
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f)](LICENSE)
-[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.11.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.11.0)
+[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.12.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.12.0)
 
 [Quick Start](#quick-start) | [Evidence](#measured-actuation) |
 [Architecture](#architecture) | [Roadmap](#roadmap) |
@@ -38,7 +38,7 @@ The public promise today is precise:
 | Component | Role | Current state |
 | --- | --- | --- |
 | **FluidGateway v0.62.0** | PresentMon analysis, policy modeling, runtime protocols, operational ledger | Usable diagnostic CLI; management remains advisory |
-| **[FluidRuntime v0.11.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, cooperative D3D11 hook, managed-to-native control | Generic copy, readback, and upload actuation proven in an owned, opt-in laboratory |
+| **[FluidRuntime v0.12.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, cooperative D3D11 hook, managed-to-native control | Generic copy, readback, staging upload, and direct-update actuation proven in an owned, opt-in laboratory |
 | External game integration | Allowlisted observation and future reversible control | Not implemented |
 | CPU scheduler and RAM/VRAM residency backends | Deeper system-level efficiency management | Research roadmap |
 
@@ -64,48 +64,47 @@ technical next steps without pretending that inference is internal-cause proof.
 | Native copy-path intervention | Bounded D3D11 copy elision through FluidRuntime | Owned target only |
 | Native readback intervention | Bounded `DEFAULT -> STAGING + CPU_READ` elision through FluidRuntime | Owned target only |
 | Native upload intervention | Bounded `STAGING + CPU_WRITE -> DEFAULT` elision through FluidRuntime | Owned target only |
+| Native direct-update intervention | Exact-content full-buffer `UpdateSubresource` elision through FluidRuntime | Owned target only |
 
 FluidGateway has no third-party runtime dependencies. The Python v0.62.0 suite
 currently contains 199 tests and runs on Python 3.10 and 3.13 in GitHub Actions.
 
 ## Measured Actuation
 
-FluidRuntime v0.11.0 proves both API-visible memory directions with separate,
-bounded action bits rather than treating every resource copy as the same
-operation. The newest evidence covers uploads from a CPU-writable staging
-buffer into a default resource.
+FluidRuntime v0.12.0 adds a fourth isolated action: exact-content elimination
+of repeated full-buffer `UpdateSubresource` uploads. This is a more direct
+CPU-memory-to-D3D11 path than the v0.11 staging-copy experiment.
 
-In an owned D3D11 workload on an AMD Radeon RX 580:
+The owned workload deliberately contains three required uploads: content A,
+content B after a one-bit mutation, and B again after another API overwrites the
+destination with content C. Only the remaining 64 exact repeats may be skipped.
+
+On an AMD Radeon RX 580:
 
 | Signal | Baseline | Optimized |
 | --- | ---: | ---: |
-| Upload copies observed | 65 | 65 |
-| CPU write map/unmap completed | 1 | 1 |
-| Upload copies forwarded | 65 | 1 |
-| Proven redundant upload copies skipped | 0 | 64 |
-| Logical copy traffic avoided | 0 | 268,435,456 bytes |
-| CPU submission p95 | 13.397 ms | 12.391 ms |
-| GPU timestamp interval p95 | 32.520 ms | 1.734 ms |
+| Direct 4 MiB updates observed | 67 | 67 |
+| Direct updates forwarded | 67 | 3 |
+| Exact redundant updates skipped | 0 | 64 |
+| Exact-content cache | 1 resource / 4 MiB | 1 resource / 4 MiB |
+| Logical source bytes avoided | 0 | 268,435,456 bytes |
+| CPU workload p95 | 333.515 ms | 89.122 ms |
+| GPU timestamp interval p95 | 275.277 ms | 3.213 ms |
+| Measured CPU pair wins | 0/10 | 10/10 |
 | Measured GPU pair wins | 0/10 | 10/10 |
 
-Every measured run retained the staging write and required exact expected,
-source, and destination hashes; complete event/snapshot agreement; adapter
-identity; valid GPU timestamps; and restored dispatch after detach. All 10 CPU
-submission pairs remained inside the declared +1 ms / +10% overhead envelope;
-CPU won 6/10, so this is not a CPU-acceleration claim. A 320-process
-Release/Debug policy matrix also proved valid, rejected, expired, and no-opt-in
-behavior.
+`memcmp` proves equality; hashes only label evidence. Every run verifies the
+A-to-B mutation, invalidation after the C write, exact final B readback, policy
+accounting, adapter identity, event/snapshot agreement, zero ring loss, and
+restored dispatch. The 320-process Release/Debug negative matrix also passed.
 
-This is a deliberately narrow
-`owned-d3d11-writable-staging-to-default-upload-copy-workload-only` result.
-D3D11 usage classes do not prove physical RAM/VRAM placement, and 256 MiB of
-logical removed calls does not mean 256 MiB of physical PCIe traffic. The GPU
-number is a timestamp interval around the workload, not a GPU-busy hardware
-counter. The
-project does **not** claim higher game FPS, lower power, or external-game support
-from this experiment.
+This is deliberately scoped to
+`owned-d3d11-default-buffer-full-update-subresource-exact-content-workload-only`.
+It is not evidence of physical RAM-to-VRAM or PCIe bytes, game FPS, lower power,
+texture/partial uploads, external-game safety, or a general-purpose cache. The
+GPU number is a guarded workload interval, not a GPU-busy counter.
 
-[Read the evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.11.0/docs/evidence/v0.11.0-upload-elision.md)
+[Read the v0.12 evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.12.0/docs/evidence/v0.12.0-update-upload-elision.md)
 
 ## Architecture
 
@@ -206,8 +205,11 @@ driver cause.
 - [x] Direction-specific D3D11 readback elision with per-map equivalence and
   hardware evidence.
 - [x] Prototype the API-visible `RAM -> GPU` upload direction in the owned lab.
-- [ ] Extend upload provenance to dynamic buffers, `UpdateSubresource`, partial
-  regions, reuse, batching, fences, and synchronization.
+- [x] Add bounded exact-content full-buffer `UpdateSubresource` elision with
+  mutation and external-write generation guards.
+- [ ] Extend upload provenance to dynamic buffers, textures, pitch-aware and
+  partial regions, `UpdateSubresource1`, reuse, batching, fences, and
+  synchronization.
 - [ ] Harden provenance for aliases, shader writes, fences, deferred contexts,
   and synchronization.
 - [ ] Add explicit allowlisted external observation for authorized,
@@ -229,8 +231,8 @@ reproducible evidence, narrow claim, then the next layer of authority.
   protocol and feature history preserved from the original long-form README.
 - [`FluidRuntime`](https://github.com/maxhuntert1414-max/FluidRuntime): native
   observation, actuation, evidence, and rollback companion.
-- [`FluidRuntime v0.11.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.11.0/docs/evidence/v0.11.0-upload-elision.md): raw policy,
-  WARP, and RX 580 upload results.
+- [`FluidRuntime v0.12.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.12.0/docs/evidence/v0.12.0-update-upload-elision.md): exact-content policy,
+  WARP, and RX 580 direct-update results.
 
 ## Contributing
 

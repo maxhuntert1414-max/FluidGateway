@@ -118,6 +118,24 @@ submission pairs stayed inside the declared +1 ms / +10% overhead envelope.
 This is not physical RAM-to-VRAM, PCIe, residency, FPS, or CPU-acceleration
 evidence.
 
+FluidRuntime v0.12.0 adds a fourth isolated action for a direct CPU-memory
+upload path: full-buffer `UpdateSubresource` into one owned 4 MiB default
+buffer. Attach-options ABI 3 bounds exact retained content to one resource;
+ring ABI 9 and snapshot ABI 12 expose content-comparison, candidate, forwarded,
+skipped, and cache evidence. Baselines forward all 67 direct updates. Optimized
+runs forward three required writes and skip 64 byte-identical repeats.
+
+The workload is adversarial rather than pointer-based: content B differs from A
+by one bit, then an external `CopyResource` writes distinct content C before B
+is uploaded again. Both B transitions must be forwarded. Exact `memcmp` proves
+equality; FNV-1a hashes only identify evidence. The
+[v0.12 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.12.0/docs/evidence/v0.12.0-update-upload-elision.md)
+contains a 320-process negative matrix, WARP traces, and 22 RX 580 raw runs.
+CPU and guarded GPU intervals improved in 10/10 measured pairs, but the claim
+remains limited to the owned full-buffer workload. It does not establish
+physical RAM/VRAM or PCIe traffic, texture/partial uploads, external-game
+safety, FPS, or a general cache.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
