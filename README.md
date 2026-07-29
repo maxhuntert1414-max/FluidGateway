@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/fluidgateway-readme.gif" alt="FluidGateway animated frame-pipeline visualization" width="960">
+
 # FluidGateway
 
 **An evidence-driven gateway for finding and reducing wasted work across CPU,
