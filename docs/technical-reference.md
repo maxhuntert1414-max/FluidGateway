@@ -1,6 +1,6 @@
 # FluidGateway Technical Reference
 
-> This document preserves the complete v0.62 protocol and feature history from
+> This document preserves the complete v0.63 protocol and feature history from
 > the original long-form README. Start with the
 > [project overview](../README.md) for the current capability map, evidence, and
 > roadmap.
@@ -318,6 +318,26 @@ This is still a user-space prototype, not a driver or graphics API hook. It is,
 however, a concrete integration surface for an engine plugin, telemetry adapter,
 or future interceptor to ask for decisions before performing CPU/GPU/RAM/VRAM
 movement or synchronization.
+
+### FluidLink v1 Binary Mode
+
+Version 0.63 adds FluidLink without removing the original JSONL surface. A TCP
+connection beginning with ASCII `FLNK` uses a fixed 56-byte little-endian
+header; any other valid event connection stays in legacy JSONL mode. The modes
+never mix within one connection.
+
+FluidLink places message, event, and decision vocabulary in one-byte numeric
+opcodes. Dynamic event fields remain a strict UTF-8 JSON object bounded to 1 MiB
+and 64 levels. Handshake, sequence, message/session correlation, exact contract
+fingerprint, capability set, flags, reserved bits, and payload length are all
+validated before a decision is accepted. The .NET client is loopback-only and
+serializes concurrent round trips.
+
+The machine-readable layout is
+[`contracts/fluidlink-v1.contract.json`](../contracts/fluidlink-v1.contract.json),
+with protocol details and measured framing evidence in
+[`docs/fluidlink-v1.md`](fluidlink-v1.md). FluidLink decisions remain advisory;
+they do not grant native hook authority.
 
 ## Runtime Client SDK
 

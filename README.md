@@ -12,7 +12,7 @@ GPU, RAM, VRAM, graphics resources, and frame presentation.**
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f)](LICENSE)
-[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.12.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.12.0)
+[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.13.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.13.0)
 
 [Quick Start](#quick-start) | [Evidence](#measured-actuation) |
 [Architecture](#architecture) | [Roadmap](#roadmap) |
@@ -39,8 +39,8 @@ The public promise today is precise:
 
 | Component | Role | Current state |
 | --- | --- | --- |
-| **FluidGateway v0.62.0** | PresentMon analysis, policy modeling, runtime protocols, operational ledger | Usable diagnostic CLI; management remains advisory |
-| **[FluidRuntime v0.12.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, cooperative D3D11 hook, managed-to-native control | Generic copy, readback, staging upload, and direct-update actuation proven in an owned, opt-in laboratory |
+| **FluidGateway v0.63.0** | PresentMon analysis, policy modeling, FluidLink decisions, operational ledger | Usable diagnostic CLI; management remains advisory |
+| **[FluidRuntime v0.13.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, FluidLink client, cooperative D3D11 hook, managed-to-native control | Cross-process Gateway interop plus bounded native actuation in an owned, opt-in laboratory |
 | External game integration | Allowlisted observation and future reversible control | Not implemented |
 | CPU scheduler and RAM/VRAM residency backends | Deeper system-level efficiency management | Research roadmap |
 
@@ -62,14 +62,15 @@ technical next steps without pretending that inference is internal-cause proof.
 | Trace tracking | Local history with SHA-256 identity, labels, findings, and policy pressure | Local data only |
 | Pipeline optimizer prototype | Removes redundant modeled copies/syncs and reuses modeled transient buffers | Simulation |
 | Runtime event protocol | JSONL replay, TCP decision server, lifecycle adapter, persisted manager state | Local prototype |
+| FluidLink v1 intercommunication | 56-byte binary header, numeric opcodes, exact contract negotiation, correlated sessions, compact decisions | Local advisory IPC |
 | PresentMon-to-daemon bridge | Operational ledger and repeated advisory control cycles | Dry run |
 | Native copy-path intervention | Bounded D3D11 copy elision through FluidRuntime | Owned target only |
 | Native readback intervention | Bounded `DEFAULT -> STAGING + CPU_READ` elision through FluidRuntime | Owned target only |
 | Native upload intervention | Bounded `STAGING + CPU_WRITE -> DEFAULT` elision through FluidRuntime | Owned target only |
 | Native direct-update intervention | Exact-content full-buffer `UpdateSubresource` elision through FluidRuntime | Owned target only |
 
-FluidGateway has no third-party runtime dependencies. The Python v0.62.0 suite
-currently contains 199 tests and runs on Python 3.10 and 3.13 in GitHub Actions.
+FluidGateway has no third-party runtime dependencies. The Python v0.63.0 suite
+currently contains 222 tests and runs on Python 3.10 and 3.13 in GitHub Actions.
 
 ## Measured Actuation
 
@@ -115,7 +116,11 @@ flowchart LR
     PM["PresentMon 2.x trace"] --> FG["FluidGateway diagnosis"]
     FG --> HR["HTML and JSON report"]
     FG --> OL["Operational ledger"]
-    OL --> MR["FluidRuntime manager"]
+    FR["FluidRuntime event intent"] --> FL["FluidLink v1 numeric opcodes"]
+    FL --> FG
+    FG --> FL
+    FL --> MR["FluidRuntime manager"]
+    OL --> MR
     WT["Windows and GPU telemetry"] --> MR
     MR --> CP["Bounded shared-memory policy"]
     CP --> HK["Owned D3D11 hook"]
@@ -167,6 +172,23 @@ python -m fluidgateway runtime run-presentmon-daemon `
 Use `python -m fluidgateway --help` and
 `python -m fluidgateway runtime --help` for the complete command surface.
 
+Run the local FluidLink decision endpoint:
+
+```powershell
+python -m fluidgateway runtime serve-events `
+  --host 127.0.0.1 `
+  --port 8765
+```
+
+FluidRuntime v0.13 provides the typed .NET client and a cross-process probe.
+FluidLink uses a fixed binary control header and numeric opcodes for repeated
+vocabulary. Its bounded dynamic payload remains JSON in v1. The handshake
+verifies the exact contract fingerprint, while the client serializes correlated
+round trips and fails closed on malformed or truncated frames. The legacy raw
+JSONL endpoint remains isolated as a compatibility mode. Read the
+[FluidLink v1 contract](docs/fluidlink-v1.md) for opcode tables, byte evidence,
+capabilities, and trust boundaries.
+
 ## Findings
 
 The diagnostic engine looks for:
@@ -209,6 +231,9 @@ driver cause.
 - [x] Prototype the API-visible `RAM -> GPU` upload direction in the owned lab.
 - [x] Add bounded exact-content full-buffer `UpdateSubresource` elision with
   mutation and external-write generation guards.
+- [x] Add a versioned FluidGateway/FluidRuntime intercommunication library with
+  binary framing, numeric opcodes, compact decisions, negotiated contract
+  fingerprints, and cross-process CI.
 - [ ] Extend upload provenance to dynamic buffers, textures, pitch-aware and
   partial regions, `UpdateSubresource1`, reuse, batching, fences, and
   synchronization.
@@ -228,8 +253,12 @@ reproducible evidence, narrow claim, then the next layer of authority.
 
 - [`fluidgateway/`](fluidgateway): Python diagnostic, policy, control, and daemon
   implementation.
-- [`tests/`](tests): 199 unit and integration tests plus deterministic fixtures.
-- [`docs/technical-reference.md`](docs/technical-reference.md): complete v0.62
+- [`contracts/fluidlink-v1.contract.json`](contracts/fluidlink-v1.contract.json):
+  canonical cross-repository binary layout, limits, and opcode registry.
+- [`docs/fluidlink-v1.md`](docs/fluidlink-v1.md): numeric opcode registry,
+  session protocol, byte evidence, and trust boundary.
+- [`tests/`](tests): 222 unit and integration tests plus deterministic fixtures.
+- [`docs/technical-reference.md`](docs/technical-reference.md): complete v0.63
   protocol and feature history preserved from the original long-form README.
 - [`FluidRuntime`](https://github.com/maxhuntert1414-max/FluidRuntime): native
   observation, actuation, evidence, and rollback companion.

@@ -1,0 +1,172 @@
+# FluidLink v1
+
+FluidLink is the local binary transport between FluidGateway and FluidRuntime.
+It carries runtime intent to the Gateway and returns compact decisions without
+giving those decisions direct authority over the native hook.
+
+The canonical machine-readable contract is
+[`contracts/fluidlink-v1.contract.json`](../contracts/fluidlink-v1.contract.json).
+Its SHA-256 fingerprint is
+`10b46685472d13d2d49cc81aa1f7df2d654c1ec53fdc666e086e0d062ad114fa`.
+
+## Transport
+
+- loopback TCP only in the v1 .NET client;
+- fixed 56-byte binary header in little-endian order;
+- one request followed by one correlated response;
+- exact reads across fragmented TCP delivery;
+- compact UTF-8 JSON object for dynamic payload fields;
+- maximum payload size of 1 MiB;
+- maximum JSON nesting depth of 64 and finite numbers only;
+- mandatory capability handshake and monotonic sequence;
+- exact contract-fingerprint negotiation;
+- fail-closed connection handling for malformed or truncated frames.
+
+The control envelope is binary. The event-specific payload remains JSON in v1
+so adapters can add bounded fields without a hand-written binary serializer.
+Resource IDs and other dynamic strings are therefore not compressed by the
+framing layer.
+
+## Header Layout
+
+| Offset | Bytes | Field | Encoding |
+| ---: | ---: | --- | --- |
+| `0` | `4` | Magic | ASCII `FLNK` |
+| `4` | `1` | Wire version | `1` |
+| `5` | `1` | Kind | request `1`, response `2` |
+| `6` | `1` | Message opcode | unsigned byte |
+| `7` | `1` | Subject/event opcode | unsigned byte |
+| `8` | `1` | Decision opcode | unsigned byte |
+| `9` | `1` | Flags | OK `1`, session `2`, JSON payload `4` |
+| `10` | `2` | Reserved | must be zero |
+| `12` | `8` | Sequence | unsigned 64-bit integer |
+| `20` | `16` | Message ID | opaque bytes |
+| `36` | `16` | Session ID | opaque bytes or all zero |
+| `52` | `4` | Payload size | unsigned 32-bit integer |
+
+The header size and every offset are validated by both Python and .NET tests.
+Unknown flags, nonzero reserved bits, zero identities, session-flag drift, wrong
+magic, unsupported version, oversized payloads, and truncated frames are
+rejected.
+
+## Message Opcodes
+
+| Opcode | Name | Direction |
+| ---: | --- | --- |
+| `1` | Hello | Runtime to Gateway |
+| `2` | Welcome | Gateway to Runtime |
+| `10` | Runtime event | Runtime to Gateway |
+| `11` | Runtime decision | Gateway to Runtime |
+| `20` | Ping | Runtime to Gateway |
+| `21` | Pong | Gateway to Runtime |
+| `30` | Goodbye | Both |
+| `255` | Error | Gateway to Runtime |
+
+## Event And Decision Opcodes
+
+| Event opcode | Runtime event |
+| ---: | --- |
+| `100` | Session lifecycle |
+| `101` | Frame lifecycle |
+| `102` | Resource |
+| `103` | Operation |
+| `104` | State snapshot request |
+
+| Decision opcode | Gateway decision |
+| ---: | --- |
+| `0` | Execute |
+| `1` | Eliminate self-copy |
+| `2` | Deduplicate identical transfer |
+| `3` | Collapse aliased-resource copy |
+| `4` | Remove orphan sync |
+| `5` | Remove empty sync |
+| `6` | Reuse transient buffer |
+| `255` | Unknown decision |
+
+For a runtime event, byte 6 is `10` and byte 7 identifies the event. For a
+runtime decision, byte 6 is `11`, byte 7 echoes the event, and byte 8 carries
+the decision. Successful decision payloads contain only bounded results such as
+`accepted`, `executed`, `saved_ms`, and `saved_mb`; policy names stay local to
+logs and reports.
+
+## Session And Capabilities
+
+Sequence 1 must be a `Hello` frame without a session. A successful `Welcome`
+returns a new 16-byte session ID. Every later request must echo it and advance
+the sequence exactly once. Message IDs are echoed unchanged for correlation.
+Both handshake payloads carry the canonical SHA-256 fingerprint and the peers
+reject any mismatch before accepting runtime events. Peer names, versions,
+capability names, and heartbeat nonces also have explicit UTF-8 byte limits.
+
+FluidRuntime v0.13 requires:
+
+- `binary.framing.v1`;
+- `compact.decisions.v1`;
+- `runtime.decisions.v1`;
+- `runtime.events.v1`.
+
+The default client also requests `heartbeat.v1`, `memory.transit.v1`, and
+`session.lifecycle.v1`. An unavailable required capability rejects the
+handshake.
+
+## Compatibility
+
+The Gateway detects binary connections by the first four `FLNK` bytes. A
+connection without that magic enters the pre-existing raw JSONL event endpoint.
+The two modes do not mix within one connection. Legacy events keep their
+symbolic `event` field; FluidLink frames do not carry symbolic message, event,
+or decision names in the binary header.
+
+## Measured Encoding
+
+The reproducible Python/.NET probe sends eight runtime events plus handshake,
+heartbeat, and shutdown: 11 request/response round trips. The current binary
+run measured:
+
+| Signal | Bytes |
+| --- | ---: |
+| Binary requests sent | `1,755` |
+| Binary responses received | `1,434` |
+| Total FluidLink frame bytes | `3,189` |
+| Equivalent JSON envelopes | `6,570` |
+| Binary bytes avoided | `3,381` |
+| Reduction | `51.46%` |
+
+The comparison is generated by the SDK from the same frame semantics, payloads,
+IDs, opcodes, sessions, and line termination. It isolates envelope encoding; it
+does not include TCP/IP overhead and is not a claim about physical RAM/VRAM,
+PCIe traffic, FPS, latency, or power.
+
+The probe also proves that the first synthetic 64 MiB upload executes and the
+identical second upload returns decision opcode `2`, `executed=false`, and the
+modeled `0.8 ms` / `64 MiB` estimate. Those values are Gateway model output,
+not hardware traffic measurements.
+
+## Verification
+
+From FluidGateway:
+
+```powershell
+python -m unittest tests.test_fluidlink -v
+```
+
+From the adjacent FluidRuntime repository:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File tools/Test-FluidLinkIntegration.ps1
+```
+
+The gate compares contract files and negotiates the same fingerprint on the
+connection. It then verifies fragmented frame handling, strict bounded JSON,
+heartbeat correlation, serialized request sequences, numeric opcodes, compact
+decisions, duplicate classification, frame-byte counters, binary size
+reduction, and clean shutdown.
+
+## Authority Boundary
+
+FluidLink is local user-space IPC without hostile-peer authentication. A
+Gateway decision is advisory. Native actuation still requires an independently
+bounded policy, owned-target opt-in, provenance, budget, expiration, evidence,
+and rollback. FluidLink does not authorize injection, protected-process access,
+driver changes, OS scheduling, or physical RAM/VRAM residency control.
