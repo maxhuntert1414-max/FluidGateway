@@ -12,7 +12,7 @@ GPU, RAM, VRAM, graphics resources, and frame presentation.**
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f)](LICENSE)
-[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.15.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.15.0)
+[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.16.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.16.0)
 
 [Quick Start](#quick-start) | [Evidence](#measured-actuation) |
 [Architecture](#architecture) | [Roadmap](#roadmap) |
@@ -39,8 +39,8 @@ The public promise today is precise:
 
 | Component | Role | Current state |
 | --- | --- | --- |
-| **FluidGateway v0.64.0** | PresentMon analysis, policy modeling, FluidLink decisions, operational ledger | Usable diagnostic CLI; advisory by default, with one exact owned-lab authorization consumed by Runtime v0.15 |
-| **[FluidRuntime v0.15.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, FluidLink client, cooperative D3D11 hook, managed-to-native control | First fail-closed live Gateway-to-hook loop plus bounded owned-target actuation |
+| **FluidGateway v0.64.0** | PresentMon analysis, policy modeling, FluidLink decisions, operational ledger | Usable diagnostic CLI; advisory by default, with one exact owned-lab authorization consumed by Runtime v0.15+ |
+| **[FluidRuntime v0.16.0](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.16.0)** | Windows/GPU telemetry, FluidLink client, cooperative D3D11 hook, owned D3D12 observer | Fail-closed Gateway-to-hook loop, bounded D3D11 actuation, and observation-only D3D12 transfer evidence |
 | External game integration | Allowlisted observation and future reversible control | Not implemented |
 | CPU scheduler and RAM/VRAM residency backends | Deeper system-level efficiency management | Research roadmap |
 
@@ -64,6 +64,7 @@ technical next steps without pretending that inference is internal-cause proof.
 | Runtime event protocol | JSONL replay, TCP decision server, lifecycle adapter, persisted manager state | Local prototype |
 | FluidLink v2 intercommunication | Positional binary payloads, numeric opcodes, integer microseconds/bytes, exact contract and 17 full-frame golden vectors | Local advisory IPC |
 | Gateway-authorized direct update | 64 live duplicate-upload decisions become one action-8 budget; native generation and `memcmp` remain final | Owned target only |
+| Owned D3D12 transfer observation | UPLOAD/DEFAULT/READBACK resources, COPY queue, states, fence, exact content, and DXGI memory snapshots | Runtime-owned, observation only |
 | PresentMon-to-daemon bridge | Operational ledger and repeated advisory control cycles | Dry run |
 | Native copy-path intervention | Bounded D3D11 copy elision through FluidRuntime | Owned target only |
 | Native readback intervention | Bounded `DEFAULT -> STAGING + CPU_READ` elision through FluidRuntime | Owned target only |
@@ -136,6 +137,27 @@ always blocks end-to-end performance claims.
 
 [Read the v0.15 closed-loop evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.15.0/docs/evidence/v0.15.0-gateway-managed-update-upload.md)
 
+## D3D12 Pipeline Observation
+
+FluidRuntime v0.16.0 adds the first separate D3D12-native observer. Its owned
+workload moves a deterministic 4 MiB payload through committed UPLOAD, DEFAULT,
+and READBACK buffers on one COPY queue. It records the adapter architecture,
+declared resource states, implicit promotion, one explicit transition, command
+and fence facts, exact full-buffer content, timings, and process-scoped DXGI
+memory-budget snapshots.
+
+The release gate completed 5/5 WARP Release runs, 5/5 WARP Debug Layer runs, and
+10/10 AMD Radeon RX 580 runs. Debug validation recorded zero warnings and zero
+errors. The managed runner binds each report to the launched PID and frozen
+target SHA-256, and rejects schema, adapter, architecture, state, fence, hash,
+or timestamp drift.
+
+This is observation infrastructure, not D3D12 actuation. FluidGateway does not
+authorize a D3D12 command, and the reports do not claim physical RAM/VRAM or
+PCIe traffic, residency control, FPS, power, or a performance improvement.
+
+[Read the v0.16 D3D12 evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.16.0/docs/evidence/v0.16.0-d3d12-observation.md)
+
 ## Architecture
 
 ```mermaid
@@ -149,6 +171,7 @@ flowchart LR
     FL --> MR["FluidRuntime manager and exact authorization bridge"]
     OL --> MR
     WT["Windows and GPU telemetry"] --> MR
+    D12["Owned D3D12 observer"] --> MR
     MR --> CP["Bounded shared-memory policy"]
     CP --> HK["Owned D3D11 hook"]
     HK --> EV["Events, snapshots, hashes, rollback"]
@@ -285,8 +308,10 @@ driver cause.
 - [ ] Generalize live policies beyond the single owned direct-update action only
   after each path passes provenance, regression, and rollback gates.
 - [ ] Build separate CPU scheduling and RAM/VRAM residency backends.
-- [ ] Build an owned D3D12 observation backend, then prove a separately bounded
-  action with D3D12-specific resource-state, queue, fence, and rollback rules.
+- [x] Build an owned D3D12 observation backend with strict state, queue, fence,
+  content, adapter, schema, and Debug Layer evidence on WARP and hardware.
+- [ ] Prove a separately bounded D3D12 action with backend-specific provenance,
+  synchronization, equivalence, authority, expiration, and rollback rules.
 - [ ] Build a separate opt-in Vulkan layer afterward, with explicit memory,
   layout, queue-family, semaphore/fence, validation, and rollback evidence.
 
@@ -310,6 +335,7 @@ reproducible evidence, narrow claim, then the next layer of authority.
   protocol and feature history preserved from the original long-form README.
 - [`FluidRuntime`](https://github.com/maxhuntert1414-max/FluidRuntime): native
   observation, actuation, evidence, and rollback companion.
+- [`FluidRuntime v0.16.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.16.0/docs/evidence/v0.16.0-d3d12-observation.md): owned D3D12 resources, state transitions, queue/fence evidence, Debug Layer validation, WARP, and RX 580 traces.
 - [`FluidRuntime v0.15.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.15.0/docs/evidence/v0.15.0-gateway-managed-update-upload.md): live authorization, exact-content policy, fail-closed controls, WARP, and RX 580 results.
 
 ## Contributing

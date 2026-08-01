@@ -29,7 +29,7 @@ The native live-observation and future actuation work now lives in
 [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime). FluidGateway
 remains the diagnostic, evidence, policy-modeling, and operational-ledger half
 of the project; FluidRuntime consumes that evidence alongside live Windows,
-memory, GPU, and D3D11 telemetry.
+memory, GPU, D3D11 telemetry, and owned D3D12 observations.
 
 FluidRuntime v0.5 also contains a first controlled actuation experiment: it can
 skip one redundant D3D11 resource copy only inside its owned deterministic lab,
@@ -158,6 +158,19 @@ The published
 records all three WARP controls and 22 RX 580 runs. Gateway authorization remains outside
 the native workload interval, so the closed-loop report explicitly blocks an
 end-to-end performance claim.
+
+FluidRuntime v0.16.0 adds a separate owned D3D12 observation executable without
+changing the D3D11 hook ABI. A deterministic 4 MiB payload travels through
+committed UPLOAD, DEFAULT, and READBACK buffers on one COPY queue. The report
+captures adapter/architecture identity, resource-state promotion and
+transition, command counts, fence completion, exact full-buffer content,
+timings, and process-scoped `QueryVideoMemoryInfo` snapshots. A strict managed
+runner binds the JSON PID to the launched process, freezes the target SHA-256,
+and rejects schema or cross-run identity drift. The published
+[v0.16 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.16.0/docs/evidence/v0.16.0-d3d12-observation.md)
+contains 5/5 WARP Release, 5/5 Debug Layer, and 10/10 RX 580 runs. This path is
+observation-only: FluidGateway does not authorize D3D12 actuation, and logical
+copy bytes or DXGI budget snapshots are not physical RAM/VRAM or PCIe traffic.
 
 ## Intelligent Management Layer
 
