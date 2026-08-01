@@ -1,1 +1,3 @@
 contracts/fluidlink-v1.contract.json text eol=lf
+contracts/fluidlink-v2.contract.json text eol=lf
+contracts/fluidlink-v2.golden.json text eol=lf

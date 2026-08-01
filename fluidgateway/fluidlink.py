@@ -327,10 +327,14 @@ def read_fluidlink_frame(
         prefix = read_exact(stream, len(FLUIDLINK_MAGIC), allow_eof=True)
         if prefix is None:
             return None
-    if len(prefix) != len(FLUIDLINK_MAGIC):
+    if (
+        len(prefix) < len(FLUIDLINK_MAGIC)
+        or len(prefix) > FLUIDLINK_HEADER_SIZE
+        or prefix[: len(FLUIDLINK_MAGIC)] != FLUIDLINK_MAGIC
+    ):
         raise FluidLinkProtocolError(
             "truncated_frame",
-            "FluidLink magic prefix is incomplete.",
+            "FluidLink header prefix is invalid.",
         )
     header_tail = read_exact(
         stream,

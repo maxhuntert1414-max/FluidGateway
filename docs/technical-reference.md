@@ -319,9 +319,9 @@ however, a concrete integration surface for an engine plugin, telemetry adapter,
 or future interceptor to ask for decisions before performing CPU/GPU/RAM/VRAM
 movement or synchronization.
 
-### FluidLink v1 Binary Mode
+### FluidLink Binary Modes
 
-Version 0.63 adds FluidLink without removing the original JSONL surface. A TCP
+Version 0.63 added FluidLink v1 without removing the original JSONL surface. A TCP
 connection beginning with ASCII `FLNK` uses a fixed 56-byte little-endian
 header; any other valid event connection stays in legacy JSONL mode. The modes
 never mix within one connection.
@@ -338,6 +338,21 @@ The machine-readable layout is
 with protocol details and measured framing evidence in
 [`docs/fluidlink-v1.md`](fluidlink-v1.md). FluidLink decisions remain advisory;
 they do not grant native hook authority.
+
+Version 0.64 adds wire version 2 without changing v1. Byte 5 selects the
+connection protocol. V2 removes JSON from FluidLink payloads: each opcode has a
+positional binary schema, optional fields use presence masks, capabilities use
+one `u64`, time uses integer microseconds, and memory uses integer bytes. The
+payload cap is 65,535 bytes and every text field remains strict bounded UTF-8.
+
+The v0.14 cross-process probe executes the same 11 request/response semantics
+through a real v1 session and a real v2 session. It measured 3,189 v1 frame
+bytes and 1,880 v2 frame bytes, a 41.05% reduction. These are control-protocol
+frame bytes, not RAM/VRAM or PCIe traffic. The canonical layout and golden
+vectors are [`contracts/fluidlink-v2.contract.json`](../contracts/fluidlink-v2.contract.json)
+and [`contracts/fluidlink-v2.golden.json`](../contracts/fluidlink-v2.golden.json).
+See [`docs/fluidlink-v2.md`](fluidlink-v2.md) for action rules, fixed-point
+boundaries, compatibility, and the explicit delta/shared-memory deferral.
 
 ## Runtime Client SDK
 

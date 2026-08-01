@@ -1,0 +1,153 @@
+{
+  "contract": "fluidlink-v2",
+  "wire": {
+    "magic_ascii": "FLNK",
+    "version": 2,
+    "byte_order": "little-endian",
+    "header_size": 56,
+    "max_payload_bytes": 65535,
+    "payload_encoding": "opcode-specific-positional-binary"
+  },
+  "limits": {
+    "max_peer_name_utf8_bytes": 128,
+    "max_peer_version_utf8_bytes": 64,
+    "max_nonce_utf8_bytes": 128,
+    "max_identifier_utf8_bytes": 256,
+    "max_reason_utf8_bytes": 512,
+    "max_aliases": 32,
+    "max_dependencies": 32
+  },
+  "units": {
+    "time": "unsigned-integer-microseconds",
+    "memory": "unsigned-integer-bytes",
+    "milliseconds_conversion": "round-half-away-from-zero",
+    "megabytes_conversion": "binary-mebibytes"
+  },
+  "header": [
+    {"name": "magic", "offset": 0, "size": 4, "type": "ascii"},
+    {"name": "wire_version", "offset": 4, "size": 1, "type": "u8"},
+    {"name": "kind", "offset": 5, "size": 1, "type": "u8"},
+    {"name": "opcode", "offset": 6, "size": 1, "type": "u8"},
+    {"name": "subject_opcode", "offset": 7, "size": 1, "type": "u8"},
+    {"name": "decision_opcode", "offset": 8, "size": 1, "type": "u8"},
+    {"name": "flags", "offset": 9, "size": 1, "type": "u8"},
+    {"name": "reserved", "offset": 10, "size": 2, "type": "u16"},
+    {"name": "sequence", "offset": 12, "size": 8, "type": "u64"},
+    {"name": "message_id", "offset": 20, "size": 16, "type": "bytes"},
+    {"name": "session_id", "offset": 36, "size": 16, "type": "bytes"},
+    {"name": "payload_size", "offset": 52, "size": 4, "type": "u32"}
+  ],
+  "kinds": {"request": 1, "response": 2},
+  "flags": {"ok": 1, "has_session": 2},
+  "opcodes": {
+    "hello": 1,
+    "welcome": 2,
+    "runtime_event": 10,
+    "runtime_decision": 11,
+    "ping": 20,
+    "pong": 21,
+    "goodbye": 30,
+    "error": 255
+  },
+  "event_opcodes": {
+    "session": 100,
+    "frame": 101,
+    "resource": 102,
+    "operation": 103,
+    "state": 104
+  },
+  "decision_opcodes": {
+    "execute": 0,
+    "eliminate_self_copy": 1,
+    "deduplicate_identical_transfer": 2,
+    "collapse_aliased_resource_copy": 3,
+    "remove_orphan_sync": 4,
+    "remove_empty_sync": 5,
+    "reuse_transient_buffer": 6,
+    "unknown": 255
+  },
+  "capability_bits": {
+    "binary_payloads": 0,
+    "fixed_point_units": 1,
+    "heartbeat": 2,
+    "runtime_events": 3,
+    "runtime_decisions": 4,
+    "memory_transit": 5,
+    "session_lifecycle": 6
+  },
+  "required_capability_mask": 27,
+  "enums": {
+    "lifecycle_action": {"begin": 1, "end": 2},
+    "resource_action": {"register": 1, "release": 2},
+    "state_action": {"snapshot": 1},
+    "resource_kind": {"unknown": 0, "buffer": 1, "texture": 2, "framebuffer": 3, "command": 4},
+    "memory_layer": {"ram": 1, "vram": 2, "shared": 3, "staging": 4, "swapchain": 5, "display": 6},
+    "lifetime": {"unknown": 0, "asset": 1, "frame": 2, "transient": 3, "session": 4},
+    "operation_type": {"copy": 1, "sync": 2, "allocate": 3, "upload": 4, "present": 5, "compute": 6, "draw": 7},
+    "queue": {"unknown": 0, "cpu": 1, "copy": 2, "graphics": 3, "compute": 4, "present": 5}
+  },
+  "presence_mask_bits": {
+    "session_event": {"target_frame_microseconds": 0, "ram_bytes": 1, "vram_bytes": 2, "shared_bytes": 3, "staging_bytes": 4, "swapchain_bytes": 5},
+    "frame_event": {"target_frame_microseconds": 0},
+    "operation_event": {"source": 0, "target": 1, "reason": 2, "frame": 3}
+  },
+  "decision_status_bits": {
+    "accepted": 0,
+    "has_executed": 1,
+    "executed": 2
+  },
+  "error_codes": {
+    "invalid_frame": 1,
+    "handshake_required": 2,
+    "contract_mismatch": 3,
+    "required_capability_unavailable": 4,
+    "capability_not_negotiated": 5,
+    "sequence_mismatch": 6,
+    "session_mismatch": 7,
+    "unsupported_opcode": 8,
+    "unsupported_event_opcode": 9,
+    "invalid_payload": 10,
+    "runtime_event_rejected": 11,
+    "session_closed": 12
+  },
+  "field_encodings": {
+    "text8": "u8-byte-length-followed-by-strict-utf8",
+    "text16": "u16-byte-length-followed-by-strict-utf8",
+    "optional": "present-only-when-corresponding-mask-bit-is-one",
+    "arrays": "u8-count-followed-by-count-positional-elements"
+  },
+  "action_rules": {
+    "session_begin": "nonempty-session-id; optional budget mask",
+    "session_end": "empty-or-nonempty-session-id; zero presence mask",
+    "frame_begin": "optional target-frame mask",
+    "frame_end": "zero presence mask",
+    "resource_register": "all register fields follow resource id",
+    "resource_release": "payload ends after resource id",
+    "state_snapshot": "payload ends after action",
+    "goodbye": "empty payload",
+    "operation_decision": "has-executed bit required",
+    "non_operation_decision": "has-executed and executed bits clear; saved units zero"
+  },
+  "payload_schemas": {
+    "hello": ["contract_sha256:bytes32", "requested_capabilities:u64", "required_capabilities:u64", "client_name:text8", "client_version:text8"],
+    "welcome": ["contract_sha256:bytes32", "available_capabilities:u64", "accepted_capabilities:u64", "max_payload_bytes:u32", "server_name:text8", "server_version:text8"],
+    "ping_pong": ["nonce:text8"],
+    "goodbye": [],
+    "runtime_decision": ["status_flags:u8", "saved_microseconds:u64", "saved_bytes:u64"],
+    "session_event": ["action:u8", "presence_mask:u8", "session_id:text16", "optional_fields:mask-ordered"],
+    "frame_event": ["action:u8", "presence_mask:u8", "frame:u64", "target_frame_microseconds:u32?"],
+    "resource_register": ["action:u8", "resource_id:text16", "kind:u8", "memory:u8", "lifetime:u8", "size_bytes:u64", "alias_count:u8", "aliases:text16[]"],
+    "resource_release": ["action:u8", "resource_id:text16"],
+    "operation_event": ["operation_type:u8", "queue:u8", "presence_mask:u8", "operation_id:text16", "source:text16?", "target:text16?", "reason:text16?", "cost_microseconds:u32", "size_bytes:u64", "frame:u64?", "dependency_count:u8", "dependencies:text16[]"],
+    "state_event": ["action:u8"],
+    "error": ["error_code:u16", "message:text16"]
+  },
+  "handshake": {
+    "contract_rule": "exact-sha256-match",
+    "capability_rule": "accepted-equals-requested-or-required-intersect-available"
+  },
+  "compatibility": {
+    "v1": "separate-wire-version-supported-by-gateway",
+    "mixed_versions_per_connection": false
+  }
+}

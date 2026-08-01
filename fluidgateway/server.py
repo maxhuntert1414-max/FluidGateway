@@ -9,10 +9,17 @@ from .adapter import RuntimeAdapterSession, process_adapter_event_payload
 from .fluidlink import (
     FLUIDLINK_MAGIC,
     FLUIDLINK_MAX_PAYLOAD_BYTES,
+    FLUIDLINK_WIRE_VERSION,
     FluidLinkProtocolError,
     FluidLinkServerSession,
     encode_fluidlink_frame,
     read_fluidlink_frame,
+)
+from .fluidlink_v2 import (
+    FLUIDLINK_V2_WIRE_VERSION,
+    FluidLinkV2ServerSession,
+    encode_fluidlink_v2_frame,
+    read_fluidlink_v2_frame,
 )
 
 
@@ -24,6 +31,10 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
         super().setup()
         self.session = RuntimeAdapterSession()
         self.fluidlink = FluidLinkServerSession(
+            server_name="fluidgateway",
+            server_version=__version__,
+        )
+        self.fluidlink_v2 = FluidLinkV2ServerSession(
             server_name="fluidgateway",
             server_version=__version__,
         )
@@ -40,9 +51,13 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
             if received[0] != expected_byte:
                 self._handle_legacy_jsonl(bytes(prefix))
                 return
-        self._handle_fluidlink(bytes(prefix))
+        wire_version = self.rfile.read(1)
+        if wire_version == bytes((FLUIDLINK_WIRE_VERSION,)):
+            self._handle_fluidlink_v1(bytes(prefix) + wire_version)
+        elif wire_version == bytes((FLUIDLINK_V2_WIRE_VERSION,)):
+            self._handle_fluidlink_v2(bytes(prefix) + wire_version)
 
-    def _handle_fluidlink(self, prefix: bytes) -> None:
+    def _handle_fluidlink_v1(self, prefix: bytes) -> None:
         next_prefix: bytes | None = prefix
         while True:
             try:
@@ -59,6 +74,25 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
             self.wfile.write(encode_fluidlink_frame(response))
             self.wfile.flush()
             if self.fluidlink.closed:
+                break
+
+    def _handle_fluidlink_v2(self, prefix: bytes) -> None:
+        next_prefix: bytes | None = prefix
+        while True:
+            try:
+                request = read_fluidlink_v2_frame(self.rfile, next_prefix)
+            except FluidLinkProtocolError:
+                break
+            next_prefix = None
+            if request is None:
+                break
+            response = self.fluidlink_v2.process(
+                request,
+                lambda event: process_adapter_event_payload(self.session, event),
+            )
+            self.wfile.write(encode_fluidlink_v2_frame(response))
+            self.wfile.flush()
+            if self.fluidlink_v2.closed:
                 break
 
     def _handle_legacy_jsonl(self, prefix: bytes) -> None:
