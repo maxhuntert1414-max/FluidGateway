@@ -12,7 +12,7 @@ GPU, RAM, VRAM, graphics resources, and frame presentation.**
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-2ea44f)](LICENSE)
-[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.14.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.14.0)
+[![FluidRuntime](https://img.shields.io/badge/FluidRuntime-v0.15.0-6f42c1)](https://github.com/maxhuntert1414-max/FluidRuntime/releases/tag/v0.15.0)
 
 [Quick Start](#quick-start) | [Evidence](#measured-actuation) |
 [Architecture](#architecture) | [Roadmap](#roadmap) |
@@ -39,8 +39,8 @@ The public promise today is precise:
 
 | Component | Role | Current state |
 | --- | --- | --- |
-| **FluidGateway v0.64.0** | PresentMon analysis, policy modeling, FluidLink decisions, operational ledger | Usable diagnostic CLI; management remains advisory |
-| **[FluidRuntime v0.14.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, FluidLink client, cooperative D3D11 hook, managed-to-native control | Cross-process Gateway interop plus bounded native actuation in an owned, opt-in laboratory |
+| **FluidGateway v0.64.0** | PresentMon analysis, policy modeling, FluidLink decisions, operational ledger | Usable diagnostic CLI; advisory by default, with one exact owned-lab authorization consumed by Runtime v0.15 |
+| **[FluidRuntime v0.15.0](https://github.com/maxhuntert1414-max/FluidRuntime)** | Windows/GPU telemetry, FluidLink client, cooperative D3D11 hook, managed-to-native control | First fail-closed live Gateway-to-hook loop plus bounded owned-target actuation |
 | External game integration | Allowlisted observation and future reversible control | Not implemented |
 | CPU scheduler and RAM/VRAM residency backends | Deeper system-level efficiency management | Research roadmap |
 
@@ -63,6 +63,7 @@ technical next steps without pretending that inference is internal-cause proof.
 | Pipeline optimizer prototype | Removes redundant modeled copies/syncs and reuses modeled transient buffers | Simulation |
 | Runtime event protocol | JSONL replay, TCP decision server, lifecycle adapter, persisted manager state | Local prototype |
 | FluidLink v2 intercommunication | Positional binary payloads, numeric opcodes, integer microseconds/bytes, exact contract and 17 full-frame golden vectors | Local advisory IPC |
+| Gateway-authorized direct update | 64 live duplicate-upload decisions become one action-8 budget; native generation and `memcmp` remain final | Owned target only |
 | PresentMon-to-daemon bridge | Operational ledger and repeated advisory control cycles | Dry run |
 | Native copy-path intervention | Bounded D3D11 copy elision through FluidRuntime | Owned target only |
 | Native readback intervention | Bounded `DEFAULT -> STAGING + CPU_READ` elision through FluidRuntime | Owned target only |
@@ -109,6 +110,32 @@ GPU number is a guarded workload interval, not a GPU-busy counter.
 
 [Read the v0.12 evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.12.0/docs/evidence/v0.12.0-update-upload-elision.md)
 
+FluidRuntime v0.15.0 now drives that same action from a live FluidGateway 0.64.0
+session. Each optimized run requires one executed seed and 64 exact
+`deduplicate-identical-transfer` decisions before the optimized target starts.
+The Runtime then publishes action bit 8 with budget 64; the hook can spend it
+only after destination-generation and full-content equality checks.
+
+The RX 580 gate passed 22/22 raw runs and all ten measured native workload pairs
+favored the optimized path. Three adversarial peers also passed: malformed
+binary response, accepted TCP connection with no response, and a valid peer
+whose individually short delays exceeded the single 500 ms authorization
+deadline. All produced a fresh baseline with 70 forwarded calls, zero skips,
+and no policy publication.
+
+Runtime binds the exact IPv4 loopback tuple through the Windows TCP owner table
+to the expected Gateway PID and executable SHA-256. It also holds target/hook
+binaries without write/delete sharing, revalidates what the target loaded, and
+binds the authorization to a unique context SHA-256. This is OS process binding,
+not cryptographic authentication of a hostile or compromised peer.
+
+This is the first functional Gateway-to-hook closed loop, not a production
+per-frame scheduler. Authorization currently uses 74 serial round trips per
+optimized run and is outside the native timing interval, so the v0.15 report
+always blocks end-to-end performance claims.
+
+[Read the v0.15 closed-loop evidence and raw traces](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.15.0/docs/evidence/v0.15.0-gateway-managed-update-upload.md)
+
 ## Architecture
 
 ```mermaid
@@ -119,7 +146,7 @@ flowchart LR
     FR["FluidRuntime event intent"] --> FL["FluidLink v2 positional binary"]
     FL --> FG
     FG --> FL
-    FL --> MR["FluidRuntime manager"]
+    FL --> MR["FluidRuntime manager and exact authorization bridge"]
     OL --> MR
     WT["Windows and GPU telemetry"] --> MR
     MR --> CP["Bounded shared-memory policy"]
@@ -180,7 +207,7 @@ python -m fluidgateway runtime serve-events `
   --port 8765
 ```
 
-FluidRuntime v0.14 provides the typed .NET client and a cross-process v1/v2
+FluidRuntime v0.15 provides the typed .NET client and a cross-process v1/v2
 probe. FluidLink v2 keeps the fixed binary control header and replaces the JSON
 body with opcode-specific positional fields, capability bitmasks, and integer
 microsecond/byte units. The measured same-flow result is 3,189 v1 frame bytes
@@ -189,6 +216,13 @@ exact contract fingerprint, while the client serializes correlated round trips
 and fails closed on malformed or truncated frames. FluidLink v1 and raw JSONL
 remain isolated compatibility modes. Read the [FluidLink v2 contract](docs/fluidlink-v2.md)
 for schemas, byte evidence, deferrals, and trust boundaries.
+
+The dedicated v0.15 update-upload bridge is narrower than the generic protocol:
+it requires an OS-verified expected peer process, frozen target/hook evidence,
+exact contract/capabilities, a context digest, and exact decision counts, then
+hands only a bounded candidate budget to the owned native hook. Advertised
+server identity is metadata. Gateway size/source/target deduplication is not
+content proof; native `memcmp` remains authoritative.
 
 ## Findings
 
@@ -237,6 +271,10 @@ driver cause.
   fingerprints, and cross-process CI.
 - [x] Remove JSON from FluidLink v2 payloads and use positional schemas,
   capability bitmasks, fixed-point wire units, and cross-language golden vectors.
+- [x] Connect one exact set of live FluidGateway decisions to a bounded native
+  action with malformed-response, real-timeout, content, and rollback gates.
+- [ ] Batch the 64 candidate decisions into a bounded low-latency control shape
+  and measure authorization inside the complete end-to-end interval.
 - [ ] Extend upload provenance to dynamic buffers, textures, pitch-aware and
   partial regions, `UpdateSubresource1`, reuse, batching, fences, and
   synchronization.
@@ -244,10 +282,13 @@ driver cause.
   and synchronization.
 - [ ] Add explicit allowlisted external observation for authorized,
   unprotected software.
-- [ ] Derive shadow policies from live FluidGateway evidence and promote only
-  after regression/rollback gates pass.
+- [ ] Generalize live policies beyond the single owned direct-update action only
+  after each path passes provenance, regression, and rollback gates.
 - [ ] Build separate CPU scheduling and RAM/VRAM residency backends.
-- [ ] Expand observation and control research to D3D12 and Vulkan.
+- [ ] Build an owned D3D12 observation backend, then prove a separately bounded
+  action with D3D12-specific resource-state, queue, fence, and rollback rules.
+- [ ] Build a separate opt-in Vulkan layer afterward, with explicit memory,
+  layout, queue-family, semaphore/fence, validation, and rollback evidence.
 
 The ambition is large, but promotion is intentionally incremental: owned lab,
 reproducible evidence, narrow claim, then the next layer of authority.
@@ -269,8 +310,7 @@ reproducible evidence, narrow claim, then the next layer of authority.
   protocol and feature history preserved from the original long-form README.
 - [`FluidRuntime`](https://github.com/maxhuntert1414-max/FluidRuntime): native
   observation, actuation, evidence, and rollback companion.
-- [`FluidRuntime v0.12.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.12.0/docs/evidence/v0.12.0-update-upload-elision.md): exact-content policy,
-  WARP, and RX 580 direct-update results.
+- [`FluidRuntime v0.15.0 evidence`](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.15.0/docs/evidence/v0.15.0-gateway-managed-update-upload.md): live authorization, exact-content policy, fail-closed controls, WARP, and RX 580 results.
 
 ## Contributing
 

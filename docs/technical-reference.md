@@ -1,6 +1,6 @@
 # FluidGateway Technical Reference
 
-> This document preserves the complete v0.63 protocol and feature history from
+> This document preserves the complete v0.64 protocol and feature history from
 > the original long-form README. Start with the
 > [project overview](../README.md) for the current capability map, evidence, and
 > roadmap.
@@ -16,10 +16,11 @@ borrow the efficiency philosophy of tightly integrated systems such as Apple
 Silicon: less redundant movement, fewer late sync points, more useful work per
 watt.
 
-The current release does not inject code, hook games, change drivers, or
-optimize anything automatically. It ingests PresentMon 2.x CSV data, produces a
-ranked report of likely waste patterns with evidence, and includes user-space
-runtime prototypes for modeling early CPU/GPU/RAM/VRAM decisions.
+FluidGateway itself does not inject code, hook games, or change drivers. It
+ingests PresentMon 2.x CSV data, produces a ranked report of likely waste
+patterns with evidence, and includes user-space runtime prototypes for modeling
+early CPU/GPU/RAM/VRAM decisions. One exact owned-lab authorization path is now
+consumed by FluidRuntime v0.15; it is not a general optimization authority.
 
 > The initial promise is to find probable waste in the frame path, not to
 > automatically increase FPS.
@@ -136,6 +137,28 @@ remains limited to the owned full-buffer workload. It does not establish
 physical RAM/VRAM or PCIe traffic, texture/partial uploads, external-game
 safety, FPS, or a general cache.
 
+FluidRuntime v0.15.0 closes the first deliberately narrow live control loop.
+Before an optimized owned run starts, FluidGateway must return one executed
+seed decision and exactly 64 accepted `deduplicate-identical-transfer`
+decisions over FluidLink v2. Runtime maps that authorization to the existing
+native action bit 8 with budget 64. The hook still requires matching resource
+generation and exact 4 MiB content equality before each skip.
+
+Each optimized authorization currently costs 74 serial loopback round trips
+under one configurable total deadline; the published positive harness uses
+five seconds. Runtime OS-verifies the exact tuple against the expected Gateway
+PID/executable, freezes target/hook hashes, and binds all authorization inputs
+in a unique context SHA-256. Advertised server identity is metadata, and this
+process binding is not cryptographic authentication. The adversarial controls
+use 500 ms: a malformed response, a peer that accepts TCP and never responds,
+or a valid peer whose cumulative delay exceeds the deadline launches a fresh
+baseline with 70 forwarded calls, zero skips, and no policy publication.
+The published
+[v0.15 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.15.0/docs/evidence/v0.15.0-gateway-managed-update-upload.md)
+records all three WARP controls and 22 RX 580 runs. Gateway authorization remains outside
+the native workload interval, so the closed-loop report explicitly blocks an
+end-to-end performance claim.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
@@ -149,9 +172,11 @@ input for a future runtime controller. The goal is to eventually coordinate:
 - frame pacing stability;
 - zero-copy or lower-copy presentation routes.
 
-FluidGateway-side management remains advisory. The tool generates a plan that says
-which policies a future gateway/scheduler should apply and why. Direct RAM/VRAM
-control requires additional telemetry beyond PresentMon.
+FluidGateway-side management remains advisory by default. The tool generates a
+plan that says which policies a future gateway/scheduler should apply and why.
+The v0.15 exception translates one exact owned-lab decision set into a bounded
+Runtime action; it does not generalize to other resources or processes. Direct
+RAM/VRAM control requires additional telemetry beyond PresentMon.
 
 The v0.2 management plan can activate policies such as:
 
@@ -336,8 +361,8 @@ serializes concurrent round trips.
 The machine-readable layout is
 [`contracts/fluidlink-v1.contract.json`](../contracts/fluidlink-v1.contract.json),
 with protocol details and measured framing evidence in
-[`docs/fluidlink-v1.md`](fluidlink-v1.md). FluidLink decisions remain advisory;
-they do not grant native hook authority.
+[`docs/fluidlink-v1.md`](fluidlink-v1.md). V1 decisions remain advisory and do
+not grant native hook authority.
 
 Version 0.64 adds wire version 2 without changing v1. Byte 5 selects the
 connection protocol. V2 removes JSON from FluidLink payloads: each opcode has a
@@ -353,6 +378,8 @@ vectors are [`contracts/fluidlink-v2.contract.json`](../contracts/fluidlink-v2.c
 and [`contracts/fluidlink-v2.golden.json`](../contracts/fluidlink-v2.golden.json).
 See [`docs/fluidlink-v2.md`](fluidlink-v2.md) for action rules, fixed-point
 boundaries, compatibility, and the explicit delta/shared-memory deferral.
+V2 also has one v0.15 owned-lab consumer for the exact direct-update sequence;
+all other decisions remain advisory, and native equality checks remain final.
 
 ## Runtime Client SDK
 
