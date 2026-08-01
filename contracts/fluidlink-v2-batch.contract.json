@@ -1,0 +1,77 @@
+{
+  "contract": "fluidlink-v2-batched-runtime-events-v1",
+  "extends": {
+    "contract": "fluidlink-v2",
+    "contract_sha256": "0d24d96aec32d74e123f9e198e51adde74ddf190e8c40b0ac18bddf5c4108b2f"
+  },
+  "wire": {
+    "magic_ascii": "FLNK",
+    "version": 2,
+    "byte_order": "little-endian",
+    "header_size": 56,
+    "max_payload_bytes": 65535,
+    "payload_encoding": "opcode-specific-positional-binary"
+  },
+  "limits": {
+    "max_batch_operations": 256,
+    "max_identifier_utf8_bytes": 256,
+    "max_reason_utf8_bytes": 512,
+    "max_dependencies": 32
+  },
+  "capability_bits": {
+    "batched_runtime_events": 7
+  },
+  "event_opcodes": {
+    "operation_batch": 105
+  },
+  "decision_opcodes": {
+    "batch_vector": 7
+  },
+  "presence_mask_bits": {
+    "operation_batch": {
+      "source": 0,
+      "target": 1,
+      "reason": 2,
+      "frame": 3
+    }
+  },
+  "payload_schemas": {
+    "operation_batch_event": [
+      "batch_id:bytes16",
+      "operation_count:u16",
+      "operation_type:u8",
+      "queue:u8",
+      "presence_mask:u8",
+      "source:text16?",
+      "target:text16?",
+      "reason:text16?",
+      "cost_microseconds:u32",
+      "size_bytes:u64",
+      "frame:u64?",
+      "dependency_count:u8",
+      "dependencies:text16[]"
+    ],
+    "operation_batch_decision": [
+      "batch_id:bytes16",
+      "decision_count:u16",
+      "decisions:[decision_opcode:u8,status_flags:u8,saved_microseconds:u64,saved_bytes:u64][]"
+    ]
+  },
+  "expansion": {
+    "batch_id": "exactly-16-bytes-and-not-all-zero",
+    "event_order": "input-order-with-ordinal-zero-first",
+    "operation_id": "batch-{lowercase-batch-id-hex}-{zero-padded-three-digit-ordinal}",
+    "decision_order": "exactly-matches-expanded-event-order",
+    "partial_failure": "reject-entire-wire-request-close-session-and-return-no-decision-vector"
+  },
+  "handshake": {
+    "contract_rule": "exact-extension-sha256-match",
+    "required_capability": "batched_runtime_events",
+    "base_profile_remains_accepted": true
+  },
+  "compatibility": {
+    "base_fluidlink_v2_contract_unchanged": true,
+    "base_and_batch_profiles_share_wire_version": true,
+    "batch_messages_on_base_profile": false
+  }
+}
