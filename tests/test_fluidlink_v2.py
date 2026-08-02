@@ -17,10 +17,17 @@ from fluidgateway.fluidlink import (
     fluidlink_request,
 )
 from fluidgateway.fluidlink_v2 import (
+    FLUIDLINK_V2_BATCH_CAPABILITIES,
+    FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+    FLUIDLINK_V2_BATCH_CONTRACT_SHA256,
+    FLUIDLINK_V2_BATCH_REQUIRED_CAPABILITIES,
+    FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE,
     FLUIDLINK_V2_CAPABILITIES,
     FLUIDLINK_V2_CONTRACT_SHA256,
     FLUIDLINK_V2_HEADER_SIZE,
+    FLUIDLINK_V2_MAX_BATCH_OPERATIONS,
     FLUIDLINK_V2_MAX_PAYLOAD_BYTES,
+    FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
     FLUIDLINK_V2_REQUIRED_CAPABILITIES,
     FLUIDLINK_V2_WIRE_VERSION,
     FluidLinkV2Capability,
@@ -30,6 +37,8 @@ from fluidgateway.fluidlink_v2 import (
     decode_fluidlink_v2_frame,
     decode_hello_payload,
     decode_nonce_payload,
+    decode_operation_batch_decision_payload,
+    decode_operation_batch_event_payload,
     decode_runtime_decision_payload,
     decode_runtime_event_payload,
     decode_welcome_payload,
@@ -37,6 +46,8 @@ from fluidgateway.fluidlink_v2 import (
     encode_fluidlink_v2_frame,
     encode_hello_payload,
     encode_nonce_payload,
+    encode_operation_batch_decision_payload,
+    encode_operation_batch_event_payload,
     encode_runtime_decision_payload,
     encode_runtime_event_payload,
     encode_welcome_payload,
@@ -70,6 +81,420 @@ class FluidLinkV2Tests(unittest.TestCase):
             int(FLUIDLINK_V2_REQUIRED_CAPABILITIES),
             contract["required_capability_mask"],
         )
+
+    def test_batch_contract_fingerprint_and_extension_are_canonical(self):
+        path = ROOT / "contracts" / "fluidlink-v2-batch.contract.json"
+        content = path.read_bytes()
+        contract = json.loads(content)
+
+        self.assertEqual(
+            FLUIDLINK_V2_BATCH_CONTRACT_SHA256,
+            hashlib.sha256(content).hexdigest(),
+        )
+        self.assertEqual(
+            FLUIDLINK_V2_CONTRACT_SHA256,
+            contract["extends"]["contract_sha256"],
+        )
+        self.assertEqual(
+            FLUIDLINK_V2_MAX_BATCH_OPERATIONS,
+            contract["limits"]["max_batch_operations"],
+        )
+        self.assertEqual(
+            FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            contract["event_opcodes"]["operation_batch"],
+        )
+        self.assertEqual(
+            FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE,
+            contract["decision_opcodes"]["batch_vector"],
+        )
+
+    def test_batch_golden_vectors_match_the_canonical_encoder(self):
+        fixture = json.loads(
+            (ROOT / "contracts" / "fluidlink-v2-batch.golden.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        message_id = bytes.fromhex(fixture["message_id_hex"])
+        session_id = bytes.fromhex(fixture["session_id_hex"])
+        batch_id = fixture["batch_id_hex"]
+        hello = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.HELLO,
+            sequence=1,
+            message_id=message_id,
+            payload=encode_hello_payload(
+                client_name="fluidruntime",
+                client_version="0.17.0",
+                requested_capabilities=FLUIDLINK_V2_BATCH_CAPABILITIES,
+                required_capabilities=FLUIDLINK_V2_BATCH_REQUIRED_CAPABILITIES,
+                contract_digest=FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+            ),
+        )
+        batch = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.RUNTIME_EVENT,
+            subject_opcode=FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            sequence=2,
+            message_id=message_id,
+            session_id=session_id,
+            payload=encode_operation_batch_event_payload(
+                {
+                    "batch_id": batch_id,
+                    "operation_count": 2,
+                    "operation_type": "upload",
+                    "queue": "copy",
+                    "source": "ram-buffer",
+                    "target": "vram-texture",
+                    "reason": "duplicate upload",
+                    "cost_us": 800,
+                    "size_bytes": 64 * 1024**2,
+                    "frame": 42,
+                    "depends_on": ["allocate-1"],
+                }
+            ),
+        )
+        frames = {
+            "batch_hello_request": hello,
+            "batch_welcome_response": fluidlink_v2_response(
+                hello,
+                opcode=FluidLinkOpcode.WELCOME,
+                session_id=session_id,
+                payload=encode_welcome_payload(
+                    available_capabilities=FLUIDLINK_V2_BATCH_CAPABILITIES,
+                    accepted_capabilities=FLUIDLINK_V2_BATCH_CAPABILITIES,
+                    server_name="fluidgateway",
+                    server_version="0.65.0",
+                    contract_digest=FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+                ),
+            ),
+            "operation_batch_request": batch,
+            "operation_batch_decision_response": fluidlink_v2_response(
+                batch,
+                opcode=FluidLinkOpcode.RUNTIME_DECISION,
+                subject_opcode=FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+                decision_opcode=FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE,
+                session_id=session_id,
+                payload=encode_operation_batch_decision_payload(
+                    {
+                        "batch_id": batch_id,
+                        "decisions": [
+                            {
+                                "decision_opcode": FluidLinkDecisionOpcode.EXECUTE,
+                                "accepted": True,
+                                "executed": True,
+                                "saved_us": 0,
+                                "saved_bytes": 0,
+                            },
+                            {
+                                "decision_opcode": (
+                                    FluidLinkDecisionOpcode
+                                    .DEDUPLICATE_IDENTICAL_TRANSFER
+                                ),
+                                "accepted": True,
+                                "executed": False,
+                                "saved_us": 800,
+                                "saved_bytes": 64 * 1024**2,
+                            },
+                        ],
+                    }
+                ),
+            ),
+        }
+
+        self.assertEqual(
+            FLUIDLINK_V2_BATCH_CONTRACT_SHA256,
+            fixture["contract_sha256"],
+        )
+        for vector in fixture["vectors"]:
+            wire = encode_fluidlink_v2_frame(frames[vector["name"]])
+            self.assertEqual(vector["wire_bytes"], len(wire), vector["name"])
+            self.assertEqual(vector["wire_hex"], wire.hex(), vector["name"])
+
+    def test_operation_batch_payloads_round_trip_and_enforce_limits(self):
+        batch_id = "0102030405060708090a0b0c0d0e0f10"
+        event = {
+            "batch_id": batch_id,
+            "operation_count": 2,
+            "operation_type": "upload",
+            "queue": "copy",
+            "source": "ram-buffer",
+            "target": "vram-texture",
+            "reason": "same upload fingerprint",
+            "cost_us": 800,
+            "size_bytes": 64 * 1024**2,
+            "frame": 42,
+            "depends_on": ["allocation-1"],
+        }
+        encoded_event = encode_operation_batch_event_payload(event)
+        decoded_event = decode_operation_batch_event_payload(encoded_event)
+
+        self.assertEqual(batch_id, decoded_event["batch_id"])
+        self.assertEqual(2, decoded_event["operation_count"])
+        self.assertEqual(800, decoded_event["cost_us"])
+        self.assertEqual(64 * 1024**2, decoded_event["size_bytes"])
+        self.assertEqual(["allocation-1"], decoded_event["depends_on"])
+        self.assertNotIn(b"operation_count", encoded_event)
+
+        encoded_decision = encode_operation_batch_decision_payload(
+            {
+                "batch_id": batch_id,
+                "decisions": [
+                    {
+                        "decision_opcode": FluidLinkDecisionOpcode.EXECUTE,
+                        "accepted": True,
+                        "executed": True,
+                        "saved_us": 0,
+                        "saved_bytes": 0,
+                    },
+                    {
+                        "decision_opcode": (
+                            FluidLinkDecisionOpcode.DEDUPLICATE_IDENTICAL_TRANSFER
+                        ),
+                        "accepted": True,
+                        "executed": False,
+                        "saved_us": 800,
+                        "saved_bytes": 64 * 1024**2,
+                    },
+                ],
+            }
+        )
+        decoded_decision = decode_operation_batch_decision_payload(encoded_decision)
+
+        self.assertEqual(batch_id, decoded_decision["batch_id"])
+        self.assertEqual(2, len(decoded_decision["decisions"]))
+        self.assertTrue(decoded_decision["decisions"][0]["executed"])
+        self.assertFalse(decoded_decision["decisions"][1]["executed"])
+        self.assertEqual(800, decoded_decision["decisions"][1]["saved_us"])
+
+        for invalid_count in (0, FLUIDLINK_V2_MAX_BATCH_OPERATIONS + 1):
+            with self.subTest(invalid_count=invalid_count):
+                with self.assertRaisesRegex(FluidLinkProtocolError, "between 1 and"):
+                    encode_operation_batch_event_payload(
+                        {**event, "operation_count": invalid_count}
+                    )
+        with self.assertRaisesRegex(FluidLinkProtocolError, "nonzero-identity"):
+            encode_operation_batch_event_payload(
+                {**event, "batch_id": "0" * 32}
+            )
+        with self.assertRaisesRegex(FluidLinkProtocolError, "disagree"):
+            encode_operation_batch_decision_payload(
+                {
+                    "batch_id": batch_id,
+                    "decisions": [
+                        {
+                            "decision_opcode": FluidLinkDecisionOpcode.EXECUTE,
+                            "accepted": True,
+                            "executed": False,
+                        }
+                    ],
+                }
+            )
+        with self.assertRaisesRegex(FluidLinkProtocolError, "trailing bytes"):
+            decode_operation_batch_event_payload(encoded_event + b"\x00")
+
+    def test_server_keeps_batch_messages_out_of_the_base_profile(self):
+        session = FluidLinkV2ServerSession(
+            server_name="fluidgateway", server_version="0.65.0"
+        )
+        hello = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.HELLO,
+            sequence=1,
+            message_id=MESSAGE_ID,
+            payload=encode_hello_payload(
+                client_name="fluidruntime", client_version="0.15.0"
+            ),
+        )
+        welcome_frame = session.process(hello, lambda event: {"ok": True})
+        welcome = decode_welcome_payload(welcome_frame.payload)
+        self.assertEqual(FLUIDLINK_V2_CAPABILITIES, welcome.available_capabilities)
+        self.assertEqual(FLUIDLINK_V2_CAPABILITIES, welcome.accepted_capabilities)
+
+        request = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.RUNTIME_EVENT,
+            subject_opcode=FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            sequence=2,
+            message_id=MESSAGE_ID,
+            session_id=welcome_frame.session_id,
+            payload=encode_operation_batch_event_payload(
+                {
+                    "batch_id": "0102030405060708090a0b0c0d0e0f10",
+                    "operation_count": 1,
+                    "operation_type": "copy",
+                }
+            ),
+        )
+        response = session.process(request, lambda event: {"ok": True})
+        code, _ = decode_error_payload(response.payload)
+
+        self.assertEqual(FluidLinkOpcode.ERROR, response.opcode)
+        self.assertEqual("capability_not_negotiated", code)
+
+    def test_server_requires_batch_capability_for_batch_contract(self):
+        session = FluidLinkV2ServerSession(
+            server_name="fluidgateway", server_version="0.65.0"
+        )
+        hello = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.HELLO,
+            sequence=1,
+            message_id=MESSAGE_ID,
+            payload=encode_hello_payload(
+                client_name="fluidruntime",
+                client_version="0.17.0",
+                requested_capabilities=FLUIDLINK_V2_BATCH_CAPABILITIES,
+                required_capabilities=FLUIDLINK_V2_REQUIRED_CAPABILITIES,
+                contract_digest=FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+            ),
+        )
+
+        response = session.process(hello, lambda event: {"ok": True})
+        code, message = decode_error_payload(response.payload)
+
+        self.assertEqual(FluidLinkOpcode.ERROR, response.opcode)
+        self.assertEqual("invalid_payload", code)
+        self.assertIn("requires its batch capability", message)
+        self.assertIsNone(session.session_id)
+
+    def test_server_expands_batch_in_order_and_returns_a_decision_vector(self):
+        session = FluidLinkV2ServerSession(
+            server_name="fluidgateway", server_version="0.65.0"
+        )
+        hello = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.HELLO,
+            sequence=1,
+            message_id=MESSAGE_ID,
+            payload=encode_hello_payload(
+                client_name="fluidruntime",
+                client_version="0.15.0",
+                requested_capabilities=FLUIDLINK_V2_BATCH_CAPABILITIES,
+                required_capabilities=FLUIDLINK_V2_BATCH_REQUIRED_CAPABILITIES,
+                contract_digest=FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+            ),
+        )
+        welcome_frame = session.process(hello, lambda event: {"ok": True})
+        welcome = decode_welcome_payload(welcome_frame.payload)
+        self.assertEqual(
+            FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+            welcome.contract_digest,
+        )
+        self.assertEqual(
+            FLUIDLINK_V2_BATCH_CAPABILITIES,
+            welcome.accepted_capabilities,
+        )
+
+        batch_id = "0102030405060708090a0b0c0d0e0f10"
+        request = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.RUNTIME_EVENT,
+            subject_opcode=FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            sequence=2,
+            message_id=MESSAGE_ID,
+            session_id=welcome_frame.session_id,
+            payload=encode_operation_batch_event_payload(
+                {
+                    "batch_id": batch_id,
+                    "operation_count": 2,
+                    "operation_type": "upload",
+                    "queue": "copy",
+                    "source": "ram-buffer",
+                    "target": "vram-texture",
+                    "cost_us": 800,
+                    "size_bytes": 64 * 1024**2,
+                    "frame": 42,
+                }
+            ),
+        )
+        events: list[dict[str, object]] = []
+
+        def handle_event(event):
+            events.append(event)
+            if len(events) == 1:
+                return {"ok": True, "result": {"executed": True}}
+            return {
+                "ok": True,
+                "result": {
+                    "executed": False,
+                    "decision": {
+                        "policy": "deduplicate-identical-transfer",
+                        "estimated_saved_ms": 0.8,
+                        "estimated_saved_mb": 64,
+                    },
+                },
+            }
+
+        response = session.process(request, handle_event)
+        decision = decode_operation_batch_decision_payload(response.payload)
+
+        self.assertEqual(FluidLinkOpcode.RUNTIME_DECISION, response.opcode)
+        self.assertEqual(
+            FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            response.subject_opcode,
+        )
+        self.assertEqual(
+            FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE,
+            response.decision_opcode,
+        )
+        self.assertEqual(
+            [f"batch-{batch_id}-000", f"batch-{batch_id}-001"],
+            [event["id"] for event in events],
+        )
+        self.assertEqual(batch_id, decision["batch_id"])
+        self.assertEqual(
+            [
+                FluidLinkDecisionOpcode.EXECUTE,
+                FluidLinkDecisionOpcode.DEDUPLICATE_IDENTICAL_TRANSFER,
+            ],
+            [item["decision_opcode"] for item in decision["decisions"]],
+        )
+
+    def test_server_closes_batch_session_without_partial_vector_on_failure(self):
+        session = FluidLinkV2ServerSession(
+            server_name="fluidgateway", server_version="0.65.0"
+        )
+        hello = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.HELLO,
+            sequence=1,
+            message_id=MESSAGE_ID,
+            payload=encode_hello_payload(
+                client_name="fluidruntime",
+                client_version="0.15.0",
+                requested_capabilities=FLUIDLINK_V2_BATCH_CAPABILITIES,
+                required_capabilities=FLUIDLINK_V2_BATCH_REQUIRED_CAPABILITIES,
+                contract_digest=FLUIDLINK_V2_BATCH_CONTRACT_DIGEST,
+            ),
+        )
+        welcome = session.process(hello, lambda event: {"ok": True})
+        request = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.RUNTIME_EVENT,
+            subject_opcode=FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            sequence=2,
+            message_id=MESSAGE_ID,
+            session_id=welcome.session_id,
+            payload=encode_operation_batch_event_payload(
+                {
+                    "batch_id": "0102030405060708090a0b0c0d0e0f10",
+                    "operation_count": 3,
+                    "operation_type": "copy",
+                }
+            ),
+        )
+        calls = 0
+
+        def fail_second_event(event):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise RuntimeError("synthetic batch failure")
+            return {"ok": True, "result": {"executed": True}}
+
+        response = session.process(request, fail_second_event)
+        code, message = decode_error_payload(response.payload)
+
+        self.assertEqual(2, calls)
+        self.assertTrue(session.closed)
+        self.assertEqual(FluidLinkOpcode.ERROR, response.opcode)
+        self.assertNotEqual(
+            FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE,
+            response.decision_opcode,
+        )
+        self.assertEqual("runtime_event_rejected", code)
+        self.assertIn("synthetic batch failure", message)
 
     def test_golden_vectors_match_the_canonical_encoder(self):
         fixture = json.loads(

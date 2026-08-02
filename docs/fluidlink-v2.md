@@ -8,6 +8,7 @@ Canonical files:
 
 - [`fluidlink-v2.contract.json`](../contracts/fluidlink-v2.contract.json)
 - [`fluidlink-v2.golden.json`](../contracts/fluidlink-v2.golden.json)
+- [Optional operation-batch profile](fluidlink-v2-batch.md)
 
 Contract SHA-256:
 
@@ -155,8 +156,11 @@ trusted provenance, matching destination generation, one-resource/4 MiB cache
 limits, budget reservation, and exact `memcmp` before skipping any
 `UpdateSubresource` call.
 
-The current sequence uses 74 serial round trips per optimized run under one
-deadline covering connect, OS peer verification, and every round trip.
+FluidRuntime 0.17.0 uses the optional operation-batch profile for this sequence.
+The seed and 64 candidates remain 65 individually validated logical decisions
+but share one wire request and response. The complete flow now uses 10 round
+trips instead of 74 under one deadline covering connect, OS peer verification,
+and every round trip.
 Malformed frames, accepted connections that never answer, and valid peers whose
 cumulative delay exceeds that deadline fail before optimized target launch,
 then execute a fresh baseline with no policy fields and zero skips. The
@@ -212,7 +216,7 @@ powershell -NoProfile -ExecutionPolicy Bypass `
   -Hardware $false
 ```
 
-The integration gate hashes both contract copies and both 17-vector copies,
+The integration gate hashes the base and batch contract/golden copies,
 requires the exact fixed-point decision, checks the same-flow byte budget, and
 rejects any v2 report that claims JSON, delta encoding, or shared-memory
 transport. Encoder tests also reject implicit identifier coercion and

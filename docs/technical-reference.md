@@ -1,6 +1,6 @@
 # FluidGateway Technical Reference
 
-> This document preserves the complete v0.64 protocol and feature history from
+> This document preserves the complete v0.65 protocol and feature history from
 > the original long-form README. Start with the
 > [project overview](../README.md) for the current capability map, evidence, and
 > roadmap.
@@ -144,7 +144,7 @@ decisions over FluidLink v2. Runtime maps that authorization to the existing
 native action bit 8 with budget 64. The hook still requires matching resource
 generation and exact 4 MiB content equality before each skip.
 
-Each optimized authorization currently costs 74 serial loopback round trips
+Each v0.15 optimized authorization cost 74 serial loopback round trips
 under one configurable total deadline; the published positive harness uses
 five seconds. Runtime OS-verifies the exact tuple against the expected Gateway
 PID/executable, freezes target/hook hashes, and binds all authorization inputs
@@ -171,6 +171,21 @@ and rejects schema or cross-run identity drift. The published
 contains 5/5 WARP Release, 5/5 Debug Layer, and 10/10 RX 580 runs. This path is
 observation-only: FluidGateway does not authorize D3D12 actuation, and logical
 copy bytes or DXGI budget snapshots are not physical RAM/VRAM or PCIe traffic.
+
+FluidGateway v0.65.0 and FluidRuntime v0.17.0 add the first optional FluidLink
+v2 extension profile. One positional operation template represents an ordered
+batch of 1 to 256 homogeneous operations; the response contains one explicit
+numeric decision per expanded operation. Exact profile hash negotiation,
+capability bit 7, echoed batch identity, cardinality, status/opcode consistency,
+and no-partial-vector failure are mandatory. Base v2 remains unchanged.
+
+The owned update-upload authorization now transports its seed and 64 candidates
+in one batch. It still processes 71 logical runtime events and validates all 65
+operation decisions, while the complete authorization falls from 74 to 10
+loopback round trips. The local WARP gate passed native equivalence, rollback,
+and malformed/stalled/slow-peer fallback. This is measured transport overhead
+reduction in an owned workload, not an FPS, power, PCIe, or physical RAM/VRAM
+claim. See the [batch profile](fluidlink-v2-batch.md).
 
 ## Intelligent Management Layer
 

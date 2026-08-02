@@ -35,6 +35,15 @@ FLUIDLINK_V2_CONTRACT_SHA256 = (
     "0d24d96aec32d74e123f9e198e51adde74ddf190e8c40b0ac18bddf5c4108b2f"
 )
 FLUIDLINK_V2_CONTRACT_DIGEST = bytes.fromhex(FLUIDLINK_V2_CONTRACT_SHA256)
+FLUIDLINK_V2_BATCH_CONTRACT_SHA256 = (
+    "bf8727c22ac878ceff6dd0f462d6db5e81174737e839ecdf2e263a6f55268542"
+)
+FLUIDLINK_V2_BATCH_CONTRACT_DIGEST = bytes.fromhex(
+    FLUIDLINK_V2_BATCH_CONTRACT_SHA256
+)
+FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE = 105
+FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE = 7
+FLUIDLINK_V2_MAX_BATCH_OPERATIONS = 256
 FLUIDLINK_V2_HEADER = struct.Struct("<4sBBBBBBHQ16s16sI")
 MEBIBYTE = 1024 * 1024
 
@@ -52,6 +61,7 @@ class FluidLinkV2Capability(IntFlag):
     RUNTIME_DECISIONS = 1 << 4
     MEMORY_TRANSIT = 1 << 5
     SESSION_LIFECYCLE = 1 << 6
+    BATCHED_RUNTIME_EVENTS = 1 << 7
 
 
 FLUIDLINK_V2_CAPABILITIES = (
@@ -68,6 +78,14 @@ FLUIDLINK_V2_REQUIRED_CAPABILITIES = (
     | FluidLinkV2Capability.FIXED_POINT_UNITS
     | FluidLinkV2Capability.RUNTIME_EVENTS
     | FluidLinkV2Capability.RUNTIME_DECISIONS
+)
+FLUIDLINK_V2_SUPPORTED_CAPABILITIES = (
+    FLUIDLINK_V2_CAPABILITIES | FluidLinkV2Capability.BATCHED_RUNTIME_EVENTS
+)
+FLUIDLINK_V2_BATCH_CAPABILITIES = FLUIDLINK_V2_SUPPORTED_CAPABILITIES
+FLUIDLINK_V2_BATCH_REQUIRED_CAPABILITIES = (
+    FLUIDLINK_V2_REQUIRED_CAPABILITIES
+    | FluidLinkV2Capability.BATCHED_RUNTIME_EVENTS
 )
 
 
@@ -767,6 +785,147 @@ def decode_runtime_decision_payload(payload: bytes) -> dict[str, Any]:
     return result
 
 
+def encode_operation_batch_event_payload(payload: dict[str, Any]) -> bytes:
+    if not isinstance(payload, dict):
+        raise FluidLinkProtocolError(
+            "invalid_payload", "FluidLink v2 operation batch must be an object."
+        )
+    batch_id = _batch_id_bytes(payload.get("batch_id"))
+    operation_count = _batch_count(payload.get("operation_count"))
+    operation_type = payload.get("operation_type")
+    if operation_type is None:
+        operation_type = payload.get("op")
+    if operation_type is None:
+        operation_type = payload.get("kind")
+    source = _optional_text(payload.get("source"))
+    target = _optional_text(payload.get("target"))
+    reason = _optional_text(payload.get("reason"))
+    frame = payload.get("frame")
+    presence = (
+        (1 if source is not None else 0)
+        | (2 if target is not None else 0)
+        | (4 if reason is not None else 0)
+        | (8 if frame is not None else 0)
+    )
+    dependencies = _text_list(
+        _value_or_default(payload, "depends_on", []),
+        FLUIDLINK_V2_MAX_DEPENDENCIES,
+        "dependencies",
+    )
+    writer = _PayloadWriter()
+    writer.raw(batch_id, 16)
+    writer.u16(operation_count)
+    writer.u8(_enum_value(operation_type, OPERATION_TYPES, "operation type"))
+    writer.u8(
+        _enum_value(
+            _value_or_default(payload, "queue", "unknown"), QUEUES, "queue"
+        )
+    )
+    writer.u8(presence)
+    if source is not None:
+        writer.text16(source, FLUIDLINK_V2_MAX_IDENTIFIER_BYTES)
+    if target is not None:
+        writer.text16(target, FLUIDLINK_V2_MAX_IDENTIFIER_BYTES)
+    if reason is not None:
+        writer.text16(reason, FLUIDLINK_V2_MAX_REASON_BYTES)
+    writer.u32(_time_value(payload, "cost_us", "cost_ms", maximum=0xFFFFFFFF))
+    writer.u64(_memory_value(payload, "size_bytes", "size_mb"))
+    if frame is not None:
+        writer.u64(_unsigned(frame, 0xFFFFFFFFFFFFFFFF, "frame"))
+    writer.u8(len(dependencies))
+    for dependency in dependencies:
+        writer.text16(dependency, FLUIDLINK_V2_MAX_IDENTIFIER_BYTES)
+    return writer.finish()
+
+
+def decode_operation_batch_event_payload(payload: bytes) -> dict[str, Any]:
+    reader = _PayloadReader(payload)
+    batch_id = reader.take(16)
+    _validate_batch_id(batch_id)
+    operation_count = _batch_count(reader.u16())
+    operation_type = _enum_name(reader.u8(), OPERATION_TYPES, "operation type")
+    queue = _enum_name(reader.u8(), QUEUES, "queue")
+    presence = reader.u8()
+    if presence & ~0x0F:
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch presence mask is invalid.",
+        )
+    result: dict[str, Any] = {
+        "batch_id": batch_id.hex(),
+        "operation_count": operation_count,
+        "operation_type": operation_type,
+        "queue": queue,
+    }
+    if presence & 1:
+        result["source"] = reader.text16(FLUIDLINK_V2_MAX_IDENTIFIER_BYTES)
+    if presence & 2:
+        result["target"] = reader.text16(FLUIDLINK_V2_MAX_IDENTIFIER_BYTES)
+    if presence & 4:
+        result["reason"] = reader.text16(FLUIDLINK_V2_MAX_REASON_BYTES)
+    cost_us = reader.u32()
+    size_bytes = reader.u64()
+    result.update(
+        {
+            "cost_us": cost_us,
+            "cost_ms": cost_us / 1000,
+            "size_bytes": size_bytes,
+            "size_mb": size_bytes / MEBIBYTE,
+        }
+    )
+    if presence & 8:
+        result["frame"] = reader.u64()
+    count = reader.u8()
+    if count > FLUIDLINK_V2_MAX_DEPENDENCIES:
+        raise FluidLinkProtocolError(
+            "invalid_payload", "FluidLink v2 dependency count exceeds its limit."
+        )
+    result["depends_on"] = [
+        reader.text16(FLUIDLINK_V2_MAX_IDENTIFIER_BYTES) for _ in range(count)
+    ]
+    reader.finish()
+    return result
+
+
+def encode_operation_batch_decision_payload(payload: dict[str, Any]) -> bytes:
+    if not isinstance(payload, dict):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch decision must be an object.",
+        )
+    batch_id = _batch_id_bytes(payload.get("batch_id"))
+    decisions = payload.get("decisions")
+    if not isinstance(decisions, (list, tuple)):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch decisions must be a list.",
+        )
+    _batch_count(len(decisions))
+    writer = _PayloadWriter()
+    writer.raw(batch_id, 16)
+    writer.u16(len(decisions))
+    for decision in decisions:
+        opcode, compact = _batch_decision(decision)
+        writer.u8(opcode)
+        writer.raw(encode_runtime_decision_payload(compact), 17)
+    return writer.finish()
+
+
+def decode_operation_batch_decision_payload(payload: bytes) -> dict[str, Any]:
+    reader = _PayloadReader(payload)
+    batch_id = reader.take(16)
+    _validate_batch_id(batch_id)
+    decision_count = _batch_count(reader.u16())
+    decisions: list[dict[str, Any]] = []
+    for _ in range(decision_count):
+        opcode = reader.u8()
+        compact = decode_runtime_decision_payload(reader.take(17))
+        _validate_batch_decision(opcode, compact)
+        decisions.append({"decision_opcode": opcode, **compact})
+    reader.finish()
+    return {"batch_id": batch_id.hex(), "decisions": decisions}
+
+
 def encode_runtime_event_payload(
     event_opcode: FluidLinkEventOpcode | int,
     payload: dict[str, Any],
@@ -1168,6 +1327,7 @@ class FluidLinkV2ServerSession:
         self.server_name = server_name
         self.server_version = server_version
         self.session_id: bytes | None = None
+        self.contract_digest: bytes | None = None
         self.expected_sequence = 1
         self.accepted_capabilities = FluidLinkV2Capability(0)
         self.closed = False
@@ -1246,13 +1406,26 @@ class FluidLinkV2ServerSession:
             hello = decode_hello_payload(request.payload)
         except FluidLinkProtocolError as exc:
             return self._error(request, FluidLinkV2ErrorCode.INVALID_PAYLOAD, str(exc))
-        if hello.contract_digest != FLUIDLINK_V2_CONTRACT_DIGEST:
+        if hello.contract_digest == FLUIDLINK_V2_CONTRACT_DIGEST:
+            available_capabilities = FLUIDLINK_V2_CAPABILITIES
+        elif hello.contract_digest == FLUIDLINK_V2_BATCH_CONTRACT_DIGEST:
+            available_capabilities = FLUIDLINK_V2_BATCH_CAPABILITIES
+            if not (
+                hello.required_capabilities
+                & FluidLinkV2Capability.BATCHED_RUNTIME_EVENTS
+            ):
+                return self._error(
+                    request,
+                    FluidLinkV2ErrorCode.INVALID_PAYLOAD,
+                    "The FluidLink v2 batch profile requires its batch capability.",
+                )
+        else:
             return self._error(
                 request,
                 FluidLinkV2ErrorCode.CONTRACT_MISMATCH,
                 "FluidLink peers do not share the same v2 contract.",
             )
-        unavailable = int(hello.required_capabilities) & ~int(FLUIDLINK_V2_CAPABILITIES)
+        unavailable = int(hello.required_capabilities) & ~int(available_capabilities)
         if unavailable:
             return self._error(
                 request,
@@ -1260,19 +1433,21 @@ class FluidLinkV2ServerSession:
                 f"Required capability mask 0x{unavailable:x} is unavailable.",
             )
         self.session_id = uuid4().bytes
+        self.contract_digest = hello.contract_digest
         self.accepted_capabilities = FluidLinkV2Capability(
             (int(hello.requested_capabilities) | int(hello.required_capabilities))
-            & int(FLUIDLINK_V2_CAPABILITIES)
+            & int(available_capabilities)
         )
         return fluidlink_v2_response(
             request,
             opcode=FluidLinkOpcode.WELCOME,
             session_id=self.session_id,
             payload=encode_welcome_payload(
-                available_capabilities=FLUIDLINK_V2_CAPABILITIES,
+                available_capabilities=available_capabilities,
                 accepted_capabilities=self.accepted_capabilities,
                 server_name=self.server_name,
                 server_version=self.server_version,
+                contract_digest=hello.contract_digest,
             ),
         )
 
@@ -1289,6 +1464,8 @@ class FluidLinkV2ServerSession:
                 FluidLinkV2ErrorCode.CAPABILITY_NOT_NEGOTIATED,
                 "FluidLink v2 runtime capabilities were not negotiated.",
             )
+        if request.subject_opcode == FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE:
+            return self._handle_operation_batch(request, event_handler)
         try:
             event_opcode = FluidLinkEventOpcode(request.subject_opcode)
         except ValueError:
@@ -1320,6 +1497,73 @@ class FluidLinkV2ServerSession:
             opcode=FluidLinkOpcode.RUNTIME_DECISION,
             subject_opcode=event_opcode,
             decision_opcode=decision_opcode,
+            session_id=self.session_id,
+            payload=decision_payload,
+        )
+
+    def _handle_operation_batch(
+        self,
+        request: FluidLinkV2Frame,
+        event_handler: Callable[[dict[str, Any]], dict[str, Any]],
+    ) -> FluidLinkV2Frame:
+        if (
+            self.contract_digest != FLUIDLINK_V2_BATCH_CONTRACT_DIGEST
+            or not self.accepted_capabilities
+            & FluidLinkV2Capability.BATCHED_RUNTIME_EVENTS
+        ):
+            return self._error(
+                request,
+                FluidLinkV2ErrorCode.CAPABILITY_NOT_NEGOTIATED,
+                "FluidLink v2 batched runtime events were not negotiated.",
+            )
+        try:
+            batch = decode_operation_batch_event_payload(request.payload)
+        except FluidLinkProtocolError as exc:
+            return self._error(
+                request,
+                FluidLinkV2ErrorCode.INVALID_PAYLOAD,
+                str(exc),
+            )
+
+        decisions: list[dict[str, Any]] = []
+        batch_id = batch["batch_id"]
+        try:
+            for ordinal in range(batch["operation_count"]):
+                event = {
+                    key: value
+                    for key, value in batch.items()
+                    if key not in {"batch_id", "operation_count"}
+                }
+                event.update(
+                    {
+                        "event": "operation",
+                        "id": f"batch-{batch_id}-{ordinal:03d}",
+                    }
+                )
+                response = event_handler(event)
+                decision_opcode, compact = compact_runtime_response(
+                    FluidLinkEventOpcode.OPERATION,
+                    response,
+                )
+                decisions.append(
+                    {"decision_opcode": int(decision_opcode), **compact}
+                )
+            decision_payload = encode_operation_batch_decision_payload(
+                {"batch_id": batch_id, "decisions": decisions}
+            )
+        except Exception as exc:
+            self.closed = True
+            return self._error(
+                request,
+                FluidLinkV2ErrorCode.RUNTIME_EVENT_REJECTED,
+                str(exc),
+            )
+
+        return fluidlink_v2_response(
+            request,
+            opcode=FluidLinkOpcode.RUNTIME_DECISION,
+            subject_opcode=FLUIDLINK_V2_OPERATION_BATCH_EVENT_OPCODE,
+            decision_opcode=FLUIDLINK_V2_BATCH_VECTOR_DECISION_OPCODE,
             session_id=self.session_id,
             payload=decision_payload,
         )
@@ -1374,8 +1618,72 @@ class FluidLinkV2ServerSession:
         )
 
 
+def _batch_id_bytes(value: Any) -> bytes:
+    if (
+        not isinstance(value, str)
+        or len(value) != 32
+        or any(character not in "0123456789abcdefABCDEF" for character in value)
+    ):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 batch_id must contain exactly 16 hexadecimal bytes.",
+        )
+    result = bytes.fromhex(value)
+    _validate_batch_id(result)
+    return result
+
+
+def _validate_batch_id(value: bytes) -> None:
+    if len(value) != 16 or not any(value):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 batch_id must contain 16 nonzero-identity bytes.",
+        )
+
+
+def _batch_count(value: Any) -> int:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 1 <= value <= FLUIDLINK_V2_MAX_BATCH_OPERATIONS
+    ):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch count must be between 1 and "
+            f"{FLUIDLINK_V2_MAX_BATCH_OPERATIONS}.",
+        )
+    return value
+
+
+def _batch_decision(value: Any) -> tuple[int, dict[str, Any]]:
+    if not isinstance(value, dict):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch decision entry must be an object.",
+        )
+    opcode = value.get("decision_opcode")
+    _validate_batch_decision(opcode, value)
+    return int(opcode), value
+
+
+def _validate_batch_decision(opcode: Any, compact: dict[str, Any]) -> None:
+    if isinstance(opcode, bool) or not isinstance(opcode, int) or not 0 <= opcode <= 6:
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch contains an invalid decision opcode.",
+        )
+    executed = compact.get("executed")
+    if not isinstance(executed, bool) or executed != (
+        opcode == int(FluidLinkDecisionOpcode.EXECUTE)
+    ):
+        raise FluidLinkProtocolError(
+            "invalid_payload",
+            "FluidLink v2 operation batch decision execution state and opcode disagree.",
+        )
+
+
 def _decode_capability_mask(value: int) -> FluidLinkV2Capability:
-    unknown = value & ~int(FLUIDLINK_V2_CAPABILITIES)
+    unknown = value & ~int(FLUIDLINK_V2_SUPPORTED_CAPABILITIES)
     if unknown:
         raise FluidLinkProtocolError(
             "invalid_payload", f"FluidLink v2 capability mask has unknown bits 0x{unknown:x}."
