@@ -56,6 +56,11 @@ one authorization fell from 26,756 in the published v0.15 serial trace to 3,138
 with the batch profile. These counters exclude TCP/IP overhead. This is protocol
 overhead evidence, not proof of FPS, power, PCIe, or physical RAM/VRAM traffic.
 
+FluidRuntime v0.18 uses the same unchanged profile for one seed plus 128 exact
+candidates, or 129 ordered operations. The native policy ceiling remains 128;
+the profile's 256-operation wire maximum was not widened. The historical
+64-candidate workload remains selectable for regression.
+
 ## Verify
 
 ```powershell
@@ -67,7 +72,8 @@ dotnet test tests\FluidRuntime.Tests\FluidRuntime.Tests.csproj `
   --filter FullyQualifiedName~FluidLinkV2
 powershell -NoProfile -ExecutionPolicy Bypass `
   -File tools\Test-GatewayManagedUpdateUpload.ps1 `
-  -GatewayPath ..\FluidGateway -TrialPairs 2 -WarmupPairs 0 -Hardware $false
+  -GatewayPath ..\FluidGateway -CandidateActionCount 128 `
+  -TrialPairs 2 -WarmupPairs 0 -Hardware $false
 ```
 
 The managed integration also checks OS loopback peer ownership, exact contract

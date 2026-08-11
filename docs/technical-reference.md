@@ -1,6 +1,6 @@
 # FluidGateway Technical Reference
 
-> This document preserves the complete v0.65 protocol and feature history from
+> This document preserves the complete v0.66 protocol and feature history from
 > the original long-form README. Start with the
 > [project overview](../README.md) for the current capability map, evidence, and
 > roadmap.
@@ -20,7 +20,7 @@ FluidGateway itself does not inject code, hook games, or change drivers. It
 ingests PresentMon 2.x CSV data, produces a ranked report of likely waste
 patterns with evidence, and includes user-space runtime prototypes for modeling
 early CPU/GPU/RAM/VRAM decisions. One exact owned-lab authorization path is now
-consumed by FluidRuntime v0.15; it is not a general optimization authority.
+consumed by FluidRuntime v0.18; it is not a general optimization authority.
 
 > The initial promise is to find probable waste in the frame path, not to
 > automatically increase FPS.
@@ -187,6 +187,24 @@ and malformed/stalled/slow-peer fallback. This is measured transport overhead
 reduction in an owned workload, not an FPS, power, PCIe, or physical RAM/VRAM
 claim. See the [batch profile](fluidlink-v2-batch.md).
 
+FluidGateway v0.66.0 keeps both FluidLink v2 contract fingerprints unchanged
+and hardens the local decision server around them. Legacy JSONL, v1, and v2
+connections share one eight-worker limit and a backlog of 16. A partial initial
+prefix has a one-second absolute deadline, an in-progress frame has two seconds,
+and an idle completed session has 30 seconds. Deadlines use monotonic time and
+do not reset for each received byte. Excess clients are closed without input
+processing, shutdown terminates active workers, and `--once` waits for its
+selected connection to finish.
+
+The paired FluidRuntime v0.18.0 release promotes the owned update-upload lab to
+one seed plus 128 candidates without changing the batch profile, native ABI,
+one-resource cache, or 128-action policy ceiling. The historical 64-candidate
+profile remains explicitly selectable and tested. WARP, fail-closed controls,
+and 20 measured RX 580 pairs passed; the complete-loop performance claim remains
+blocked because Gateway authorization is outside the measured native interval.
+See the
+[v0.18 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.18.0/docs/evidence/v0.18.0-resilience-update-upload-128.md).
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
@@ -202,7 +220,7 @@ input for a future runtime controller. The goal is to eventually coordinate:
 
 FluidGateway-side management remains advisory by default. The tool generates a
 plan that says which policies a future gateway/scheduler should apply and why.
-The v0.15 exception translates one exact owned-lab decision set into a bounded
+The v0.18 exception translates one exact owned-lab decision set into a bounded
 Runtime action; it does not generalize to other resources or processes. Direct
 RAM/VRAM control requires additional telemetry beyond PresentMon.
 

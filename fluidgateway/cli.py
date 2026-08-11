@@ -322,7 +322,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument(
         "--host",
         default="127.0.0.1",
-        help="Host interface to bind. Defaults to 127.0.0.1.",
+        help="IPv4 loopback interface to bind. Defaults to 127.0.0.1.",
     )
     serve.add_argument(
         "--port",

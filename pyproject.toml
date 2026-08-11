@@ -1,6 +1,6 @@
 [project]
 name = "fluidgateway"
-version = "0.65.0"
+version = "0.66.0"
 description = "An evidence-driven gateway for finding waste across CPU, GPU, memory, and frame pipelines."
 readme = "README.md"
 requires-python = ">=3.10"

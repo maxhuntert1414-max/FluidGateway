@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Version](https://img.shields.io/badge/version-0.65.0-ef6c35)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.66.0-ef6c35)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 
 FluidGateway is the diagnostic and decision layer of the Fluid project. The
@@ -21,15 +21,16 @@ physically unified memory, but it can coordinate the path with less waste.
 | PresentMon 2.x diagnosis | Working CLI with HTML and JSON evidence |
 | Policy and runtime modeling | Advisory and dry-run by default |
 | FluidLink v2 | Strict positional binary IPC with numeric opcodes |
-| FluidLink operation batch | 65 logical operations in 1 wire round trip |
+| FluidLink operation batch | 129 logical operations in 1 bounded request/vector pair |
+| Local decision server | Loopback-only, 8-worker limit, absolute read deadlines |
 | Native intervention | One bounded owned D3D11 path through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | External games, driver hooks, general scheduler | Not implemented |
 
-The v0.65 batch profile reduced the controlled authorization flow from 74 to 10
-loopback round trips while preserving 71 logical runtime events and one explicit
-decision per operation. In the local WARP gate, the native hook still avoided
-268,435,456 logical bytes in its owned deterministic workload and all fault
-cases returned to an unmodified baseline.
+The v0.66 server isolates at most eight local connections, rejects excess
+clients, and closes slow-drip frames on monotonic absolute deadlines. The wire
+contracts and fingerprints are unchanged. FluidRuntime v0.18 now uses the
+existing batch envelope for one seed plus 128 exact candidates; its owned RX
+580 gate completed 20 measured pairs with exact content and rollback.
 
 This is protocol and owned-lab evidence. It is not proof of higher game FPS,
 lower power, physical RAM/VRAM placement, or reduced PCIe traffic.

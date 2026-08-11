@@ -134,14 +134,15 @@ game workload.
 
 ## Bounded Native Authorization Consumer
 
-FluidLink v2 remains advisory for general Runtime events. FluidRuntime v0.15
-adds one explicit owned-lab consumer that recognizes only the complete direct
-update-upload authorization sequence. FluidLink package 0.2.1 exposes read-only
+FluidLink v2 remains advisory for general Runtime events. FluidRuntime v0.18
+retains one explicit owned-lab consumer, introduced in v0.15, that recognizes
+only the complete direct update-upload authorization sequence. FluidLink
+package 0.2.1 introduced read-only
 connected endpoints so Runtime can bind the exact IPv4 loopback tuple through
 the Windows TCP owner table to the caller-supplied expected Gateway PID,
 executable SHA-256, and process start time. Advertised server name/version are
 metadata rather than authentication. Exact contract/capabilities, one executed
-seed, and exactly 64 accepted opcode-2 duplicate-transfer decisions in the
+seed, and exactly 128 accepted opcode-2 duplicate-transfer decisions in the
 expected session, pair, and phase are still mandatory.
 
 Before authorization, Runtime opens the target and hook without write/delete
@@ -150,21 +151,21 @@ peer process evidence, target/hook hashes, pair/phase, transfer shape, action,
 and budget; it is carried in the session and every candidate operation.
 
 An accepted sequence authorizes Runtime to publish the existing native action
-bit 8 with budget 64 for one short-lived owned-target epoch. It does not prove
+bit 8 with budget 128 for one short-lived owned-target epoch. It does not prove
 content equality. The D3D11 hook remains the final authority and still requires
 trusted provenance, matching destination generation, one-resource/4 MiB cache
 limits, budget reservation, and exact `memcmp` before skipping any
 `UpdateSubresource` call.
 
-FluidRuntime 0.17.0 uses the optional operation-batch profile for this sequence.
-The seed and 64 candidates remain 65 individually validated logical decisions
+FluidRuntime 0.18.0 uses the optional operation-batch profile for this sequence.
+The seed and 128 candidates remain 129 individually validated logical decisions
 but share one wire request and response. The complete flow now uses 10 round
 trips instead of 74 under one deadline covering connect, OS peer verification,
 and every round trip.
 Malformed frames, accepted connections that never answer, and valid peers whose
 cumulative delay exceeds that deadline fail before optimized target launch,
 then execute a fresh baseline with no policy fields and zero skips. The
-[v0.15 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.15.0/docs/evidence/v0.15.0-gateway-managed-update-upload.md)
+[v0.18 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.18.0/docs/evidence/v0.18.0-resilience-update-upload-128.md)
 contains the closed-loop, fault-peer, WARP, and RX 580 traces. The process
 binding is not cryptographic authentication. This is not a generic permission
 channel, external-process claim, or end-to-end performance measurement.
