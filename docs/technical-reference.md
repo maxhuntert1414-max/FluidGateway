@@ -205,6 +205,15 @@ blocked because Gateway authorization is outside the measured native interval.
 See the
 [v0.18 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.18.0/docs/evidence/v0.18.0-resilience-update-upload-128.md).
 
+FluidGateway v0.67.0 makes completion of a valid FluidLink `GOODBYE` release
+the bounded worker slot before writing the final acknowledgement. Slot release
+is idempotent, so thread cleanup cannot over-release the semaphore. Saturation
+still rejects a genuinely excess session, while back-to-back bursts at the
+declared concurrency ceiling no longer race server-thread cleanup. The paired
+FluidRuntime v0.19.0 benchmark measures complete authorization calls at
+concurrency 1, 2, 4, and 8 and keeps transport conclusions separate from native
+CPU/GPU timing.
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor

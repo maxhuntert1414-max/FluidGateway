@@ -188,6 +188,8 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
                 request,
                 lambda event: process_adapter_event_payload(self.session, event),
             )
+            if self.fluidlink.closed:
+                self.server._release_connection_slot(self.connection)
             self._write_bytes(encode_fluidlink_frame(response))
             if self.fluidlink.closed:
                 break
@@ -208,6 +210,8 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
                 request,
                 lambda event: process_adapter_event_payload(self.session, event),
             )
+            if self.fluidlink_v2.closed:
+                self.server._release_connection_slot(self.connection)
             self._write_bytes(encode_fluidlink_v2_frame(response))
             if self.fluidlink_v2.closed:
                 break
@@ -386,6 +390,8 @@ class RuntimeEventTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer)
 
     def _release_connection_slot(self, request: socket.socket) -> None:
         with self._connection_count_lock:
+            if request not in self._active_requests:
+                return
             self._active_requests.discard(request)
             self._active_connection_count -= 1
         self._connection_slots.release()

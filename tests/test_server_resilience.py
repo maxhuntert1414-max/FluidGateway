@@ -12,7 +12,11 @@ from fluidgateway.fluidlink_v2 import (
     fluidlink_v2_request,
     read_fluidlink_v2_frame,
 )
-from fluidgateway.server import create_runtime_event_server
+from fluidgateway.server import (
+    RuntimeEventRequestHandler,
+    RuntimeEventTCPServer,
+    create_runtime_event_server,
+)
 
 
 class RuntimeEventServerResilienceTests(unittest.TestCase):
@@ -99,6 +103,78 @@ class RuntimeEventServerResilienceTests(unittest.TestCase):
 
             self.assertEqual(0, server.active_connection_count)
             self.assertFalse(server_thread.is_alive())
+
+    def test_goodbye_ack_releases_slot_before_handler_finish(self):
+        finish_started = threading.Event()
+        release_finish = threading.Event()
+
+        class SlowFinishHandler(RuntimeEventRequestHandler):
+            def finish(self) -> None:
+                finish_started.set()
+                release_finish.wait(timeout=2)
+                super().finish()
+
+        with RuntimeEventTCPServer(
+            ("127.0.0.1", 0),
+            SlowFinishHandler,
+            max_active_connections=1,
+        ) as server:
+            host, port = server.server_address
+            server_thread = self._start_server(server)
+            try:
+                self._perform_goodbye_session(host, port)
+                self.assertTrue(finish_started.wait(timeout=1))
+                self._perform_goodbye_session(host, port)
+            finally:
+                release_finish.set()
+                server.shutdown()
+                server_thread.join(timeout=2)
+
+            self.assertEqual(0, server.active_connection_count)
+            self.assertFalse(server_thread.is_alive())
+
+    def test_goodbye_releases_slot_before_ack_write(self):
+        goodbye_write_started = threading.Event()
+        release_goodbye_write = threading.Event()
+
+        class PausedGoodbyeWriter(RuntimeEventRequestHandler):
+            def _write_bytes(self, payload: bytes) -> None:
+                if self.fluidlink_v2.closed:
+                    goodbye_write_started.set()
+                    release_goodbye_write.wait(timeout=2)
+                super()._write_bytes(payload)
+
+        with RuntimeEventTCPServer(
+            ("127.0.0.1", 0),
+            PausedGoodbyeWriter,
+            max_active_connections=1,
+        ) as server:
+            host, port = server.server_address
+            server_thread = self._start_server(server)
+            client_errors: list[BaseException] = []
+
+            def run_client() -> None:
+                try:
+                    self._perform_goodbye_session(host, port)
+                except BaseException as exc:
+                    client_errors.append(exc)
+
+            client = threading.Thread(
+                target=run_client,
+            )
+            client.start()
+            try:
+                self.assertTrue(goodbye_write_started.wait(timeout=1))
+                self.assertEqual(0, server.active_connection_count)
+            finally:
+                release_goodbye_write.set()
+                client.join(timeout=2)
+                server.shutdown()
+                server_thread.join(timeout=2)
+
+            self.assertFalse(client.is_alive())
+            self.assertFalse(server_thread.is_alive())
+            self.assertEqual([], client_errors)
 
     def test_initial_prefix_uses_an_absolute_slow_drip_deadline(self):
         with create_runtime_event_server(
@@ -282,6 +358,34 @@ class RuntimeEventServerResilienceTests(unittest.TestCase):
                 response = read_fluidlink_v2_frame(stream)
         if response is None or response.opcode != FluidLinkOpcode.WELCOME:
             raise AssertionError("Healthy FluidLink v2 handshake did not complete.")
+
+    @staticmethod
+    def _perform_goodbye_session(host: str, port: int) -> None:
+        hello = fluidlink_v2_request(
+            opcode=FluidLinkOpcode.HELLO,
+            sequence=1,
+            payload=encode_hello_payload(
+                client_name="resilience-goodbye-test",
+                client_version="1",
+            ),
+        )
+        with socket.create_connection((host, port), timeout=1) as connection:
+            connection.settimeout(1)
+            with connection.makefile("rwb", buffering=0) as stream:
+                stream.write(encode_fluidlink_v2_frame(hello))
+                welcome = read_fluidlink_v2_frame(stream)
+                if welcome is None or welcome.opcode != FluidLinkOpcode.WELCOME:
+                    raise AssertionError("FluidLink v2 welcome did not complete.")
+                goodbye = fluidlink_v2_request(
+                    opcode=FluidLinkOpcode.GOODBYE,
+                    sequence=2,
+                    session_id=welcome.session_id,
+                    payload=b"",
+                )
+                stream.write(encode_fluidlink_v2_frame(goodbye))
+                response = read_fluidlink_v2_frame(stream)
+                if response is None or response.opcode != FluidLinkOpcode.GOODBYE:
+                    raise AssertionError("FluidLink v2 goodbye did not complete.")
 
     @staticmethod
     def _start_server(server):

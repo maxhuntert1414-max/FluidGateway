@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Version](https://img.shields.io/badge/version-0.66.0-ef6c35)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.67.0-ef6c35)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 
 FluidGateway is the diagnostic and decision layer of the Fluid project. The
@@ -26,11 +26,11 @@ physically unified memory, but it can coordinate the path with less waste.
 | Native intervention | One bounded owned D3D11 path through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | External games, driver hooks, general scheduler | Not implemented |
 
-The v0.66 server isolates at most eight local connections, rejects excess
-clients, and closes slow-drip frames on monotonic absolute deadlines. The wire
-contracts and fingerprints are unchanged. FluidRuntime v0.18 now uses the
-existing batch envelope for one seed plus 128 exact candidates; its owned RX
-580 gate completed 20 measured pairs with exact content and rollback.
+The v0.67 server preserves its eight-connection bound while releasing a slot
+before the final `GOODBYE` acknowledgement is sent. This removes a measured
+turnover race at concurrency 8 without admitting excess active sessions.
+FluidRuntime v0.19 now measures authorization, process startup, native action,
+and fallback in one end-to-end window and publishes p50/p95/p99 evidence.
 
 This is protocol and owned-lab evidence. It is not proof of higher game FPS,
 lower power, physical RAM/VRAM placement, or reduced PCIe traffic.
