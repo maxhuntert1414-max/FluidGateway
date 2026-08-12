@@ -23,14 +23,16 @@ physically unified memory, but it can coordinate the path with less waste.
 | FluidLink v2 | Strict positional binary IPC with numeric opcodes |
 | FluidLink operation batch | 129 logical operations in 1 bounded request/vector pair |
 | Local decision server | Loopback-only, 8-worker limit, absolute read deadlines |
-| Native intervention | One bounded owned D3D11 path through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
+| Native intervention | Bounded owned D3D11 and D3D12 paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | External games, driver hooks, general scheduler | Not implemented |
 
 The v0.67 server preserves its eight-connection bound while releasing a slot
 before the final `GOODBYE` acknowledgement is sent. This removes a measured
 turnover race at concurrency 8 without admitting excess active sessions.
-FluidRuntime v0.19 now measures authorization, process startup, native action,
-and fallback in one end-to-end window and publishes p50/p95/p99 evidence.
+FluidRuntime v0.21 binds D3D12 authorization to a backend-neutral transfer
+topology with two independent lanes, queue submission, and fence provenance.
+Its native execution gate passed on RX 580; the full end-to-end performance gate
+remains blocked by managed-path tail variance.
 
 This is protocol and owned-lab evidence. It is not proof of higher game FPS,
 lower power, physical RAM/VRAM placement, or reduced PCIe traffic.
@@ -79,6 +81,7 @@ The cooperative native experiments and Windows/GPU telemetry live in
 - [FluidLink v2 base protocol](docs/fluidlink-v2.md)
 - [FluidLink v2 operation-batch profile](docs/fluidlink-v2-batch.md)
 - [Canonical contracts and golden vectors](contracts)
+- [FluidRuntime v0.21 transfer evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.21.0/docs/evidence/v0.21.0-d3d12-transfer-core.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 

@@ -214,6 +214,15 @@ FluidRuntime v0.19.0 benchmark measures complete authorization calls at
 concurrency 1, 2, 4, and 8 and keeps transport conclusions separate from native
 CPU/GPU timing.
 
+FluidRuntime v0.21.0 reuses the unchanged FluidLink v2 batch decisions for a
+generalized owned D3D12 transfer core. Runtime, not Gateway, binds each accepted
+decision set to the exact native queue/scope/resource/lane/fence topology in a
+separate authorization context. Two command lists and destinations retain
+independent state; queue submission, fence signal, readback, event sequence, and
+rollback must agree. The RX 580 native execution gate passed 30/30 measured
+pairs, while the complete Gateway-to-effect p95/p99 gate remained blocked. See
+the [v0.21 evidence](https://github.com/maxhuntert1414-max/FluidRuntime/blob/v0.21.0/docs/evidence/v0.21.0-d3d12-transfer-core.md).
+
 ## Intelligent Management Layer
 
 FluidGateway's management layer treats the diagnostic report as the sensor
