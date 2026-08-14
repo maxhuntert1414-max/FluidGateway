@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .atomic_io import atomic_write_json
 from .runtime import (
     RuntimeDecision,
     RuntimeOperation,
@@ -124,11 +124,7 @@ class FluidGatewayController:
         path = Path(output_path)
         if path.suffix.lower() != ".json":
             path = path.with_suffix(".json")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(self.snapshot(), indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        atomic_write_json(path, self.snapshot())
         return path
 
     def _record_executed(self, operation: RuntimeOperation) -> None:

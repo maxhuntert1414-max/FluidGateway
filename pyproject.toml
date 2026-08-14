@@ -1,6 +1,6 @@
 [project]
 name = "fluidgateway"
-version = "0.67.0"
+version = "0.67.1"
 description = "An evidence-driven gateway for finding waste across CPU, GPU, memory, and frame pipelines."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,7 +13,6 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Testing",
   "Topic :: System :: Benchmark"
@@ -21,3 +20,10 @@ classifiers = [
 
 [project.scripts]
 fluidgateway = "fluidgateway.cli:main"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["fluidgateway*"]

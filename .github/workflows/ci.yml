@@ -12,11 +12,34 @@ jobs:
       matrix:
         python-version: ["3.10", "3.13"]
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run test suite
         run: python -m unittest
+      - name: Compile package
+        run: python -m compileall -q fluidgateway tests
+      - name: Verify packaged entry point
+        shell: pwsh
+        run: |
+          python -m pip install .
+          Push-Location $env:RUNNER_TEMP
+          try {
+            fluidgateway --version
+          } finally {
+            Pop-Location
+          }
+      - name: Verify fail-closed doctor report
+        shell: pwsh
+        run: |
+          fluidgateway doctor --out artifacts/doctor.json
+          $doctor = Get-Content artifacts/doctor.json -Raw | ConvertFrom-Json
+          if (-not $doctor.readiness.offline_trace_diagnostics -or
+              $doctor.readiness.external_process_hooking -or
+              $doctor.readiness.system_wide_actuation -or
+              $doctor.would_modify_system) {
+            throw 'Doctor readiness contract was widened or blocked.'
+          }
       - name: Check CLI entry point
         run: python -m fluidgateway --help

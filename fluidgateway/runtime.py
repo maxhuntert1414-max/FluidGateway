@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .atomic_io import atomic_write_json
 
 MEMORY_LAYERS = {"ram", "vram", "shared", "staging", "swapchain", "display"}
 RESOURCE_TYPES = {"buffer", "texture", "framebuffer", "command", "unknown"}
@@ -186,8 +187,7 @@ def write_runtime_plan(plan: RuntimePlan, output_path: str | Path) -> Path:
     path = Path(output_path)
     if path.suffix.lower() != ".json":
         path = path.with_suffix(".json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(plan.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+    atomic_write_json(path, plan.to_dict())
     return path
 
 

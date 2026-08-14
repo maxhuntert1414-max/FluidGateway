@@ -5,6 +5,7 @@ import socket
 from pathlib import Path
 from typing import Any, Iterable
 
+from .atomic_io import atomic_write_json
 from .actuation import build_actuation_plan
 from .adaptive import build_adaptive_executor_loop
 from .admission import build_admission_plan
@@ -381,11 +382,5 @@ def write_client_responses(
     path = Path(output_path)
     if path.suffix.lower() != ".json":
         path = path.with_suffix(".json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(
-            summarize_client_responses(responses), indent=2, ensure_ascii=False
-        ),
-        encoding="utf-8",
-    )
+    atomic_write_json(path, summarize_client_responses(responses))
     return path

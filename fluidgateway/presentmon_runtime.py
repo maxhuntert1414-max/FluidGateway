@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .atomic_io import atomic_write_text
 from .models import AnalysisReport, ManagementAction, MetricSummary
 from .policy import DEFAULT_FRAME_BUDGET_MS
 
@@ -104,11 +105,11 @@ def write_presentmon_runtime_events(
     path = Path(output_path)
     if path.suffix.lower() != ".jsonl":
         path = path.with_suffix(".jsonl")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as handle:
-        for event in stream.events:
-            handle.write(json.dumps(event, ensure_ascii=False))
-            handle.write("\n")
+    content = "".join(
+        json.dumps(event, ensure_ascii=False) + "\n"
+        for event in stream.events
+    )
+    atomic_write_text(path, content)
     return path
 
 

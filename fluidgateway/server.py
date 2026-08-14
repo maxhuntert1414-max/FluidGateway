@@ -3,6 +3,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import math
+import os
 import socket
 import socketserver
 import threading
@@ -282,7 +283,7 @@ class RuntimeEventRequestHandler(socketserver.StreamRequestHandler):
 
 
 class RuntimeEventTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    allow_reuse_address = True
+    allow_reuse_address = os.name != "nt"
     daemon_threads = False
     block_on_close = True
 
@@ -322,6 +323,15 @@ class RuntimeEventTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer)
         self.shutdown_event = threading.Event()
         self._synchronous_request = False
         super().__init__(server_address, request_handler_class)
+
+    def server_bind(self) -> None:
+        if os.name == "nt":
+            self.socket.setsockopt(
+                socket.SOL_SOCKET,
+                socket.SO_EXCLUSIVEADDRUSE,
+                1,
+            )
+        super().server_bind()
 
     @property
     def active_connection_count(self) -> int:

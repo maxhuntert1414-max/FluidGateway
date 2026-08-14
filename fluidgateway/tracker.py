@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .atomic_io import atomic_write_json
 from .analyzer import analyze_trace
 from .models import AnalysisReport, TraceData, TraceRecord
 
@@ -64,9 +65,7 @@ def load_registry(registry_path: str | Path | None = None) -> dict[str, Any]:
 
 def save_registry(registry_path: str | Path, registry: dict[str, Any]) -> None:
     path = Path(registry_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(registry, handle, indent=2, ensure_ascii=False)
+    atomic_write_json(path, registry)
 
 
 def summarize_registry(registry_path: str | Path | None = None) -> list[dict[str, Any]]:

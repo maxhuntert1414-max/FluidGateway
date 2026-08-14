@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .atomic_io import atomic_write_json
 from .control import ControllerResult, FluidGatewayController
 from .runtime import RuntimeResource
 
@@ -60,11 +61,7 @@ def write_event_replay(result: EventReplayResult, output_path: str | Path) -> Pa
     path = Path(output_path)
     if path.suffix.lower() != ".json":
         path = path.with_suffix(".json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(result.to_dict(), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    atomic_write_json(path, result.to_dict())
     return path
 
 

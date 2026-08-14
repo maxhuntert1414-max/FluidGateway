@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .atomic_io import atomic_write_json
 from .policy_update import FramePolicyUpdate, MemoryPolicyUpdate, RuntimePolicyUpdate
 
 
@@ -216,11 +217,7 @@ def write_runtime_state_accumulator(
     path = Path(output_path)
     if path.suffix.lower() != ".json":
         path = path.with_suffix(".json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(state.to_dict(), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    atomic_write_json(path, state.to_dict())
     return path
 
 

@@ -53,6 +53,8 @@ class HostCapabilitySnapshot:
     ram_pressure_class: str
     gpu_count: int
     total_reported_vram_mb: float | None
+    largest_reported_vram_mb: float | None
+    gpu_selection_basis: str
     gpu_class: str
     host_profile: str
     manager_hint: str
@@ -89,6 +91,10 @@ class HostCapabilitySnapshot:
             "total_reported_vram_mb": round(self.total_reported_vram_mb, 4)
             if self.total_reported_vram_mb is not None
             else None,
+            "largest_reported_vram_mb": round(self.largest_reported_vram_mb, 4)
+            if self.largest_reported_vram_mb is not None
+            else None,
+            "gpu_selection_basis": self.gpu_selection_basis,
             "gpu_class": self.gpu_class,
             "host_profile": self.host_profile,
             "manager_hint": self.manager_hint,
@@ -141,11 +147,15 @@ def build_host_capability_snapshot(
         if gpu.adapter_ram_mb is not None
     )
     reported_vram = total_vram_mb if gpu_items else None
+    largest_reported_vram = max(
+        (gpu.adapter_ram_mb for gpu in gpu_items if gpu.adapter_ram_mb is not None),
+        default=None,
+    )
     ram_pressure_pct = calculate_ram_pressure_pct(total_ram_mb, available_ram_mb)
     cpu = classify_cpu(cpu_logical_count)
     ram = classify_ram(total_ram_mb)
     ram_pressure = classify_ram_pressure(ram_pressure_pct)
-    gpu = classify_gpu(reported_vram, len(gpu_items))
+    gpu = classify_gpu(largest_reported_vram, len(gpu_items))
     profile = classify_host_profile(cpu, ram, ram_pressure, gpu)
     hint = manager_hint_for_profile(profile, ram_pressure, gpu)
     errors = list(capture_errors or [])
@@ -169,6 +179,8 @@ def build_host_capability_snapshot(
         ram_pressure_class=ram_pressure,
         gpu_count=len(gpu_items),
         total_reported_vram_mb=reported_vram,
+        largest_reported_vram_mb=largest_reported_vram,
+        gpu_selection_basis="largest-reported-adapter-not-active-process-binding",
         gpu_class=gpu,
         host_profile=profile,
         manager_hint=hint,
@@ -399,7 +411,10 @@ def telemetry_confidence(
 ) -> str:
     memory_known = total_ram_mb is not None and available_ram_mb is not None
     gpu_known = bool(gpus)
-    if memory_known and gpu_known and not capture_errors:
+    gpu_binding_unambiguous = (
+        len(gpus) == 1 and gpus[0].adapter_ram_mb is not None
+    )
+    if memory_known and gpu_binding_unambiguous and not capture_errors:
         return "high"
     if memory_known and gpu_known:
         return "medium"

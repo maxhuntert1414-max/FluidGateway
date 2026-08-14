@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
+from .atomic_io import atomic_write_json
 from .adapter import replay_adapter_event_stream
 from .daemon_actions import (
     RuntimeDaemonActionQueue,
@@ -503,9 +503,5 @@ def write_runtime_daemon_report(
     path = Path(output_path)
     if path.suffix.lower() != ".json":
         path = path.with_suffix(".json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(report.to_dict(), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    atomic_write_json(path, report.to_dict())
     return path

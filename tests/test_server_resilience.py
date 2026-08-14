@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+import os
 import threading
 import time
 import unittest
@@ -340,6 +341,13 @@ class RuntimeEventServerResilienceTests(unittest.TestCase):
     def test_server_rejects_non_loopback_bind(self):
         with self.assertRaisesRegex(ValueError, "loopback"):
             create_runtime_event_server("0.0.0.0", 0)
+
+    @unittest.skipUnless(os.name == "nt", "Windows exclusive bind semantics")
+    def test_windows_bind_is_exclusive_while_server_is_open(self):
+        with create_runtime_event_server("127.0.0.1", 0) as server:
+            host, port = server.server_address
+            with self.assertRaises(OSError):
+                create_runtime_event_server(host, port)
 
     @staticmethod
     def _perform_healthy_handshake(host: str, port: int) -> None:

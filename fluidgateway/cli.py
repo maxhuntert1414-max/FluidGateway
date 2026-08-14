@@ -14,6 +14,7 @@ from .client import (
 from .control import FluidGatewayController
 from .daemon import run_runtime_daemon, write_runtime_daemon_report
 from .daemon_cli import print_runtime_daemon_summary
+from .doctor import collect_doctor_report, write_doctor_report
 from .events import replay_event_stream, write_event_replay
 from .host import collect_host_capability_snapshot
 from .parser import parse_presentmon_csv
@@ -119,6 +120,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the trace registry JSON.",
     )
     history.set_defaults(func=run_history)
+
+    doctor = subparsers.add_parser(
+        "doctor",
+        help="Verify local diagnostic readiness without changing system settings.",
+    )
+    doctor.add_argument(
+        "--out",
+        default=str(Path(".fluidgateway") / "doctor.json"),
+        help="Path to the structured readiness report.",
+    )
+    doctor.add_argument(
+        "--presentmon-exe",
+        help="Optional explicit PresentMon executable path.",
+    )
+    doctor.add_argument(
+        "--fluidruntime-exe",
+        help="Optional explicit FluidRuntime executable path.",
+    )
+    doctor.add_argument(
+        "--native-dir",
+        help="Optional directory containing the complete owned-lab native asset set.",
+    )
+    doctor.set_defaults(func=run_doctor)
 
     runtime = subparsers.add_parser(
         "runtime",
@@ -400,6 +424,26 @@ def run_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_doctor(args: argparse.Namespace) -> int:
+    output_path = Path(args.out).expanduser().resolve()
+    report = collect_doctor_report(
+        state_directory=output_path.parent,
+        presentmon_executable=args.presentmon_exe,
+        fluidruntime_executable=args.fluidruntime_exe,
+        native_directory=args.native_dir,
+    )
+    written_path = write_doctor_report(report, output_path)
+    readiness = report["readiness"]
+    print(f"FluidGateway doctor: {report['status']}")
+    print(f"Offline diagnostics: {'ready' if readiness['offline_trace_diagnostics'] else 'blocked'}")
+    print(f"FluidLink server: {'ready' if readiness['fluidlink_decision_server'] else 'blocked'}")
+    print(f"Live PresentMon capture: {'ready' if readiness['live_presentmon_capture'] else 'unavailable'}")
+    print(f"Owned native labs: {'ready' if readiness['owned_native_labs'] else 'unavailable'}")
+    print("External process hooking: unsupported")
+    print(f"Report: {written_path}")
+    return 0 if report["status"] == "ready-with-limitations" else 1
+
+
 def run_runtime_optimize(args: argparse.Namespace) -> int:
     manifest = load_manifest(args.manifest)
     plan = optimize_manifest(manifest)
@@ -636,6 +680,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return args.func(args)
+    except KeyboardInterrupt:
+        print("fluidgateway: interrupted.", file=sys.stderr)
+        return 130
     except (OSError, ValueError) as exc:
         print(f"fluidgateway: error: {exc}", file=sys.stderr)
         return 1

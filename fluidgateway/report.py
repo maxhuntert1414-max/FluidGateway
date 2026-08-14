@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import html
-import json
 from pathlib import Path
 
+from .atomic_io import atomic_write_json, atomic_write_text
 from .models import AnalysisReport, Finding, ManagementAction, ManagementPlan, MetricSummary
 from .stats import fmt_ms
 
@@ -12,14 +12,10 @@ def write_report(report: AnalysisReport, html_path: str | Path) -> tuple[Path, P
     output_path = Path(html_path)
     if output_path.suffix.lower() != ".html":
         output_path = output_path.with_suffix(".html")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     json_path = output_path.with_suffix(".json")
 
-    output_path.write_text(render_html(report), encoding="utf-8")
-    json_path.write_text(
-        json.dumps(report.to_dict(), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    atomic_write_text(output_path, render_html(report))
+    atomic_write_json(json_path, report.to_dict())
     return output_path, json_path
 
 
@@ -27,11 +23,7 @@ def write_management_plan(plan: ManagementPlan, json_path: str | Path) -> Path:
     output_path = Path(json_path)
     if output_path.suffix.lower() != ".json":
         output_path = output_path.with_suffix(".json")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(plan.to_dict(), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    atomic_write_json(output_path, plan.to_dict())
     return output_path
 
 

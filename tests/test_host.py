@@ -45,6 +45,35 @@ class HostCapabilitySnapshotTests(unittest.TestCase):
         self.assertEqual(payload["telemetry_confidence"], "high")
         self.assertEqual(payload["gpu_count"], 1)
         self.assertEqual(payload["total_reported_vram_mb"], 8192)
+        self.assertEqual(payload["largest_reported_vram_mb"], 8192)
+        self.assertEqual(
+            payload["gpu_selection_basis"],
+            "largest-reported-adapter-not-active-process-binding",
+        )
+
+    def test_multi_gpu_classification_does_not_sum_unrelated_adapters(self):
+        snapshot = build_host_capability_snapshot(
+            os_name="Windows",
+            os_release="11",
+            os_version="test",
+            machine="AMD64",
+            processor="test-cpu",
+            python_version="3.13.0",
+            cpu_logical_count=16,
+            total_ram_mb=32768,
+            available_ram_mb=24576,
+            gpus=[
+                HostGpuCapability("GPU A", 8192, "1", "test"),
+                HostGpuCapability("GPU B", 8192, "2", "test"),
+            ],
+        )
+
+        payload = snapshot.to_dict()
+
+        self.assertEqual(payload["total_reported_vram_mb"], 16384)
+        self.assertEqual(payload["largest_reported_vram_mb"], 8192)
+        self.assertEqual(payload["gpu_class"], "balanced-vram-gpu")
+        self.assertEqual(payload["telemetry_confidence"], "medium")
 
     def test_host_snapshot_prioritizes_memory_pressure_hint(self):
         snapshot = build_host_capability_snapshot(
