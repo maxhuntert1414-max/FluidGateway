@@ -30,7 +30,7 @@ physically unified memory, but it can coordinate the path with less waste.
 The v0.67.1 hardening release adds atomic report/state replacement, exclusive
 Windows loopback binding, bounded readiness checks, interrupt-safe CLI exit,
 and correct per-adapter VRAM classification on multi-GPU hosts. FluidRuntime
-v0.21.1 adds verified subprocess cleanup, native-probe deadlines, atomic
+v0.21.2 includes verified subprocess cleanup, native-probe deadlines, atomic
 evidence files, and stricter native compiler/linker gates without widening
 actuation authority.
 
