@@ -1,0 +1,4 @@
+Application,ProcessID,SwapChainAddress,PresentRuntime,SyncInterval,PresentFlags,AllowsTearing,PresentMode,HybridPresent,CPUStartTime,FrameTime,CPUBusy,CPUWait,GPULatency,GPUTime,GPUBusy,GPUWait,DisplayLatency,DisplayedTime,AnimationError,AnimationTime,MsFlipDelay
+eldenring.exe,10224,0x1D5D9D625E0,DXGI,1,0,0,Composed: Flip,0,28.4800,22.7517,22.1202,0.6315,7.1108,15.5374,12.3224,3.2150,46.3100,33.4565,NA,28.4800,NA
+eldenring.exe,10224,0x1D5D9D625E0,DXGI,1,0,0,Composed: Flip,0,51.2317,22.1923,21.5605,0.6318,6.3328,18.9326,18.5615,0.3711,57.0148,16.7164,-10.7048,51.2317,NA
+eldenring.exe,10224,0x1D5D9D625E0,DXGI,1,0,0,Composed: Flip,0,73.4240,21.7330,21.1184,0.6146,6.6893,15.0996,9.3400,5.7596,51.5389,16.7457,5.4759,73.4240,NA

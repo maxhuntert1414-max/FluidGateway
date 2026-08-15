@@ -62,6 +62,36 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertIsNotNone(report.summary.approx_fps)
         self.assert_has_finding(report, "undisplayed-frames")
 
+    def test_presentmon_2_5_v2_columns_are_canonicalized(self):
+        trace = parse_presentmon_csv(FIXTURES / "presentmon_2_5_v2.csv")
+        report = analyze_trace(trace)
+
+        self.assertEqual(trace.frames[0].number("MsBetweenPresents"), 22.7517)
+        self.assertEqual(trace.frames[0].number("MsCPUBusy"), 22.1202)
+        self.assertEqual(trace.frames[0].number("MsCPUWait"), 0.6315)
+        self.assertEqual(trace.frames[0].number("MsGPULatency"), 7.1108)
+        self.assertEqual(trace.frames[0].number("MsGPUTime"), 15.5374)
+        self.assertEqual(trace.frames[0].number("MsGPUBusy"), 12.3224)
+        self.assertEqual(trace.frames[0].number("MsGPUWait"), 3.215)
+        self.assertIsNone(trace.frames[0].number("MsAnimationError"))
+        self.assertEqual(trace.frames[0].text("FrameTime"), "22.7517")
+
+        for column in (
+            "MsBetweenPresents",
+            "MsCPUBusy",
+            "MsCPUWait",
+            "MsGPULatency",
+            "MsGPUTime",
+            "MsGPUBusy",
+            "MsGPUWait",
+            "MsAnimationError",
+        ):
+            self.assertNotIn(column, report.summary.missing_columns)
+
+        self.assertEqual(report.summary.metrics["MsGPUWait"].count, 3)
+        self.assertIsNotNone(report.summary.duration_ms)
+        self.assertIsNotNone(report.summary.approx_fps)
+
     def test_clean_trace_has_no_medium_or_worse_findings(self):
         report = self.analyze_fixture("clean.csv")
         severe = [finding for finding in report.findings if finding.score >= 45]

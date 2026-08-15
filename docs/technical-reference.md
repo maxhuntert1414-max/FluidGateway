@@ -1296,6 +1296,23 @@ are available:
 
 Missing columns reduce finding confidence but do not fail the analysis.
 
+PresentMon 2.5 `--v2_metrics` uses shorter headers. FluidGateway preserves the
+original raw fields and normalizes them onto the existing internal metric
+contract:
+
+| PresentMon 2.5 header | FluidGateway metric |
+| --- | --- |
+| `FrameTime` | `MsBetweenPresents` |
+| `CPUBusy` / `CPUWait` | `MsCPUBusy` / `MsCPUWait` |
+| `GPULatency` / `GPUTime` | `MsGPULatency` / `MsGPUTime` |
+| `GPUBusy` / `GPUWait` | `MsGPUBusy` / `MsGPUWait` |
+| `AnimationError` | `MsAnimationError` |
+
+For `FrameTime`, the canonical name keeps report and automation compatibility;
+the 2.x source value is the CPU frame-start interval rather than the legacy
+delta between `Present()` calls. Metrics that `--v2_metrics` does not emit,
+such as `MsInPresentAPI`, remain missing instead of being fabricated.
+
 ## Findings
 
 The v0 engine looks for:

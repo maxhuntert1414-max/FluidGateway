@@ -11,6 +11,14 @@ NA_VALUES = {"", "na", "n/a", "nan", "null", "none", "-"}
 COLUMN_ALIASES = {column.casefold(): column for column in EXPECTED_COLUMNS}
 COLUMN_ALIASES.update(
     {
+        "frametime": "MsBetweenPresents",
+        "cpubusy": "MsCPUBusy",
+        "cpuwait": "MsCPUWait",
+        "gpulatency": "MsGPULatency",
+        "gputime": "MsGPUTime",
+        "gpubusy": "MsGPUBusy",
+        "gpuwait": "MsGPUWait",
+        "animationerror": "MsAnimationError",
         "runtime": "PresentRuntime",
         "msbetweendisplaychange": "DisplayedTime",
         "msuntilrendercomplete": "MsRenderPresentLatency",
