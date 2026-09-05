@@ -24,7 +24,7 @@ physically unified memory, but it can coordinate the path with less waste.
 | FluidLink operation batch | 129 logical operations in 1 bounded request/vector pair |
 | Local decision server | Loopback-only, 8-worker limit, absolute read deadlines |
 | Local readiness | `doctor` reports available and blocked capabilities without changing system settings |
-| Native intervention | Bounded owned D3D11 and D3D12 paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
+| Native intervention | Bounded owned D3D11, D3D12 and cooperative Vulkan paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | External games, driver hooks, general scheduler | Not implemented |
 
 The v0.67.1 hardening release adds atomic report/state replacement, exclusive
@@ -33,6 +33,11 @@ and correct per-adapter VRAM classification on multi-GPU hosts. FluidRuntime
 v0.21.2 includes verified subprocess cleanup, native-probe deadlines, atomic
 evidence files, and stricter native compiler/linker gates without widening
 actuation authority.
+
+The current development branch also recognizes optional Vulkan native assets.
+FluidRuntime's [Vulkan library](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/vulkan-native.md)
+uses the existing FluidLink contract; asset presence alone does not prove GPU
+execution or enable hooks in external games.
 
 This is protocol and owned-lab evidence. It is not proof of higher game FPS,
 lower power, physical RAM/VRAM placement, or reduced PCIe traffic.

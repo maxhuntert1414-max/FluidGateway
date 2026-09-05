@@ -9,7 +9,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fluidgateway.cli import main
-from fluidgateway.doctor import REQUIRED_NATIVE_ASSETS, collect_doctor_report
+from fluidgateway.doctor import (
+    OPTIONAL_VULKAN_ASSETS, REQUIRED_NATIVE_ASSETS, collect_doctor_report,
+    probe_native_assets,
+)
 from fluidgateway.host import HostGpuCapability, build_host_capability_snapshot
 
 
@@ -37,6 +40,25 @@ def write_test_pe(path: Path) -> None:
 
 
 class DoctorTests(unittest.TestCase):
+    def test_vulkan_assets_do_not_claim_execution_or_break_existing_native_builds(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            for name in REQUIRED_NATIVE_ASSETS:
+                write_test_pe(directory / name)
+            legacy = probe_native_assets(directory)
+            self.assertEqual(legacy.status, "pass")
+            self.assertFalse(legacy.evidence["optional_vulkan_assets_present"])
+            for name in OPTIONAL_VULKAN_ASSETS:
+                write_test_pe(directory / name)
+            vulkan = probe_native_assets(directory)
+            self.assertEqual(vulkan.status, "pass")
+            self.assertTrue(vulkan.evidence["optional_vulkan_assets_present"])
+            self.assertFalse(vulkan.evidence["vulkan_device_execution_verified"])
+            (directory / OPTIONAL_VULKAN_ASSETS[0]).write_bytes(b"invalid")
+            invalid = probe_native_assets(directory)
+            self.assertFalse(invalid.evidence["optional_vulkan_assets_present"])
+            self.assertEqual(invalid.status, "pass")
+
     def test_report_is_fail_closed_about_unsupported_actuation(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             executable = Path(temporary_directory) / "tool.exe"

@@ -27,6 +27,10 @@ REQUIRED_NATIVE_ASSETS = (
     "fluidruntime-present-hook.dll",
     "fluidruntime-hook-target.exe",
 )
+OPTIONAL_VULKAN_ASSETS = (
+    "fluidruntime-vulkan-transfer.dll",
+    "fluidruntime-vulkan-transfer-target.exe",
+)
 
 
 @dataclass(frozen=True)
@@ -280,18 +284,29 @@ def probe_native_assets(native_directory: str | Path | None) -> DoctorCheck:
         for name in REQUIRED_NATIVE_ASSETS
         if not is_portable_executable(directory / name)
     ]
+    vulkan_missing = [
+        name for name in OPTIONAL_VULKAN_ASSETS
+        if not is_portable_executable(directory / name)
+    ]
+    evidence = {
+        "path": str(directory),
+        "missing": missing,
+        "optional_vulkan_assets_present": not vulkan_missing,
+        "optional_vulkan_missing": vulkan_missing,
+        "vulkan_device_execution_verified": False,
+    }
     if missing:
         return DoctorCheck(
             id="native-assets",
             status="fail",
             summary="Native asset set is incomplete or contains invalid PE files.",
-            evidence={"path": str(directory), "missing": missing},
+            evidence=evidence,
         )
     return DoctorCheck(
         id="native-assets",
         status="pass",
         summary="Complete owned-lab native asset set is available.",
-        evidence={"path": str(directory), "missing": []},
+        evidence=evidence,
     )
 
 
