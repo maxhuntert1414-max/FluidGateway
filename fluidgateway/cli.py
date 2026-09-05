@@ -7,6 +7,7 @@ from pathlib import Path
 from . import __version__
 from .adapter import replay_adapter_event_stream, write_adapter_session
 from .analyzer import analyze_trace
+from .application_session import analyze_application_session, write_application_report
 from .client import (
     RuntimeEventClient,
     write_client_responses,
@@ -47,6 +48,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     subparsers = parser.add_subparsers(dest="command", required=True)
+    application = subparsers.add_parser("analyze-app", help="Diagnose a Runtime opt-in application session.")
+    application.add_argument("--session", required=True, help="Runtime application-session JSON.")
+    application.add_argument("--out", required=True, help="Destination HTML and JSON report.")
+    application.set_defaults(func=run_analyze_application)
     analyze = subparsers.add_parser(
         "analyze",
         help="Analyze a PresentMon 2.x CSV and write HTML/JSON reports.",
@@ -361,6 +366,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve.set_defaults(func=run_runtime_serve_events)
     return parser
+
+
+def run_analyze_application(args: argparse.Namespace) -> int:
+    report = analyze_application_session(args.session)
+    html_path, json_path = write_application_report(report, args.out)
+    print(f"Application diagnosis: {html_path}\nStructured evidence: {json_path}")
+    return 0
 
 
 def run_analyze(args: argparse.Namespace) -> int:

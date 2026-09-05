@@ -25,7 +25,8 @@ physically unified memory, but it can coordinate the path with less waste.
 | Local decision server | Loopback-only, 8-worker limit, absolute read deadlines |
 | Local readiness | `doctor` reports available and blocked capabilities without changing system settings |
 | Native intervention | Bounded owned D3D11, D3D12 and cooperative Vulkan paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
-| External games, driver hooks, general scheduler | Not implemented |
+| Application-session diagnosis | HTML/JSON import of Runtime Vulkan counters and Windows priority-lease evidence |
+| General game optimizer, driver hooks, global scheduler | Not implemented |
 
 The v0.67.1 hardening release adds atomic report/state replacement, exclusive
 Windows loopback binding, bounded readiness checks, interrupt-safe CLI exit,
@@ -34,12 +35,12 @@ v0.21.2 includes verified subprocess cleanup, native-probe deadlines, atomic
 evidence files, and stricter native compiler/linker gates without widening
 actuation authority.
 
-The current development branch also recognizes optional Vulkan native assets.
-FluidRuntime's [Vulkan library](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/vulkan-native.md)
-uses the existing FluidLink contract; asset presence alone does not prove GPU
-execution or enable hooks in external games.
+Current `main` also diagnoses opt-in third-party Vulkan sessions from Runtime
+v0.23. [Application sessions](docs/application-sessions.md) collect CPU/RAM and
+API counters; optional Windows priority changes require explicit bounded consent.
+The cooperative GPU library remains separate: external copies are never removed.
 
-This is protocol and owned-lab evidence. It is not proof of higher game FPS,
+This is protocol, owned-lab and scoped observation evidence. It is not proof of higher game FPS,
 lower power, physical RAM/VRAM placement, or reduced PCIe traffic.
 
 ## Quick Start
@@ -88,6 +89,7 @@ expected server PID and executable hash. Run it only in a trusted user session.
 ## Read More
 
 - [Technical reference](docs/technical-reference.md)
+- [Application-session reports](docs/application-sessions.md)
 - [v0.67.1 hardening notes](docs/release-v0.67.1.md)
 - [FluidLink v2 base protocol](docs/fluidlink-v2.md)
 - [FluidLink v2 operation-batch profile](docs/fluidlink-v2-batch.md)
