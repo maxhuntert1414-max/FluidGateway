@@ -21,18 +21,22 @@ DECREASING_COUNTERS = {"live_bytes", "active_instances", "active_devices"}
 
 
 def _number(value: object, name: str) -> float:
-    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+    try:
+        valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
+    except OverflowError:
+        valid = False
+    if not valid:
         raise ValueError(f"Invalid application-session number: {name}")
     return value
 
 
 def analyze_application_session(path: str | Path) -> dict:
     source = Path(path)
-    with source.open("r", encoding="utf-8-sig") as stream:
+    with source.open("rb") as stream:
         text = stream.read(16 * 1024 * 1024 + 1)
     if len(text) > 16 * 1024 * 1024:
         raise ValueError("Application-session report exceeds 16 MiB.")
-    report = json.loads(text)
+    report = json.loads(text.decode("utf-8-sig"))
     if not isinstance(report, dict) or report.get("schema") != "fluidruntime-application-session-v1":
         raise ValueError("Unsupported application-session schema.")
     for key in ("native_actuation_enabled", "performance_claim_allowed"):
@@ -87,11 +91,18 @@ def analyze_application_session(path: str | Path) -> dict:
                 or type(lease.get("applied")) is not bool):
             raise ValueError("Windows priority evidence has an invalid identity or authority.")
         state = lease.get("restoration")
+        after = lease.get("after")
+        known_priorities = {"Normal", "AboveNormal", "BelowNormal", "Idle", "High", "RealTime"}
         if (state not in {"restored", "process-exited", "external-change-preserved", "not-applied",
                           "restore-not-confirmed", "restore-failed"}
                 or type(lease.get("requested_seconds")) is not int or not 1 <= lease["requested_seconds"] <= 30
                 or type(lease.get("start_time_utc_ticks")) is not int or lease["start_time_utc_ticks"] <= 0
-                or (state == "restored" and (not lease["applied"] or lease.get("after") != "Normal"))):
+                or lease["applied"] != (state != "not-applied")
+                or (after is not None and after not in known_priorities)
+                or (state == "restored" and after != "Normal")
+                or (state == "process-exited" and (not report["process_exited"] or after is not None))
+                or (state == "not-applied" and after is not None)
+                or (state == "external-change-preserved" and after not in known_priorities - {"AboveNormal"})):
             raise ValueError("Windows priority restoration evidence contradicts the lease contract.")
         _number(lease.get("elapsed_milliseconds"), "priority duration")
     findings = []

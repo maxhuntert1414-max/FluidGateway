@@ -122,7 +122,7 @@ def register_resource_event(
         resource_id=str(resource_id),
         kind=str(payload.get("kind") or "unknown"),
         memory=str(payload.get("memory") or "ram"),
-        size_mb=float(payload.get("size_mb") or 0),
+        size_mb=payload.get("size_mb"),
         lifetime=str(payload.get("lifetime") or "unknown"),
         aliases=as_string_list(payload.get("aliases") or []),
     )
@@ -145,8 +145,8 @@ def submit_operation_event(
         target=optional_text(payload.get("target")),
         queue=str(payload.get("queue") or "unknown"),
         reason=str(payload.get("reason") or ""),
-        cost_ms=float(payload.get("cost_ms") or 0),
-        size_mb=float(payload.get("size_mb") or 0),
+        cost_ms=payload.get("cost_ms"),
+        size_mb=payload.get("size_mb"),
         frame=int(frame) if frame is not None else None,
         depends_on=as_string_list(payload.get("depends_on") or []),
     )

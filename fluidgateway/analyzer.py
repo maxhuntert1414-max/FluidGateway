@@ -33,6 +33,13 @@ def analyze_trace(trace: TraceData) -> AnalysisReport:
 
 
 def build_summary(trace: TraceData) -> TraceSummary:
+    for column in ("Application", "ProcessID", "SwapChainAddress"):
+        identities = {value.casefold() for value in unique_texts(trace.frames, column)}
+        if len(identities) > 1:
+            raise ValueError(
+                f"Trace contains multiple {column} values; filter the CSV to "
+                "one application/process/swapchain before analyzing frame timing."
+            )
     metrics = {
         metric: summarize(frame_numbers(trace.frames, metric))
         for metric in SUMMARY_METRICS

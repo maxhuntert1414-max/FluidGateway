@@ -59,6 +59,9 @@ python -m fluidgateway analyze `
   --out tmp/report.html
 ```
 
+Analyze one application/process/swapchain at a time. Mixed streams are rejected;
+filter the source CSV before interpreting frame timing.
+
 Outputs:
 
 - `tmp/report.html`: ranked, readable diagnostic report
@@ -88,6 +91,7 @@ expected server PID and executable hash. Run it only in a trusted user session.
 
 ## Read More
 
+- [Code review, fixes and remaining limits](docs/code-review-2026-09-05.md)
 - [Technical reference](docs/technical-reference.md)
 - [Application-session reports](docs/application-sessions.md)
 - [v0.67.1 hardening notes](docs/release-v0.67.1.md)

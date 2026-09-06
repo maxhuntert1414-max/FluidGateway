@@ -234,7 +234,9 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertGreater(plan.estimated_saved_mb, 0)
         self.assertIn("deduplicate-identical-transfer", policies)
         self.assertIn("collapse-aliased-resource-copy", policies)
-        self.assertIn("remove-orphan-sync", policies)
+        self.assertNotIn("remove-orphan-sync", policies)
+        wait = next(op for op in plan.kept_operations if op.id == "sync_duplicate_upload")
+        self.assertEqual(["upload_texture_a"], wait.depends_on)
         self.assertIn("reuse-transient-buffer", policies)
 
     def test_runtime_optimize_command_writes_plan_json(self):
@@ -329,8 +331,8 @@ class FluidGatewayTests(unittest.TestCase):
             self.assertEqual(status, 0)
             payload = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(payload["mode"], "runtime-control-plane-v0.5")
-            self.assertEqual(len(payload["executed_operations"]), 4)
-            self.assertEqual(len(payload["decisions"]), 4)
+            self.assertEqual(len(payload["executed_operations"]), 5)
+            self.assertEqual(len(payload["decisions"]), 3)
             self.assertGreater(payload["estimated_saved_ms"], 0)
 
     def test_runtime_event_stream_replays_incremental_decisions(self):
@@ -344,12 +346,12 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertEqual(payload["mode"], "runtime-event-stream-v0.6")
         self.assertEqual(payload["resource_events"], 5)
         self.assertEqual(payload["operation_events"], 7)
-        self.assertEqual(len(payload["snapshot"]["executed_operations"]), 3)
-        self.assertEqual(len(payload["snapshot"]["decisions"]), 4)
+        self.assertEqual(len(payload["snapshot"]["executed_operations"]), 4)
+        self.assertEqual(len(payload["snapshot"]["decisions"]), 3)
         self.assertIn("reuse-transient-buffer", policies)
         self.assertIn("deduplicate-identical-transfer", policies)
         self.assertIn("collapse-aliased-resource-copy", policies)
-        self.assertIn("remove-orphan-sync", policies)
+        self.assertNotIn("remove-orphan-sync", policies)
 
     def test_runtime_replay_events_command_writes_json(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -415,7 +417,7 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertEqual(len(responses), 12)
         self.assertTrue(all(response["ok"] for response in responses))
         self.assertIn("deduplicate-identical-transfer", policies)
-        self.assertIn("remove-orphan-sync", policies)
+        self.assertNotIn("remove-orphan-sync", policies)
 
     def test_runtime_event_client_sends_jsonl_to_server(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:
@@ -441,10 +443,10 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertEqual(summary["events_sent"], 12)
         self.assertEqual(summary["resource_responses"], 5)
         self.assertEqual(summary["operation_responses"], 7)
-        self.assertEqual(summary["decision_count"], 4)
+        self.assertEqual(summary["decision_count"], 3)
         self.assertEqual(summary["failed_responses"], 0)
         self.assertIn("deduplicate-identical-transfer", policies)
-        self.assertIn("remove-orphan-sync", policies)
+        self.assertNotIn("remove-orphan-sync", policies)
 
     def test_runtime_send_events_command_writes_server_responses(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -479,10 +481,10 @@ class FluidGatewayTests(unittest.TestCase):
             payload = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(payload["mode"], "runtime-event-client-v0.45")
             self.assertEqual(payload["events_sent"], 12)
-            self.assertEqual(payload["decision_count"], 4)
+            self.assertEqual(payload["decision_count"], 3)
             self.assertEqual(payload["failed_responses"], 0)
             self.assertIn("Events sent: 12", stdout.getvalue())
-            self.assertIn("Decisions: 4", stdout.getvalue())
+            self.assertIn("Decisions: 3", stdout.getvalue())
             self.assertIn("Failed responses: 0", stdout.getvalue())
 
     def test_adapter_session_replays_lifecycle_stream(self):
@@ -1268,8 +1270,8 @@ class FluidGatewayTests(unittest.TestCase):
 
         self.assertEqual(admission["operation_count"], 7)
         self.assertEqual(admission["reused_count"], 1)
-        self.assertEqual(admission["deferred_count"], 3)
-        self.assertEqual(admission["estimated_avoided_cost_ms"], 1.53)
+        self.assertEqual(admission["deferred_count"], 2)
+        self.assertEqual(admission["estimated_avoided_cost_ms"], 1.33)
         self.assertEqual(admission["estimated_avoided_transfer_mb"], 144)
 
     def test_runtime_event_server_reports_admission_decisions(self):
@@ -1316,9 +1318,9 @@ class FluidGatewayTests(unittest.TestCase):
         ledger = result.to_dict()["efficiency_ledger"]
 
         self.assertEqual(ledger["operation_count"], 7)
-        self.assertEqual(ledger["hot_path_cost_ms"], 6.28)
+        self.assertEqual(ledger["hot_path_cost_ms"], 6.48)
         self.assertEqual(ledger["shifted_cost_ms"], 0.9)
-        self.assertEqual(ledger["avoided_cost_ms"], 1.53)
+        self.assertEqual(ledger["avoided_cost_ms"], 1.33)
         self.assertEqual(ledger["transfer_relief_mb"], 208)
         self.assertEqual(ledger["frames"][0]["frame"], 0)
 
@@ -1513,12 +1515,12 @@ class FluidGatewayTests(unittest.TestCase):
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
         self.assertEqual(transit["mode"], "memory-transit-map-v0.22")
         self.assertEqual(transit["hop_count"], 7)
-        self.assertEqual(transit["executed_hop_count"], 3)
-        self.assertEqual(transit["avoided_hop_count"], 4)
+        self.assertEqual(transit["executed_hop_count"], 4)
+        self.assertEqual(transit["avoided_hop_count"], 3)
         self.assertEqual(transit["attempted_transfer_mb"], 256)
         self.assertEqual(transit["executed_transfer_mb"], 112)
         self.assertEqual(transit["avoided_transfer_mb"], 144)
-        self.assertEqual(transit["estimated_avoidable_cost_ms"], 1.53)
+        self.assertEqual(transit["estimated_avoidable_cost_ms"], 1.33)
         self.assertEqual(paths["ram->vram"]["attempted_mb"], 128)
         self.assertEqual(paths["ram->vram"]["avoided_mb"], 64)
         self.assertEqual(paths["vram->swapchain"]["executed_mb"], 32)
@@ -1530,7 +1532,7 @@ class FluidGatewayTests(unittest.TestCase):
             hops["copy_alias_texture"]["classification"],
             "same-layer-aliased-copy",
         )
-        self.assertEqual(hops["sync_duplicate_upload"]["classification"], "orphan-sync")
+        self.assertFalse(hops["sync_duplicate_upload"]["avoided"])
 
     def test_runtime_event_server_reports_memory_transit_map(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:
@@ -1568,13 +1570,13 @@ class FluidGatewayTests(unittest.TestCase):
 
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
         self.assertEqual(route["mode"], "memory-route-plan-v0.23")
-        self.assertEqual(route["directive_count"], 7)
+        self.assertEqual(route["directive_count"], 6)
         self.assertEqual(route["suppress_count"], 3)
         self.assertEqual(route["prefetch_count"], 1)
         self.assertEqual(route["residency_count"], 1)
-        self.assertEqual(route["sync_count"], 1)
+        self.assertEqual(route["sync_count"], 0)
         self.assertEqual(route["estimated_saved_mb"], 144)
-        self.assertEqual(route["estimated_saved_ms"], 1.53)
+        self.assertEqual(route["estimated_saved_ms"], 1.33)
         self.assertEqual(
             directives["upload_texture_a"]["directive"],
             "prestage_cross_memory_transfer",
@@ -1587,10 +1589,7 @@ class FluidGatewayTests(unittest.TestCase):
             directives["copy_alias_texture"]["directive"],
             "suppress_redundant_hop",
         )
-        self.assertEqual(
-            directives["sync_duplicate_upload"]["directive"],
-            "remove_sync_wait",
-        )
+        self.assertNotIn("sync_duplicate_upload", directives)
         self.assertEqual(
             directives["draw_scene"]["directive"],
             "protect_presentation_route",
@@ -1636,22 +1635,22 @@ class FluidGatewayTests(unittest.TestCase):
 
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
         self.assertEqual(plan["mode"], "frame-window-plan-v0.24")
-        self.assertEqual(plan["slot_count"], 7)
+        self.assertEqual(plan["slot_count"], 6)
         self.assertEqual(plan["frame_count"], 1)
-        self.assertEqual(plan["never_count"], 4)
+        self.assertEqual(plan["never_count"], 3)
         self.assertEqual(plan["pre_frame_count"], 1)
         self.assertEqual(plan["setup_count"], 1)
         self.assertEqual(plan["hot_path_count"], 1)
         self.assertEqual(plan["post_present_count"], 0)
-        self.assertEqual(plan["estimated_hot_path_relief_ms"], 1.53)
+        self.assertEqual(plan["estimated_hot_path_relief_ms"], 1.33)
         self.assertEqual(plan["estimated_saved_mb"], 144)
-        self.assertEqual(frame["slot_count"], 7)
-        self.assertEqual(frame["never_count"], 4)
+        self.assertEqual(frame["slot_count"], 6)
+        self.assertEqual(frame["never_count"], 3)
         self.assertEqual(slots["upload_texture_a"]["window"], "pre-frame")
         self.assertEqual(slots["upload_texture_a"]["phase"], "prefetch")
         self.assertEqual(slots["alloc_scratch_1"]["window"], "setup")
         self.assertEqual(slots["upload_texture_a_duplicate"]["window"], "never")
-        self.assertEqual(slots["sync_duplicate_upload"]["phase"], "remove-sync")
+        self.assertNotIn("sync_duplicate_upload", slots)
         self.assertEqual(slots["draw_scene"]["window"], "hot-path")
 
     def test_runtime_event_server_reports_frame_window_plan(self):
@@ -1691,14 +1690,14 @@ class FluidGatewayTests(unittest.TestCase):
 
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
         self.assertEqual(packet["mode"], "runtime-execution-packet-v0.25")
-        self.assertEqual(packet["command_count"], 7)
+        self.assertEqual(packet["command_count"], 6)
         self.assertEqual(packet["frame_count"], 1)
-        self.assertEqual(packet["skip_count"], 4)
+        self.assertEqual(packet["skip_count"], 3)
         self.assertEqual(packet["pre_frame_count"], 1)
         self.assertEqual(packet["setup_count"], 1)
         self.assertEqual(packet["hot_path_count"], 1)
         self.assertEqual(packet["estimated_saved_mb"], 144)
-        self.assertEqual(packet["estimated_hot_path_relief_ms"], 1.53)
+        self.assertEqual(packet["estimated_hot_path_relief_ms"], 1.33)
         self.assertEqual(packet["commands"][0]["window"], "never")
         self.assertEqual(packet["commands"][0]["action"], "reuse_allocation")
         self.assertEqual(
@@ -1710,9 +1709,9 @@ class FluidGatewayTests(unittest.TestCase):
             commands["upload_texture_a_duplicate"]["action"],
             "skip_transfer",
         )
-        self.assertEqual(commands["sync_duplicate_upload"]["action"], "drop_sync_wait")
+        self.assertNotIn("sync_duplicate_upload", commands)
         self.assertEqual(commands["draw_scene"]["action"], "execute_protected")
-        self.assertEqual(packet["frames"][0]["command_count"], 7)
+        self.assertEqual(packet["frames"][0]["command_count"], 6)
 
     def test_runtime_event_server_reports_execution_packet(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:
@@ -1755,23 +1754,23 @@ class FluidGatewayTests(unittest.TestCase):
 
         self.assertEqual(payload["mode"], "runtime-adapter-session-v0.45")
         self.assertEqual(simulation["mode"], "runtime-execution-simulation-v0.26")
-        self.assertEqual(simulation["command_count"], 7)
-        self.assertEqual(simulation["applied_count"], 7)
+        self.assertEqual(simulation["command_count"], 6)
+        self.assertEqual(simulation["applied_count"], 6)
         self.assertEqual(simulation["ignored_count"], 0)
-        self.assertEqual(simulation["removed_cost_ms"], 1.53)
+        self.assertEqual(simulation["removed_cost_ms"], 1.33)
         self.assertEqual(simulation["prestaged_cost_ms"], 0.9)
         self.assertEqual(simulation["setup_cost_ms"], 0.08)
         self.assertEqual(simulation["protected_hot_path_cost_ms"], 6.2)
-        self.assertEqual(simulation["hot_path_before_ms"], 8.71)
+        self.assertEqual(simulation["hot_path_before_ms"], 8.51)
         self.assertEqual(simulation["hot_path_after_ms"], 6.2)
-        self.assertEqual(simulation["hot_path_relief_ms"], 2.51)
+        self.assertEqual(simulation["hot_path_relief_ms"], 2.31)
         self.assertEqual(simulation["estimated_saved_mb"], 144)
         self.assertEqual(frame["frame"], 0)
-        self.assertEqual(frame["command_count"], 7)
+        self.assertEqual(frame["command_count"], 6)
         self.assertEqual(frame["hot_path_after_ms"], 6.2)
         self.assertEqual(command_results["upload_texture_a"]["status"], "applied")
         self.assertEqual(command_results["upload_texture_a"]["effect"], "prestaged")
-        self.assertEqual(command_results["sync_duplicate_upload"]["effect"], "removed")
+        self.assertNotIn("sync_duplicate_upload", command_results)
 
     def test_runtime_event_server_reports_execution_simulation(self):
         with create_runtime_event_server("127.0.0.1", 0) as server:

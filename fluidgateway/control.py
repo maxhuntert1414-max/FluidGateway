@@ -8,8 +8,8 @@ from .atomic_io import atomic_write_json
 from .runtime import (
     RuntimeDecision,
     RuntimeOperation,
+    RuntimeOptimizationState,
     RuntimeResource,
-    decide_operation,
     parse_operation,
     parse_resource,
 )
@@ -36,9 +36,7 @@ class FluidGatewayController:
         self.resources: dict[str, RuntimeResource] = {}
         self.executed_operations: list[RuntimeOperation] = []
         self.decisions: list[RuntimeDecision] = []
-        self.removed_ids: set[str] = set()
-        self.last_copy_by_target: dict[str, RuntimeOperation] = {}
-        self.active_buffers: dict[tuple[str | None, float], RuntimeOperation] = {}
+        self._optimization = RuntimeOptimizationState(self.resources)
 
     def register_resource(
         self,
@@ -91,19 +89,12 @@ class FluidGatewayController:
                 "depends_on": depends_on or [],
             }
         )
-        decision = decide_operation(
-            operation=operation,
-            resources=self.resources,
-            last_copy_by_target=self.last_copy_by_target,
-            active_buffers=self.active_buffers,
-            removed_ids=self.removed_ids,
-        )
+        operation, decision = self._optimization.process(operation)
         if decision:
             self.decisions.append(decision)
-            self.removed_ids.add(operation.id)
             return ControllerResult(operation=operation, decision=decision, executed=False)
 
-        self._record_executed(operation)
+        self.executed_operations.append(operation)
         return ControllerResult(operation=operation, decision=None, executed=True)
 
     def snapshot(self) -> dict[str, Any]:
@@ -127,9 +118,5 @@ class FluidGatewayController:
         atomic_write_json(path, self.snapshot())
         return path
 
-    def _record_executed(self, operation: RuntimeOperation) -> None:
-        self.executed_operations.append(operation)
-        if operation.type in {"copy", "upload"} and operation.target:
-            self.last_copy_by_target[operation.target] = operation
-        if operation.type == "allocate":
-            self.active_buffers[(operation.target, operation.size_mb)] = operation
+    def release_resource(self, resource_id: str) -> RuntimeResource | None:
+        return self._optimization.release_resource(resource_id)

@@ -107,3 +107,34 @@ class ApplicationSessionTests(unittest.TestCase):
                 write_application_report(result, source.with_suffix(".html"))
             self.assertEqual(original, source.read_text(encoding="utf-8"))
             self.assertFalse(source.with_suffix(".html").exists())
+
+    def test_huge_numbers_fail_with_validation_error(self):
+        report = session()
+        report["elapsed_milliseconds"] = 10 ** 400
+        with self.assertRaises(ValueError):
+            self.analyze(report)
+
+    def test_size_limit_counts_utf8_bytes_not_characters(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "session.json"
+            report = session()
+            report["notes"] = "\u00e9" * (8 * 1024 * 1024)
+            source.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "exceeds 16 MiB"):
+                analyze_application_session(source)
+
+    def test_contradictory_priority_outcomes_are_rejected(self):
+        for state, applied, after in (("not-applied", True, None),
+                                      ("process-exited", False, None),
+                                      ("process-exited", True, "AboveNormal"),
+                                      ("external-change-preserved", True, "AboveNormal"),
+                                      ("external-change-preserved", True, None),
+                                      ("restore-failed", False, None)):
+            with self.subTest(state=state, applied=applied, after=after):
+                report = session()
+                report["windows_priority"] = {"process_id": 42, "target_sha256": "a" * 64,
+                    "before": "Normal", "requested": "AboveNormal", "after": after, "applied": applied,
+                    "restoration": state, "requested_seconds": 2, "start_time_utc_ticks": 1234,
+                    "elapsed_milliseconds": 2001, "authority": "explicit-user-timed-priority-only"}
+                with self.assertRaises(ValueError):
+                    self.analyze(report)

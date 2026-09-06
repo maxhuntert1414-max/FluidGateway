@@ -461,7 +461,7 @@ class RuntimeAdapterSession:
             resource_id = str(payload.get("id") or payload.get("resource_id") or "").strip()
             if not resource_id:
                 raise ValueError("Resource release event requires 'id' or 'resource_id'.")
-            released_resource = self.controller.resources.pop(resource_id, None)
+            released_resource = self.controller.release_resource(resource_id)
             released = released_resource is not None
             if released:
                 self.released_resources.append(resource_id)

@@ -163,7 +163,7 @@ def cpu_present_wait(
             "perto de Present(), sugerindo sincronizacao tardia ou fila cheia."
         ),
         severity=severity(score),
-        confidence="high" if cpu_wait and present_api else "medium",
+        confidence="high" if wait_ratio is not None and present_ratio is not None else "medium",
         score=score,
         evidence=[
             Evidence(
@@ -216,7 +216,7 @@ def gpu_bubbles(summary: TraceSummary, target_ms: float) -> Finding | None:
             "o que pode indicar dependencia CPU/GPU, filas ruins ou sync prematuro."
         ),
         severity=severity(score),
-        confidence="high" if gpu_wait and (gpu_time or gpu_busy) else "medium",
+        confidence="high" if wait_p95 is not None and (time_p95 is not None or busy_p95 is not None) else "medium",
         score=score,
         evidence=[
             Evidence(

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .control import ControllerResult
-from .runtime import RuntimeResource
+from .runtime import RuntimeResource, nonnegative_number
 
 
 DEFAULT_FRAME_BUDGET_MS = 16.67
@@ -307,6 +307,6 @@ def number_value(value: Any) -> float | None:
     if value is None or value == "":
         return None
     try:
-        return float(value)
-    except (TypeError, ValueError):
+        return nonnegative_number(value, "budget")
+    except ValueError:
         return None
