@@ -6,8 +6,11 @@
 #include <atomic>
 #include <charconv>
 #include <chrono>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
 #include <thread>
+#include <utility>
 
 namespace {
 using namespace fluidgateway;
@@ -115,12 +118,47 @@ void serve(SOCKET connected) noexcept {
         // Any malformed frame or allocation failure retires this connection only.
     }
 }
-struct Worker {
-    std::thread thread;
-    std::atomic_bool done = true;
+class Worker {
+public:
+    Worker() : thread_([this] { run(); }) {}
     ~Worker() {
-        if (thread.joinable())
-            thread.join();
+        stopping.store(true);
+        {
+            std::lock_guard lock(mutex_);
+            exiting_ = true;
+        }
+        changed_.notify_one();
+        thread_.join();
+    }
+    bool assign(SOCKET socket) {
+        std::lock_guard lock(mutex_);
+        if (busy_ || exiting_)
+            return false;
+        busy_ = true;
+        pending_ = socket;
+        changed_.notify_one();
+        return true;
+    }
+
+private:
+    std::mutex mutex_;
+    std::condition_variable changed_;
+    SOCKET pending_ = INVALID_SOCKET;
+    bool busy_ = false, exiting_ = false;
+    std::thread thread_;
+
+    void run() {
+        std::unique_lock lock(mutex_);
+        for (;;) {
+            changed_.wait(lock, [this] { return exiting_ || pending_ != INVALID_SOCKET; });
+            if (pending_ == INVALID_SOCKET)
+                return;
+            const auto connected = std::exchange(pending_, INVALID_SOCKET);
+            lock.unlock();
+            serve(connected);
+            lock.lock();
+            busy_ = false;
+        }
     }
 };
 } // namespace
@@ -181,32 +219,15 @@ int main(int argc, char** argv) {
         while (!stopping.load()) {
             if (!ready(listener.value, POLLRDNORM, Clock::now() + std::chrono::milliseconds(250)))
                 continue;
-            const auto connected = accept(listener.value, nullptr, nullptr);
-            if (connected == INVALID_SOCKET)
+            Socket connected{accept(listener.value, nullptr, nullptr)};
+            if (connected.value == INVALID_SOCKET)
                 continue;
-            Worker* available = nullptr;
+            // Reuse fixed threads, but construct and destroy protocol state per connection.
             for (auto& worker : workers)
-                if (worker.done.load()) {
-                    available = &worker;
+                if (worker.assign(connected.value)) {
+                    connected.value = INVALID_SOCKET;
                     break;
                 }
-            if (!available) {
-                closesocket(connected);
-                continue;
-            }
-            if (available->thread.joinable())
-                available->thread.join();
-            available->done.store(false);
-            try {
-                available->thread = std::thread([available, connected] {
-                    serve(connected);
-                    available->done.store(true);
-                });
-            } catch (...) {
-                closesocket(connected);
-                available->done.store(true);
-                stopping.store(true);
-            }
         }
         // Worker destructors join after the stop flag wakes bounded reads/writes.
     } catch (const std::exception& e) {

@@ -54,6 +54,10 @@ TCP round trip is introduced. Native control is still authorized per bounded run
 | 4,096 active resources / 16,384 operation IDs | Reject and close when another entry exceeds the limit |
 | 8 MiB retained allocation requests per connection | Enforced by the PMR allocator; reject and close on exhaustion |
 
+Eight persistent worker threads serve connections. Each connection still owns a
+new protocol session and fresh decision state; reusing a worker never reuses an
+authorization. This avoids repeated thread creation during session renewal.
+
 The 8 MiB limit covers retained container/string allocations, not total process
 RSS, Windows thread stacks, allocator bookkeeping or bounded temporary packet
 buffers. The implementation stores no complete frame history. Operation IDs and

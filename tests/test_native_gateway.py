@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from contextlib import ExitStack
+import ctypes
+from ctypes import wintypes
 import json
 import random
 import socket
@@ -16,6 +18,43 @@ from tools.native_gateway_validation import Peer, ROOT, native_executable, serve
 NATIVE = native_executable()
 TEST_BINARY = NATIVE.with_name("fluidgateway-native-tests.exe")
 IDENTITY = bytes(range(17, 33))
+
+
+def process_thread_ids(pid):
+    class ThreadEntry(ctypes.Structure):
+        _fields_ = [
+            ("size", wintypes.DWORD),
+            ("usage", wintypes.DWORD),
+            ("thread_id", wintypes.DWORD),
+            ("process_id", wintypes.DWORD),
+            ("base_priority", wintypes.LONG),
+            ("delta_priority", wintypes.LONG),
+            ("flags", wintypes.DWORD),
+        ]
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    kernel.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    kernel.Thread32First.argtypes = [wintypes.HANDLE, ctypes.POINTER(ThreadEntry)]
+    kernel.Thread32Next.argtypes = kernel.Thread32First.argtypes
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    handle = kernel.CreateToolhelp32Snapshot(4, 0)
+    if handle == ctypes.c_void_p(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        entry = ThreadEntry(size=ctypes.sizeof(ThreadEntry))
+        present = kernel.Thread32First(handle, ctypes.byref(entry))
+        threads = set()
+        while present:
+            if entry.process_id == pid:
+                threads.add(entry.thread_id)
+            entry.size = ctypes.sizeof(ThreadEntry)
+            present = kernel.Thread32Next(handle, ctypes.byref(entry))
+        if ctypes.get_last_error() != 18:  # ERROR_NO_MORE_FILES
+            raise ctypes.WinError(ctypes.get_last_error())
+        return threads
+    finally:
+        kernel.CloseHandle(handle)
 
 
 def event(subject, **payload):
@@ -297,6 +336,33 @@ class NativeGatewayTests(unittest.TestCase):
             time.sleep(0.1)
             with Peer(port) as peer:
                 self.assertEqual(peer.request(20, b"\x01x").opcode, 21)
+
+    def test_worker_threads_and_fresh_state_survive_reconnections(self):
+        identities = set()
+        with server(executable=NATIVE) as (process, port):
+            retained_threads = None
+            for _ in range(4):
+                time.sleep(0.1)
+                with ExitStack() as stack:
+                    peers = [stack.enter_context(Peer(port)) for _ in range(8)]
+                    threads = process_thread_ids(process.pid)
+                    retained_threads = (
+                        threads if retained_threads is None else retained_threads & threads
+                    )
+                    for peer in peers:
+                        self.assertNotIn(peer.session, identities)
+                        identities.add(peer.session)
+                        peer.initialize()
+                        response = peer.batch(2, batch_id=IDENTITY.hex())
+                        decisions = wire.decode_operation_batch_decision_payload(response.payload)
+                        self.assertEqual(
+                            [item["decision_opcode"] for item in decisions["decisions"]], [0, 2]
+                        )
+                        peer.finish()
+                time.sleep(0.1)
+                retained_threads &= process_thread_ids(process.pid)
+            # Eight persistent workers and the listener, not newly created session threads.
+            self.assertGreaterEqual(len(retained_threads), 9)
 
     def test_slow_header_deadline_and_recovery(self):
         with server(executable=NATIVE) as (_, port):
