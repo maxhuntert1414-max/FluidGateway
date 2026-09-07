@@ -260,6 +260,28 @@ def write_result(path: Path, data: dict):
     temporary.replace(path)
 
 
+def assess_soak(result: dict) -> dict:
+    samples = result["samples"]
+    stable = [sample["private_bytes"] for sample in samples if sample["elapsed_seconds"] >= 300]
+    times = [0.0] + [sample["elapsed_seconds"] for sample in samples] + [result["elapsed_seconds"]]
+    gaps = [end - start for start, end in zip(times, times[1:])]
+    continuity = bool(samples) and all(0 <= gap <= 90 for gap in gaps)
+    memory = bool(stable) and max(stable) <= min(stable) * 1.10 + 1024 * 1024
+    return dict(
+        post_warmup_private_bytes=distribution(stable) if stable else None,
+        memory_plateau_passed=memory,
+        maximum_sample_gap_seconds=max(gaps),
+        continuous_load_passed=continuity,
+        soak_gate_passed=(
+            result["complete"]
+            and result["elapsed_seconds"] >= result["seconds_required"]
+            and result["operations"] >= result["minimum_operations"]
+            and continuity
+            and memory
+        ),
+    )
+
+
 def soak(executable: Path, seconds: float, events: int, out: Path):
     started = time.monotonic()
     count = sessions = 0
@@ -314,11 +336,7 @@ def soak(executable: Path, seconds: float, events: int, out: Path):
             sessions=sessions,
             final_metrics=process_metrics(process.pid),
         )
-    stable = [sample["private_bytes"] for sample in samples if sample["elapsed_seconds"] >= 300]
-    result["post_warmup_private_bytes"] = distribution(stable) if stable else None
-    result["memory_plateau_passed"] = (
-        bool(stable) and max(stable) <= min(stable) * 1.10 + 1024 * 1024
-    )
+    result.update(assess_soak(result))
     write_result(out, result)
     return result
 
@@ -409,9 +427,7 @@ def main():
     print(
         json.dumps({k: v for k, v in result.items() if k not in ("samples", "summaries")}, indent=2)
     )
-    return (
-        0 if result.get("memory_plateau_passed", result.get("comparison_gate_passed", False)) else 1
-    )
+    return 0 if result.get("soak_gate_passed", result.get("comparison_gate_passed", False)) else 1
 
 
 if __name__ == "__main__":

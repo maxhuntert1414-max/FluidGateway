@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -66,6 +67,10 @@ def main():
         args.out,
         dict(
             schema="fluidgateway-decoded-core-profile-v1",
+            native_sha256=hashlib.sha256(args.native.read_bytes()).hexdigest(),
+            benchmark_sha256=hashlib.sha256(
+                args.native.with_name("fluidgateway-native-benchmark.exe").read_bytes()
+            ).hexdigest(),
             warmup_sessions=5,
             operations=32768,
             operations_per_session=512,

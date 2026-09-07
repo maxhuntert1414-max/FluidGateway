@@ -49,7 +49,7 @@ python -m venv tmp/dev-tools
 tmp/dev-tools/Scripts/python.exe -m pip install -r requirements-dev.txt
 $cpp = Get-ChildItem native/include,native/src,native/tests -File | Where-Object Extension -in '.hpp','.cpp'
 tmp/dev-tools/Scripts/clang-format.exe -i $cpp.FullName
-tmp/dev-tools/Scripts/ruff.exe format tools tests/test_native_gateway.py
+tmp/dev-tools/Scripts/ruff.exe format tools tests/test_native_gateway.py tests/test_native_validation.py
 ```
 
 CI checks `clang-format --dry-run --Werror` for the native core and `ruff format

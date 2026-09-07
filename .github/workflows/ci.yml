@@ -19,7 +19,7 @@ jobs:
           $cpp = Get-ChildItem native/include,native/src,native/tests -File | Where-Object Extension -in '.hpp','.cpp'
           clang-format --dry-run --Werror $cpp.FullName
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          ruff format --check tools tests/test_native_gateway.py
+          ruff format --check tools tests/test_native_gateway.py tests/test_native_validation.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
   test:

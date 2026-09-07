@@ -131,3 +131,9 @@ bounded memory through an uninterrupted 60-minute soak, and lower CPU cycles per
 operation with no p95/p99 regression across 30 paired authorizations. Local
 measurements are workload-specific and do not authorize FPS, input-latency,
 energy, physical PCIe or RAM/VRAM-saving claims.
+
+Soak samples are taken at least once per minute under load. Any sampling gap over
+90 seconds fails the continuity check, including a final unsampled pause. The
+memory criterion is unchanged: after 300 seconds, maximum sampled private bytes
+must stay within 110% of the minimum plus 1 MiB. Short diagnostic runs are not
+substitutes for the 3600-second release gate. Retain failed and interrupted results.
