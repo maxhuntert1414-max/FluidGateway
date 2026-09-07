@@ -6,7 +6,8 @@
 
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Version](https://img.shields.io/badge/version-0.67.1-ef6c35)](pyproject.toml)
+[![C++](https://img.shields.io/badge/online_core-C%2B%2B20-00599c)](docs/native-gateway.md)
+[![Version](https://img.shields.io/badge/version-0.68.0-ef6c35)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 
 FluidGateway is the diagnostic and decision layer of the Fluid project. The
@@ -22,18 +23,15 @@ physically unified memory, but it can coordinate the path with less waste.
 | Policy and runtime modeling | Advisory and dry-run by default |
 | FluidLink v2 | Strict positional binary IPC with numeric opcodes |
 | FluidLink operation batch | 129 logical operations in 1 bounded request/vector pair |
-| Local decision server | Loopback-only, 8-worker limit, absolute read deadlines |
+| Native online server | C++20, no Python dependency, bounded state and loopback IPC |
 | Local readiness | `doctor` reports available and blocked capabilities without changing system settings |
 | Native intervention | Bounded owned D3D11, D3D12 and cooperative Vulkan paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | Application-session diagnosis | HTML/JSON import of Runtime Vulkan counters and Windows priority-lease evidence |
 | General game optimizer, driver hooks, global scheduler | Not implemented |
 
-The v0.67.1 hardening release adds atomic report/state replacement, exclusive
-Windows loopback binding, bounded readiness checks, interrupt-safe CLI exit,
-and correct per-adapter VRAM classification on multi-GPU hosts. FluidRuntime
-v0.21.2 includes verified subprocess cleanup, native-probe deadlines, atomic
-evidence files, and stricter native compiler/linker gates without widening
-actuation authority.
+The native server moves continuous decisions into C++20 while Python remains
+the offline analysis and reporting tool. Existing binary contracts and Runtime
+authority gates are preserved. See [native usage, limits and verification](docs/native-gateway.md).
 
 Current `main` also diagnoses opt-in third-party Vulkan sessions from Runtime
 v0.23. [Application sessions](docs/application-sessions.md) collect CPU/RAM and
@@ -45,7 +43,7 @@ lower power, physical RAM/VRAM placement, or reduced PCIe traffic.
 
 ## Quick Start
 
-Requires Python 3.10 or newer. The diagnostic CLI has no third-party runtime
+Offline diagnostics require Python 3.10 or newer. The CLI has no third-party runtime
 dependencies.
 
 ```powershell
@@ -67,10 +65,10 @@ Outputs:
 - `tmp/report.html`: ranked, readable diagnostic report
 - `tmp/report.json`: the same evidence as structured data
 
-Run the local decision server:
+Run the native decision server from the Windows x64 release package:
 
 ```powershell
-python -m fluidgateway runtime serve-events --host 127.0.0.1 --port 8765
+.\fluidgateway-native.exe serve-events --host 127.0.0.1 --port 8765
 ```
 
 ## Architecture
@@ -92,6 +90,7 @@ expected server PID and executable hash. Run it only in a trusted user session.
 ## Read More
 
 - [Code review, fixes and remaining limits](docs/code-review-2026-09-05.md)
+- [Native C++20 gateway](docs/native-gateway.md)
 - [Technical reference](docs/technical-reference.md)
 - [Application-session reports](docs/application-sessions.md)
 - [v0.67.1 hardening notes](docs/release-v0.67.1.md)

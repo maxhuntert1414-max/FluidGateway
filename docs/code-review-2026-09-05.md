@@ -61,6 +61,10 @@ evidence visibly separate before adding more actuation.
 
 ## Verification
 
+Follow-up: the v0.68 [native online Gateway](native-gateway.md) replaces the live
+reference pipeline with bounded retained state. Python's original adapter remains
+the offline/reference implementation; its history is not retroactively made bounded.
+
 - Baseline: 278 Python and 245 .NET tests passed before changes.
 - Final: **294 Python**, **250 .NET** tests passed, .NET warnings as errors.
 - Native CTest: **32/32 each in Release, Debug and ASAN**. Leak detection is

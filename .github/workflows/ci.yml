@@ -43,3 +43,65 @@ jobs:
           }
       - name: Check CLI entry point
         run: python -m fluidgateway --help
+
+  native:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: release
+            configuration: Release
+            asan: "OFF"
+          - id: debug
+            configuration: Debug
+            asan: "OFF"
+          - id: asan
+            configuration: Release
+            asan: "ON"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Configure C++20 gateway
+        run: cmake -S native -B native/build -A x64 -DFLUIDGATEWAY_ENABLE_ASAN=${{ matrix.asan }}
+      - name: Build native gateway
+        run: cmake --build native/build --config ${{ matrix.configuration }}
+      - name: Verify native and differential contracts
+        shell: pwsh
+        run: |
+          if ('${{ matrix.asan }}' -eq 'ON') {
+            $entry = Select-String -Path native/build/CMakeCache.txt -Pattern '^CMAKE_AR:FILEPATH=(.+)$'
+            if (-not $entry) { throw 'MSVC tool directory unavailable.' }
+            $tools = Split-Path $entry.Matches[0].Groups[1].Value -Parent
+            if (-not (Test-Path (Join-Path $tools 'clang_rt.asan_dynamic-x86_64.dll'))) {
+              throw 'ASAN runtime missing from compiler directory.'
+            }
+            $env:PATH = "$tools;$env:PATH"
+            $env:ASAN_OPTIONS = 'halt_on_error=1:abort_on_error=1:detect_leaks=0'
+          }
+          ctest --test-dir native/build -C ${{ matrix.configuration }} --output-on-failure
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $env:FLUIDGATEWAY_NATIVE = "$PWD/native/build/${{ matrix.configuration }}/fluidgateway-native.exe"
+          python -m unittest tests.test_native_gateway -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Package release
+        if: matrix.id == 'release'
+        shell: pwsh
+        run: |
+          cmake --install native/build --config Release --prefix tmp/native-release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item docs/native-gateway.md tmp/native-release/README.md
+          $exe = 'tmp/native-release/fluidgateway-native.exe'
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          @{ version = '0.68.0'; executable_sha256 = $hash; python_required = $false } |
+            ConvertTo-Json | Set-Content tmp/native-release/manifest.json -Encoding utf8
+          ./tools/Test-NativePackage.ps1 -PackagePath tmp/native-release
+          Compress-Archive -Path tmp/native-release/* -DestinationPath tmp/fluidgateway-native-v0.68.0-win-x64.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: matrix.id == 'release'
+        with:
+          name: fluidgateway-native-win-x64
+          path: tmp/fluidgateway-native-v0.68.0-win-x64.zip
