@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import ExitStack
 import json
 import random
 import socket
@@ -290,28 +291,32 @@ class NativeGatewayTests(unittest.TestCase):
                 self.assertEqual(peer.request(20, b"\x01x").opcode, 21)
 
     def test_receiver_backpressure_releases_worker(self):
-        with server(executable=NATIVE) as (_, port):
-            # Negotiate the small receive window before connect, and queue enough
-            # outgoing bytes to fill the server's send buffer even under ASAN.
-            with Peer(port, receive_buffer_bytes=512) as peer:
-                peer.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4 * 1024 * 1024)
-                peer.socket.settimeout(3)
-                requests = b"".join(wire.encode_fluidlink_v2_frame(wire.fluidlink_v2_request(
-                    opcode=20, sequence=sequence, session_id=peer.session, payload=b"\x80" + b"x" * 128))
-                    for sequence in range(2, 20002))
+        with server(executable=NATIVE) as (_, port), ExitStack() as connections:
+            bystanders = [connections.enter_context(Peer(port)) for _ in range(7)]
+            peer = connections.enter_context(Peer(port, receive_buffer_bytes=512))
+            peer.socket.settimeout(.5)
+            frame = wire.encode_fluidlink_v2_frame(wire.fluidlink_v2_request(
+                opcode=20, sequence=2, session_id=peer.session, payload=b"\x80" + b"x" * 128))
+            requests = bytearray(frame * 256)
+            sequence = 2
+            deadline = time.monotonic() + 10
+            # TCP buffer sizes differ across Windows versions. Fill until actual
+            # backpressure, then prove worker recovery without reopening the receive window.
+            while time.monotonic() < deadline:
+                for i in range(256):
+                    struct.pack_into("<Q", requests, i * len(frame) + 12, sequence + i)
+                sequence += 256
                 try:
                     peer.socket.sendall(requests)
                 except (socket.timeout, ConnectionResetError):
-                    pass
-                time.sleep(3)
-                peer.socket.settimeout(2)
-                try:
-                    while peer.socket.recv(65536):
-                        pass
-                except ConnectionResetError:
-                    pass
-            with Peer(port) as peer:
-                self.assertEqual(peer.request(20, b"\x01x").opcode, 21)
+                    break
+            else:
+                self.fail("Could not saturate the non-reading peer within ten seconds")
+            time.sleep(3)
+            for bystander in bystanders:
+                self.assertEqual(bystander.request(20, b"\x01x").opcode, 21)
+            with Peer(port) as recovered:
+                self.assertEqual(recovered.request(20, b"\x01x").opcode, 21)
 
     def test_dense_alias_invalidation_at_resource_limit(self):
         requests = [wire.fluidlink_v2_request(opcode=1, sequence=1,
