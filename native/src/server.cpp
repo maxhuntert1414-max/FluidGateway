@@ -58,6 +58,10 @@ bool send_frame(SOCKET socket, std::span<const std::uint8_t> bytes) {
 void serve(SOCKET connected) noexcept {
     Socket socket{connected};
     try {
+        // Deadlines must not depend on accepted-socket mode inheritance.
+        u_long nonblocking = 1;
+        if (ioctlsocket(connected, FIONBIO, &nonblocking))
+            return;
         Identity identity{};
         if (BCryptGenRandom(nullptr, identity.data(), static_cast<ULONG>(identity.size()), BCRYPT_USE_SYSTEM_PREFERRED_RNG) < 0)
             return;
