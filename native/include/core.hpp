@@ -21,6 +21,7 @@ struct Error : std::runtime_error {
 class BudgetResource final : public std::pmr::memory_resource {
 public:
     std::size_t used = 0, peak = 0;
+
 private:
     void* do_allocate(std::size_t bytes, std::size_t alignment) override;
     void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
@@ -47,7 +48,8 @@ struct TextHash {
         return std::hash<std::string_view>{}(text);
     }
 };
-template<class T> using TextMap = std::pmr::unordered_map<std::pmr::string, T, TextHash, std::equal_to<>>;
+template <class T>
+using TextMap = std::pmr::unordered_map<std::pmr::string, T, TextHash, std::equal_to<>>;
 struct StoredOperation {
     std::pmr::string id, source, target;
     std::pmr::vector<std::pmr::string> replacements;
@@ -62,7 +64,8 @@ struct Resource {
     std::uint8_t memory;
     const StoredOperation* copy = nullptr;
     const StoredOperation* allocation = nullptr;
-    Resource(std::uint8_t layer, const std::vector<std::string>& names,
+    Resource(std::uint8_t layer,
+             const std::vector<std::string>& names,
              std::pmr::memory_resource* allocator);
 };
 class State {
@@ -74,16 +77,22 @@ public:
     void begin_frame(std::uint64_t frame);
     void end_frame(std::uint64_t frame);
     void end_session() const;
-    void register_resource(std::string_view id, std::uint8_t memory,
+    void register_resource(std::string_view id,
+                           std::uint8_t memory,
                            const std::vector<std::string>& aliases);
     void release_resource(std::string_view id);
     Decision process(Operation op);
-    std::size_t resource_count() const { return resources_.size(); }
-    std::size_t operation_count() const { return operations_.size(); }
+    std::size_t resource_count() const {
+        return resources_.size();
+    }
+    std::size_t operation_count() const {
+        return operations_.size();
+    }
+
 private:
     TextMap<Resource> resources_;
     TextMap<StoredOperation> operations_;
     std::optional<std::uint64_t> current_frame_;
     void invalidate(std::string_view id);
 };
-}
+} // namespace fluidgateway

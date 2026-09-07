@@ -5,6 +5,23 @@ on:
   pull_request:
 
 jobs:
+  formatting:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Check native and validation-tool formatting
+        shell: pwsh
+        run: |
+          $cpp = Get-ChildItem native/include,native/src,native/tests -File | Where-Object Extension -in '.hpp','.cpp'
+          clang-format --dry-run --Werror $cpp.FullName
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ruff format --check tools tests/test_native_gateway.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
   test:
     runs-on: windows-latest
     strategy:

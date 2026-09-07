@@ -1,0 +1,3 @@
+# Optional development tools; neither is a runtime dependency.
+clang-format==21.1.8
+ruff==0.14.13

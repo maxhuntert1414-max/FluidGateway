@@ -4,8 +4,9 @@ Thank you for helping build a more evidence-driven frame pipeline.
 
 ## Development Setup
 
-FluidGateway requires Python 3.10 or newer and has no third-party runtime
-dependencies.
+Offline diagnostics require Python 3.10 or newer with no third-party runtime
+dependencies. The online server is C++20 and does not load Python. Keep Runtime's
+C# coordination and C++ actuation in its separate repository.
 
 ```powershell
 git clone https://github.com/maxhuntert1414-max/FluidGateway.git
@@ -13,6 +14,50 @@ cd FluidGateway
 python -m unittest
 python -m fluidgateway --help
 ```
+
+For the native server, install Visual Studio C++ Build Tools and the Windows SDK:
+
+```powershell
+cmake -S native -B native/build -A x64
+cmake --build native/build --config Release
+ctest --test-dir native/build -C Release --output-on-failure
+python -m unittest tests.test_native_gateway -v
+```
+
+Native integration tests skip without a build. A skipped test is not native
+validation. Changes to the protocol or state must also pass Debug and ASAN;
+see [the native guide](docs/native-gateway.md) for limits and full validation.
+
+## Code Map
+
+| Area | Start Here |
+| --- | --- |
+| Wire contract and golden vectors | `contracts/fluidlink-v2*.json`, `fluidgateway/fluidlink_v2.py` |
+| Native codec and negotiation | `native/include/protocol.hpp`, `native/src/protocol.cpp` |
+| Bounded state and decisions | `native/include/core.hpp`, `native/src/core.cpp` |
+| Loopback transport and deadlines | `native/src/server.cpp` |
+| Differential and failure tests | `tests/test_native_gateway.py`, `native/tests/core_tests.cpp` |
+| Benchmark and package verification | `tools/`, `docs/native-gateway.md` |
+
+## Formatting
+
+Use four spaces and the checked-in EditorConfig. Install the pinned, optional
+development tools in an isolated environment:
+
+```powershell
+python -m venv tmp/dev-tools
+tmp/dev-tools/Scripts/python.exe -m pip install -r requirements-dev.txt
+$cpp = Get-ChildItem native/include,native/src,native/tests -File | Where-Object Extension -in '.hpp','.cpp'
+tmp/dev-tools/Scripts/clang-format.exe -i $cpp.FullName
+tmp/dev-tools/Scripts/ruff.exe format tools tests/test_native_gateway.py
+```
+
+CI checks `clang-format --dry-run --Werror` for the native core and `ruff format
+--check` for the new online validation tools. Existing offline Python files are
+not reformatted wholesale by this change; preserve their style when editing them.
+Keep formatting-only commits separate from behavior changes where practical.
+Use descriptive names and small functions; explain invariants and ownership in
+comments, not every assignment. Never compress control flow to save source lines.
 
 ## Good Contribution Areas
 

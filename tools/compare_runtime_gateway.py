@@ -1,4 +1,5 @@
 """Launch two owned peers and the actual .NET authorizer benchmark (no GPU execution)."""
+
 from __future__ import annotations
 
 import argparse
@@ -26,11 +27,27 @@ def main():
         if not path.is_file():
             parser.error(f"Required built file missing: {path}")
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    with server("Python") as (python, pport), server("Native", args.native.resolve()) as (native, nport):
-        subprocess.run(["dotnet", str(tool), str(pport), str(python.pid),
-            hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest(), str(nport), str(native.pid),
-            hashlib.sha256(args.native.read_bytes()).hexdigest(), str(target), str(hook),
-            str(args.out.resolve())], check=True, timeout=300)
+    with (
+        server("Python") as (python, pport),
+        server("Native", args.native.resolve()) as (native, nport),
+    ):
+        subprocess.run(
+            [
+                "dotnet",
+                str(tool),
+                str(pport),
+                str(python.pid),
+                hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest(),
+                str(nport),
+                str(native.pid),
+                hashlib.sha256(args.native.read_bytes()).hexdigest(),
+                str(target),
+                str(hook),
+                str(args.out.resolve()),
+            ],
+            check=True,
+            timeout=300,
+        )
 
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
 [CmdletBinding()]
-param([Parameter(Mandatory = $true)] [string]$PackagePath)
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$PackagePath
+)
+
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $package = (Resolve-Path -LiteralPath $PackagePath).Path
@@ -9,6 +13,7 @@ $sha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant(
 if ($sha -ne $manifest.executable_sha256 -or $manifest.python_required) {
     throw 'Package manifest identity mismatch.'
 }
+
 function Convert-Hex([string]$Hex) {
     $bytes = New-Object byte[] ($Hex.Length / 2)
     for ($i = 0; $i -lt $bytes.Length; $i++) {
@@ -16,16 +21,20 @@ function Convert-Hex([string]$Hex) {
     }
     return ,$bytes
 }
+
 function Read-Exactly($Stream, [int]$Count) {
     $bytes = New-Object byte[] $Count
     $offset = 0
     while ($offset -lt $Count) {
         $read = $Stream.Read($bytes, $offset, $Count - $offset)
-        if ($read -eq 0) { throw 'Unexpected end of native response.' }
+        if ($read -eq 0) {
+            throw 'Unexpected end of native response.'
+        }
         $offset += $read
     }
     return ,$bytes
 }
+
 $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
 $listener.Start()
 $port = ([Net.IPEndPoint]$listener.LocalEndpoint).Port
@@ -44,12 +53,19 @@ $client = $null
 try {
     $deadline = [DateTime]::UtcNow.AddSeconds(10)
     while ($true) {
-        if ($process.HasExited) { throw "Packaged server exited: $($process.ExitCode)" }
+        if ($process.HasExited) {
+            throw "Packaged server exited: $($process.ExitCode)"
+        }
         $client = [Net.Sockets.TcpClient]::new()
-        try { $client.Connect('127.0.0.1', $port); break }
+        try {
+            $client.Connect('127.0.0.1', $port)
+            break
+        }
         catch {
             $client.Dispose()
-            if ([DateTime]::UtcNow -gt $deadline) { throw }
+            if ([DateTime]::UtcNow -gt $deadline) {
+                throw
+            }
             Start-Sleep -Milliseconds 25
         }
     }
@@ -61,13 +77,22 @@ try {
     $count = 0
     foreach ($vector in $vectors.vectors | Where-Object { $_.name.EndsWith('_request') }) {
         $request = Convert-Hex $vector.wire_hex
-        if ($session) { [Array]::Copy($session, 0, $request, 36, 16) }
+        if ($session) {
+            [Array]::Copy($session, 0, $request, 36, 16)
+        }
         $stream.Write($request, 0, $request.Length)
         $header = Read-Exactly $stream 56
         $size = [BitConverter]::ToUInt32($header, 52)
-        if ($size -gt 65535) { throw 'Invalid response length.' }
+        if ($size -gt 65535) {
+            throw 'Invalid response length.'
+        }
         $payload = Read-Exactly $stream $size
-        $expectedOpcode = switch ($request[6]) { 1 { 2 } 10 { 11 } 20 { 21 } 30 { 30 } }
+        $expectedOpcode = switch ($request[6]) {
+            1 { 2 }
+            10 { 11 }
+            20 { 21 }
+            30 { 30 }
+        }
         if ($header[6] -ne $expectedOpcode -or ($header[9] -band 1) -ne 1 -or
             [BitConverter]::ToUInt64($header, 12) -ne [BitConverter]::ToUInt64($request, 12) -or
             [Convert]::ToBase64String($header[20..35]) -ne [Convert]::ToBase64String($request[20..35])) {
@@ -76,7 +101,9 @@ try {
         if (-not $session) {
             $session = [byte[]]$header[36..51]
             $welcome = [Text.Encoding]::UTF8.GetString($payload)
-            if (-not $welcome.EndsWith([string]$manifest.version)) { throw 'Package version mismatch.' }
+            if (-not $welcome.EndsWith([string]$manifest.version)) {
+                throw 'Package version mismatch.'
+            }
         }
         elseif ([Convert]::ToBase64String($header[36..51]) -ne [Convert]::ToBase64String($session)) {
             throw 'Session identity changed.'
@@ -98,7 +125,12 @@ try {
     } | ConvertTo-Json -Depth 4
 }
 finally {
-    if ($client) { $client.Dispose() }
-    if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
+    if ($client) {
+        $client.Dispose()
+    }
+    if (-not $process.HasExited) {
+        $process.Kill()
+        $process.WaitForExit()
+    }
     $process.Dispose()
 }
