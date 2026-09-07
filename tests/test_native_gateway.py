@@ -477,19 +477,30 @@ class NativeGatewayTests(unittest.TestCase):
             requests = bytearray(frame * 256)
             sequence = 2
             deadline = time.monotonic() + 10
-            # TCP buffer sizes differ across Windows versions. Fill until actual
-            # backpressure, then prove worker recovery without reopening the receive window.
-            while time.monotonic() < deadline:
+            closed = False
+            sent = 0
+            # A client-side send timeout is not proof that server writes are blocked.
+            # Resume partial sends until the server closes, without reading responses.
+            while time.monotonic() < deadline and not closed:
                 for i in range(256):
                     struct.pack_into("<Q", requests, i * len(frame) + 12, sequence + i)
                 sequence += 256
-                try:
-                    peer.socket.sendall(requests)
-                except (socket.timeout, ConnectionResetError):
-                    break
-            else:
-                self.fail("Could not saturate the non-reading peer within ten seconds")
-            time.sleep(3)
+                offset = 0
+                while offset < len(requests) and time.monotonic() < deadline:
+                    try:
+                        count = peer.socket.send(requests[offset:])
+                        if count == 0:
+                            closed = True
+                            break
+                        offset += count
+                        sent += count
+                    except socket.timeout:
+                        continue
+                    except (ConnectionResetError, ConnectionAbortedError):
+                        closed = True
+                        break
+            self.assertTrue(closed, f"Stalled peer retained its worker after sending {sent} bytes")
+            time.sleep(0.05)
             for bystander in bystanders:
                 self.assertEqual(bystander.request(20, b"\x01x").opcode, 21)
             with Peer(port) as recovered:
