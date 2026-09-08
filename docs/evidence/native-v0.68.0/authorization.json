@@ -1,0 +1,649 @@
+{
+  "schema": "fluidruntime-native-gateway-comparison-v1",
+  "timestamp_utc": "2026-09-08T01:42:19.4188735+00:00",
+  "measured_pairs": 30,
+  "warmup_pairs": 5,
+  "candidate_count": 128,
+  "identity_guards_verified": true,
+  "unique_contexts": 70,
+  "summaries": [
+    {
+      "backend": "Python",
+      "metrics": {
+        "p50_us": 27378.5,
+        "p95_us": 30924.85,
+        "p99_us": 31206.36,
+        "server_cpu_ns_per_operation": 137273.90180878554,
+        "server_cpu_cycles_per_operation": 509500.745994832,
+        "private_bytes_p50": 24436736
+      }
+    },
+    {
+      "backend": "Native",
+      "metrics": {
+        "p50_us": 5560.5,
+        "p95_us": 7383.849999999999,
+        "p99_us": 7575.71,
+        "server_cpu_ns_per_operation": 0,
+        "server_cpu_cycles_per_operation": 28093.58087855297,
+        "private_bytes_p50": 3100672
+      }
+    }
+  ],
+  "samples": [
+    {
+      "backend": "Python",
+      "runs": [
+        {
+          "Pair": 0,
+          "LatencyUs": 30982,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 73868428,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "f781d963463293ddf0253951c292691f5049beae1b61f99c4b18a9402603826d",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 1,
+          "LatencyUs": 29381,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 68867817,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "f3e635c22a9ec45a6e53821556021c8ef1537a06d27044bf7221f66f09f763f0",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 2,
+          "LatencyUs": 27437,
+          "ServerCpuNs": 31250000,
+          "ServerCpuCycles": 64305403,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "857ae0e919d351de485e69ee2db83f4e64da9da9a4a1bb2e9d308eebb2645d64",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 3,
+          "LatencyUs": 27320,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 62629518,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "29f5ef33e72c49929a9dfad12c7101b1c50953cc94e4359adba472972e6b825c",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 4,
+          "LatencyUs": 26401,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 62050756,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "08e28601b723213f54af06ca983cb1353305e39b09557fd83f94f86e45edabd0",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 5,
+          "LatencyUs": 30698,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 71723969,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "a950df1cd23309acd27683d83a0d198158aa86ec60844cb242dc63227a3e1199",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 6,
+          "LatencyUs": 26720,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 63018760,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "350b426834ac8cbf2077138b3618c114e597ba7e16a3c1bacd2237a2747f8f27",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 7,
+          "LatencyUs": 28206,
+          "ServerCpuNs": 31250000,
+          "ServerCpuCycles": 66166710,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "b224744f18c1241c4ccb6f4e0483ef40883464b6b66b8f0c4742f41d48c80b9f",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 8,
+          "LatencyUs": 25740,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 60956883,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "fbfe2f3a496fe71919815de617fba2680af4ce5d8d71300663945471b82908af",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 9,
+          "LatencyUs": 25913,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 60750332,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "8e5624f3349197b44239707e9aa117b74185fbefed0b35d97c9dc8058a70d3e9",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 10,
+          "LatencyUs": 26658,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 63462130,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "df43715f86f7f3e26244f10e691e02e9dd5d83c17e2cf358ce832ea784506c45",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 11,
+          "LatencyUs": 27251,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 62584955,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "bb582cad46260f5cf9bfc85f501a7dd4f731ec1b2af642d680a144b2fdccb6bd",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 12,
+          "LatencyUs": 31298,
+          "ServerCpuNs": 31250000,
+          "ServerCpuCycles": 75551985,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "2204a27f1d30c69a2d44ab4d23103f2399423c80e099d92fdcd544dde41efb99",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 13,
+          "LatencyUs": 26089,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 60645459,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "467a9db247e08e00aefe2323bd6c8de8e2768ab212f2e552009fd35e78716931",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 14,
+          "LatencyUs": 25913,
+          "ServerCpuNs": 31250000,
+          "ServerCpuCycles": 61289116,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "1fefb2d534f496b149bdd524cd398d8c27d480d7fe950a4f8ed836df7a5e06b7",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 15,
+          "LatencyUs": 29229,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 68451279,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "94787b5414e105a1981c43745deba915996c07df3a05cdfc1b4045cd658a2bc1",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 16,
+          "LatencyUs": 30595,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 73577374,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "76a44404b06c6e7fc3c7a2876368f6c77c76f89bf3c03dde869395c0c725303e",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 17,
+          "LatencyUs": 29032,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 69052910,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "bc2f79b3bcd753065037df11ba570c73ee0e89f7808432f5e3d21dde451eb069",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 18,
+          "LatencyUs": 25618,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 61328614,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "5bdab31d0a2225de0b3c6ffe375610f2d23dbe226f8f39fc84b61828df6eb7fe",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 19,
+          "LatencyUs": 26830,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 63210019,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "a00a2864ea759bfb939298333c83327060083f393fe8ca636f02bdb280e3a660",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 20,
+          "LatencyUs": 26903,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 63621003,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "103c4ca74d2c62df3ed385e628c2c5c0376930c95001f8e0e40d57368cb7be57",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 21,
+          "LatencyUs": 27494,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 63589021,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "315e97b7a37c96f710234633b601ecc53f43561a09e963ca73ec14fbe647b289",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 22,
+          "LatencyUs": 26399,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 62281028,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "ed81fb268f766f4ea8dee3a42a1d1c33593b92c4e076152e54949bb3d3f2a66d",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 23,
+          "LatencyUs": 30855,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 73486032,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "86b4ff3574649b8a3d1d145f068051ad0c7e75661df841846765681c8c6e94b1",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 24,
+          "LatencyUs": 25446,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 60796056,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "80815a24bfad900ce6c7cc1d7071e56f679d15f13bb4272c3640eebeefb39499",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 25,
+          "LatencyUs": 26783,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 63531919,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "041cf1b33d3e253857020c0dd6c846012ee7199817c249bf60cd417c92f4e8e4",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 26,
+          "LatencyUs": 30648,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 73094012,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "5448a071c4aa3458dac788f10e9d70aab73be2de162c56695259b77da23da825",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 27,
+          "LatencyUs": 27574,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 65276017,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "7a0239f5a3d493c8164ddc6f987d05735a1bed86347df680145023c23b10f83e",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 28,
+          "LatencyUs": 28299,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 68096203,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "38f44621fe68e2653a643d8ed82fb2f545a252d3766312882732a7977e534dfa",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        },
+        {
+          "Pair": 29,
+          "LatencyUs": 27839,
+          "ServerCpuNs": 15625000,
+          "ServerCpuCycles": 64504179,
+          "PrivateBytes": 24436736,
+          "RoundTrips": 10,
+          "ContextSha256": "aa1df4374a024dbdce35e2d71f45aa67e1a94079a5a05361554c6163e264875c",
+          "ExecutableSha256": "3adbbf2af609e206e3ca18cd55fc7c4b52f5c8bb8218dd99fd5a9e50d7a193cd"
+        }
+      ]
+    },
+    {
+      "backend": "Native",
+      "runs": [
+        {
+          "Pair": 0,
+          "LatencyUs": 7237,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3371650,
+          "PrivateBytes": 3092480,
+          "RoundTrips": 10,
+          "ContextSha256": "851311a7b4940034083e95c45d5e6a1f411ff6d7c46edc74056703d28be16607",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 1,
+          "LatencyUs": 5721,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3870111,
+          "PrivateBytes": 3043328,
+          "RoundTrips": 10,
+          "ContextSha256": "e62512ff41c4524964ce7f65b07319b23140b96decc4d08f71c7b2b8c895b723",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 2,
+          "LatencyUs": 5514,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3384438,
+          "PrivateBytes": 3055616,
+          "RoundTrips": 10,
+          "ContextSha256": "83d619024004d43566a4f83fbfa8e6ec9aae3e0f7b840b6eb772a445ae905094",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 3,
+          "LatencyUs": 7605,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4356982,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "6d71e0b58ac6d8d4a61524739b03fe2ddba4d908982520c439ba656625edd419",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 4,
+          "LatencyUs": 5380,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3216273,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "c52b363c3f2a2aecd4c33fd716a44f918dce48374985d00cf9e8af31a4684f8d",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 5,
+          "LatencyUs": 6234,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4159174,
+          "PrivateBytes": 3100672,
+          "RoundTrips": 10,
+          "ContextSha256": "0ffec73481c31bb75a0efaaf5c3065c771dc9b1349a8410da087baa2e3a74297",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 6,
+          "LatencyUs": 5370,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3193288,
+          "PrivateBytes": 3100672,
+          "RoundTrips": 10,
+          "ContextSha256": "5e987a8309d7e7cab3c48dc18f8d38774dd57c4ef9826ebfa10bd38d5bda1c92",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 7,
+          "LatencyUs": 6177,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4327320,
+          "PrivateBytes": 3067904,
+          "RoundTrips": 10,
+          "ContextSha256": "d1ba94960246482a29dea390bd6830d849e6ce044ec4f6cc13842a9334247486",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 8,
+          "LatencyUs": 5409,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3245204,
+          "PrivateBytes": 3067904,
+          "RoundTrips": 10,
+          "ContextSha256": "f859c473ee187518fef2812b685f66b6485aff334465ec7ed1820e0a5387546b",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 9,
+          "LatencyUs": 5525,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3414736,
+          "PrivateBytes": 3067904,
+          "RoundTrips": 10,
+          "ContextSha256": "b98f50be34d5d3ef244b78f6cc0933f50ab7a8dc4e5109effd34d749b7b551b1",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 10,
+          "LatencyUs": 5299,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3295109,
+          "PrivateBytes": 3035136,
+          "RoundTrips": 10,
+          "ContextSha256": "aae47e58a0e52cdad50e2968cdd62fe6883f9fb97e7fb1169e8ef4a98abf9963",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 11,
+          "LatencyUs": 6881,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4413453,
+          "PrivateBytes": 3100672,
+          "RoundTrips": 10,
+          "ContextSha256": "fa93ef96c547c3e9d03ed294a8a9c7ba53d44a1c2ef26913407357492b2f2fcb",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 12,
+          "LatencyUs": 5172,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3177500,
+          "PrivateBytes": 3096576,
+          "RoundTrips": 10,
+          "ContextSha256": "f83ce95183d36021c01afed0e2d488599ca8d050f79160f9206c2058b4c0412b",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 13,
+          "LatencyUs": 5665,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3377105,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "83550deec5b8c584efd8fecae1ba144514dcb1405b727a5429f4689abca62b6e",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 14,
+          "LatencyUs": 5595,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3350562,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "efa933f2b4a1eb9e4150b7ba1417a1e4a8598beeb6c0ddf422f9ddadc1a063df",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 15,
+          "LatencyUs": 7504,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4488495,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "5fe5cc9268930b8c0b685f68b908e9a1f265d3d9d970e1c73b258df0c5d76a00",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 16,
+          "LatencyUs": 5180,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3193992,
+          "PrivateBytes": 3092480,
+          "RoundTrips": 10,
+          "ContextSha256": "8791e41b18971964207afaba3f25fd2a3f3d9220f1f4f82df19bf930f941877a",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 17,
+          "LatencyUs": 5595,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3393339,
+          "PrivateBytes": 3100672,
+          "RoundTrips": 10,
+          "ContextSha256": "6d66c6021a0c5fba09afaf4c5ef53302489835aec9ec3562affa66627dc3579a",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 18,
+          "LatencyUs": 5468,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3244930,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "5c4b807f8dddaf75bee421c3b90c2b172a442cefeec325e7cb8dc60544cf41d0",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 19,
+          "LatencyUs": 5983,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4284969,
+          "PrivateBytes": 3100672,
+          "RoundTrips": 10,
+          "ContextSha256": "8c71c12b171d9c6826d3e6bfbde79aab75a667dd4a9b32ac7e82ddcd31e23b85",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 20,
+          "LatencyUs": 5312,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3166791,
+          "PrivateBytes": 3100672,
+          "RoundTrips": 10,
+          "ContextSha256": "13f7e6e7ffb30ad394ea54e0026e23ae66a21bc5eb5c3635c0b5ebfd0c804cb5",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 21,
+          "LatencyUs": 7086,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4173806,
+          "PrivateBytes": 3108864,
+          "RoundTrips": 10,
+          "ContextSha256": "2cb88913ebb94aec68b0d7eb2ae226a91828b1e9e57782a76758d0be5b65bd88",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 22,
+          "LatencyUs": 5353,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3253604,
+          "PrivateBytes": 3108864,
+          "RoundTrips": 10,
+          "ContextSha256": "d3c2b8873786154c74eafef7e759ea66b1cb9a605dd86af5805465dead9749cb",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 23,
+          "LatencyUs": 6206,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4166629,
+          "PrivateBytes": 3059712,
+          "RoundTrips": 10,
+          "ContextSha256": "062cb9043f524ef33e1e46b8ccddaf601a21aa5c7d4d8a5061a87a5b4bc2d6fa",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 24,
+          "LatencyUs": 5274,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3242172,
+          "PrivateBytes": 3108864,
+          "RoundTrips": 10,
+          "ContextSha256": "7fb83f15f978f65004666c214794ace4d9ad5263c83bf9700300d9d46a48d8be",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 25,
+          "LatencyUs": 5844,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3421504,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "ca6a65f2bb66cd35b2521b7555c57d4f505d72b41f6161b99d34f061a5628c03",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 26,
+          "LatencyUs": 5363,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3228954,
+          "PrivateBytes": 3096576,
+          "RoundTrips": 10,
+          "ContextSha256": "4eacca156b21f6d48ac53db6dabecbb305a8e3a88e6c4c242c4e0a368c5b1bac",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 27,
+          "LatencyUs": 5526,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3697797,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "c244685d7c2e1540d7c478c334da5f6ba29992431fd7a5950e44ac0ffa7983bf",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 28,
+          "LatencyUs": 5234,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 3184952,
+          "PrivateBytes": 3104768,
+          "RoundTrips": 10,
+          "ContextSha256": "1b06e7094dd1bc76f35627b4c95da54ffaf4a3d144650ce0d5db3fecfabd4eb8",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        },
+        {
+          "Pair": 29,
+          "LatencyUs": 7133,
+          "ServerCpuNs": 0,
+          "ServerCpuCycles": 4427319,
+          "PrivateBytes": 3059712,
+          "RoundTrips": 10,
+          "ContextSha256": "6ad0271272326b57957d988d757c96ff43412fdca2e9579d83e963e47817f237",
+          "ExecutableSha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654"
+        }
+      ]
+    }
+  ],
+  "comparison_gate_passed": true,
+  "native_policy_published": false,
+  "scope": "Real Runtime authorizer including PID/executable SHA256/context checks; no GPU work",
+  "cpu_note": "Promotion uses QueryProcessCycleTime cycles, not quantized process-time zeros. Cycles are not nanoseconds."
+}

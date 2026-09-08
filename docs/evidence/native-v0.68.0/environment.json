@@ -1,0 +1,20 @@
+{
+  "captured_at_utc": "2026-09-07T15:35:29.3788747Z",
+  "cpu": "Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz",
+  "physical_cores": 8,
+  "logical_processors": 16,
+  "os": "Microsoft Windows 11 Pro",
+  "os_version": "10.0.22631",
+  "total_physical_memory_bytes": 17115394048,
+  "compiler_version": "19.51.36243.0",
+  "python": "Python 3.14.5",
+  "dotnet_sdk": "10.0.300",
+  "gateway_commit": "feb0d837ae93dec677b836f9f80ad6ca9fc6d68d",
+  "runtime_commit": "c256d06c2c894f72a0925e825bfdb7a1fc03f3ce",
+  "native_sha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654",
+  "windhawk_injection_observed": true,
+  "system_configuration_changed": false,
+  "evidence_exported_at_utc": "2026-09-08T01:48:25.5405288Z",
+  "comparison_tool_sha256": "95b2fa651ca2eb7ce67f94b862408c008c2a9dc3f0eda95870bec7f81884ed71",
+  "runtime_worktree_change": "Comparison tool exit code now reflects the combined correctness and performance gate; production Runtime unchanged."
+}

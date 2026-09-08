@@ -31,7 +31,9 @@ physically unified memory, but it can coordinate the path with less waste.
 
 The native server moves continuous decisions into C++20 while Python remains
 the offline analysis and reporting tool. Existing binary contracts and Runtime
-authority gates are preserved. See [native usage, limits and verification](docs/native-gateway.md).
+authority gates are preserved. The [v0.68 validation results](docs/release-v0.68.0.md)
+include a completed 60-minute soak and 30 paired Runtime authorizations.
+See [native usage, limits and verification](docs/native-gateway.md).
 
 Current `main` also diagnoses opt-in third-party Vulkan sessions from Runtime
 v0.23. [Application sessions](docs/application-sessions.md) collect CPU/RAM and
@@ -93,7 +95,7 @@ expected server PID and executable hash. Run it only in a trusted user session.
 - [Native C++20 gateway](docs/native-gateway.md)
 - [Technical reference](docs/technical-reference.md)
 - [Application-session reports](docs/application-sessions.md)
-- [v0.67.1 hardening notes](docs/release-v0.67.1.md)
+- [v0.68.0 release and measured results](docs/release-v0.68.0.md)
 - [FluidLink v2 base protocol](docs/fluidlink-v2.md)
 - [FluidLink v2 operation-batch profile](docs/fluidlink-v2-batch.md)
 - [Canonical contracts and golden vectors](contracts)

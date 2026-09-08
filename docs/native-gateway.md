@@ -5,6 +5,11 @@ Python. Python remains the offline diagnostic/reporting tool and reference test
 implementation; FluidRuntime remains the separate C# coordinator and C++ actuator.
 This is not a new graphics driver, system scheduler, or expansion of hook authority.
 
+The v0.68.0 promotion gates passed on the packaged executable. See the
+[release measurements and raw evidence](https://github.com/maxhuntert1414-max/FluidGateway/blob/v0.68.0/docs/release-v0.68.0.md).
+Runtime integration scripts use Native by default after their matching update;
+Python remains an explicit reference selection.
+
 ## Run
 
 Extract the Windows x64 native release package and run:

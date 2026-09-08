@@ -1,0 +1,567 @@
+{
+  "schema": "fluidgateway-native-soak-v1",
+  "complete": true,
+  "seconds_required": 3600.0,
+  "minimum_operations": 1000000,
+  "executable_sha256": "d8b8d2b8f64998945c799014f795cdadc19c07288ab90532406fda986af35da2",
+  "elapsed_seconds": 3600.2186069,
+  "operations": 18092032,
+  "sessions": 4417,
+  "samples": [
+    {
+      "elapsed_seconds": 0.18750139999997373,
+      "operations": 4096,
+      "sessions": 1,
+      "private_bytes": 4661248,
+      "working_set_bytes": 12673024,
+      "cpu_ns": 0,
+      "cpu_cycles": 128782793
+    },
+    {
+      "elapsed_seconds": 60.30465900000013,
+      "operations": 1236992,
+      "sessions": 302,
+      "private_bytes": 7864320,
+      "working_set_bytes": 14819328,
+      "cpu_ns": 328125000,
+      "cpu_cycles": 9096875240
+    },
+    {
+      "elapsed_seconds": 120.44789420000006,
+      "operations": 1523712,
+      "sessions": 372,
+      "private_bytes": 7782400,
+      "working_set_bytes": 14962688,
+      "cpu_ns": 406250000,
+      "cpu_cycles": 11944384675
+    },
+    {
+      "elapsed_seconds": 180.62315060000014,
+      "operations": 1810432,
+      "sessions": 442,
+      "private_bytes": 8486912,
+      "working_set_bytes": 15085568,
+      "cpu_ns": 531250000,
+      "cpu_cycles": 14847057506
+    },
+    {
+      "elapsed_seconds": 240.82416920000014,
+      "operations": 2097152,
+      "sessions": 512,
+      "private_bytes": 7598080,
+      "working_set_bytes": 14417920,
+      "cpu_ns": 640625000,
+      "cpu_cycles": 17737794666
+    },
+    {
+      "elapsed_seconds": 301.00790010000014,
+      "operations": 2383872,
+      "sessions": 582,
+      "private_bytes": 7720960,
+      "working_set_bytes": 15355904,
+      "cpu_ns": 734375000,
+      "cpu_cycles": 20649263608
+    },
+    {
+      "elapsed_seconds": 361.07751900000017,
+      "operations": 2670592,
+      "sessions": 652,
+      "private_bytes": 7241728,
+      "working_set_bytes": 14868480,
+      "cpu_ns": 765625000,
+      "cpu_cycles": 23380099882
+    },
+    {
+      "elapsed_seconds": 421.19688250000013,
+      "operations": 2957312,
+      "sessions": 722,
+      "private_bytes": 7553024,
+      "working_set_bytes": 15208448,
+      "cpu_ns": 781250000,
+      "cpu_cycles": 26114815073
+    },
+    {
+      "elapsed_seconds": 481.3116974000002,
+      "operations": 3244032,
+      "sessions": 792,
+      "private_bytes": 7151616,
+      "working_set_bytes": 14716928,
+      "cpu_ns": 812500000,
+      "cpu_cycles": 28660336364
+    },
+    {
+      "elapsed_seconds": 541.3368817,
+      "operations": 3530752,
+      "sessions": 862,
+      "private_bytes": 8499200,
+      "working_set_bytes": 15970304,
+      "cpu_ns": 875000000,
+      "cpu_cycles": 31240834954
+    },
+    {
+      "elapsed_seconds": 601.3469517999999,
+      "operations": 3817472,
+      "sessions": 932,
+      "private_bytes": 8527872,
+      "working_set_bytes": 15994880,
+      "cpu_ns": 890625000,
+      "cpu_cycles": 33800829910
+    },
+    {
+      "elapsed_seconds": 661.4866471000003,
+      "operations": 4104192,
+      "sessions": 1002,
+      "private_bytes": 8523776,
+      "working_set_bytes": 16429056,
+      "cpu_ns": 968750000,
+      "cpu_cycles": 36469630282
+    },
+    {
+      "elapsed_seconds": 721.6114287000003,
+      "operations": 4390912,
+      "sessions": 1072,
+      "private_bytes": 8495104,
+      "working_set_bytes": 16367616,
+      "cpu_ns": 1031250000,
+      "cpu_cycles": 39114612589
+    },
+    {
+      "elapsed_seconds": 781.7742169999999,
+      "operations": 4677632,
+      "sessions": 1142,
+      "private_bytes": 8495104,
+      "working_set_bytes": 16056320,
+      "cpu_ns": 1093750000,
+      "cpu_cycles": 41814073693
+    },
+    {
+      "elapsed_seconds": 841.9696313000002,
+      "operations": 4964352,
+      "sessions": 1212,
+      "private_bytes": 7110656,
+      "working_set_bytes": 15036416,
+      "cpu_ns": 1203125000,
+      "cpu_cycles": 44537121352
+    },
+    {
+      "elapsed_seconds": 902.1567611000003,
+      "operations": 5251072,
+      "sessions": 1282,
+      "private_bytes": 7847936,
+      "working_set_bytes": 15785984,
+      "cpu_ns": 1203125000,
+      "cpu_cycles": 47213484748
+    },
+    {
+      "elapsed_seconds": 962.2981053000001,
+      "operations": 5537792,
+      "sessions": 1352,
+      "private_bytes": 7847936,
+      "working_set_bytes": 15773696,
+      "cpu_ns": 1281250000,
+      "cpu_cycles": 49863395409
+    },
+    {
+      "elapsed_seconds": 1022.4976706,
+      "operations": 5824512,
+      "sessions": 1422,
+      "private_bytes": 7782400,
+      "working_set_bytes": 15687680,
+      "cpu_ns": 1343750000,
+      "cpu_cycles": 52589321714
+    },
+    {
+      "elapsed_seconds": 1082.6810836000002,
+      "operations": 6111232,
+      "sessions": 1492,
+      "private_bytes": 8499200,
+      "working_set_bytes": 15765504,
+      "cpu_ns": 1406250000,
+      "cpu_cycles": 55246166159
+    },
+    {
+      "elapsed_seconds": 1142.8292641,
+      "operations": 6397952,
+      "sessions": 1562,
+      "private_bytes": 7782400,
+      "working_set_bytes": 15704064,
+      "cpu_ns": 1453125000,
+      "cpu_cycles": 57918398431
+    },
+    {
+      "elapsed_seconds": 1202.9826370000003,
+      "operations": 6684672,
+      "sessions": 1632,
+      "private_bytes": 7786496,
+      "working_set_bytes": 15683584,
+      "cpu_ns": 1515625000,
+      "cpu_cycles": 60577881375
+    },
+    {
+      "elapsed_seconds": 1263.1731531000003,
+      "operations": 6971392,
+      "sessions": 1702,
+      "private_bytes": 7786496,
+      "working_set_bytes": 14835712,
+      "cpu_ns": 1578125000,
+      "cpu_cycles": 63301995150
+    },
+    {
+      "elapsed_seconds": 1323.3167279000002,
+      "operations": 7258112,
+      "sessions": 1772,
+      "private_bytes": 7782400,
+      "working_set_bytes": 15155200,
+      "cpu_ns": 1656250000,
+      "cpu_cycles": 65953218465
+    },
+    {
+      "elapsed_seconds": 1383.5537222,
+      "operations": 7544832,
+      "sessions": 1842,
+      "private_bytes": 7847936,
+      "working_set_bytes": 15298560,
+      "cpu_ns": 1703125000,
+      "cpu_cycles": 68648653378
+    },
+    {
+      "elapsed_seconds": 1443.7395495000003,
+      "operations": 7831552,
+      "sessions": 1912,
+      "private_bytes": 7135232,
+      "working_set_bytes": 15003648,
+      "cpu_ns": 1718750000,
+      "cpu_cycles": 71320266793
+    },
+    {
+      "elapsed_seconds": 1503.9356765999999,
+      "operations": 8118272,
+      "sessions": 1982,
+      "private_bytes": 8499200,
+      "working_set_bytes": 15859712,
+      "cpu_ns": 1781250000,
+      "cpu_cycles": 74005843581
+    },
+    {
+      "elapsed_seconds": 1564.1422544,
+      "operations": 8404992,
+      "sessions": 2052,
+      "private_bytes": 7815168,
+      "working_set_bytes": 15384576,
+      "cpu_ns": 1843750000,
+      "cpu_cycles": 76702167605
+    },
+    {
+      "elapsed_seconds": 1624.3472149000002,
+      "operations": 8691712,
+      "sessions": 2122,
+      "private_bytes": 7815168,
+      "working_set_bytes": 15368192,
+      "cpu_ns": 1921875000,
+      "cpu_cycles": 79347366352
+    },
+    {
+      "elapsed_seconds": 1684.4769503,
+      "operations": 8978432,
+      "sessions": 2192,
+      "private_bytes": 7815168,
+      "working_set_bytes": 15745024,
+      "cpu_ns": 2031250000,
+      "cpu_cycles": 82005609588
+    },
+    {
+      "elapsed_seconds": 1744.6972766000001,
+      "operations": 9265152,
+      "sessions": 2262,
+      "private_bytes": 7815168,
+      "working_set_bytes": 15069184,
+      "cpu_ns": 2078125000,
+      "cpu_cycles": 84688285032
+    },
+    {
+      "elapsed_seconds": 1804.9630176000003,
+      "operations": 9551872,
+      "sessions": 2332,
+      "private_bytes": 7811072,
+      "working_set_bytes": 15486976,
+      "cpu_ns": 2125000000,
+      "cpu_cycles": 87348247887
+    },
+    {
+      "elapsed_seconds": 1865.2379872,
+      "operations": 9838592,
+      "sessions": 2402,
+      "private_bytes": 8527872,
+      "working_set_bytes": 16142336,
+      "cpu_ns": 2234375000,
+      "cpu_cycles": 90029427748
+    },
+    {
+      "elapsed_seconds": 1925.5015792000002,
+      "operations": 10125312,
+      "sessions": 2472,
+      "private_bytes": 7815168,
+      "working_set_bytes": 15675392,
+      "cpu_ns": 2312500000,
+      "cpu_cycles": 92711254345
+    },
+    {
+      "elapsed_seconds": 1985.7672587,
+      "operations": 10412032,
+      "sessions": 2542,
+      "private_bytes": 8527872,
+      "working_set_bytes": 16146432,
+      "cpu_ns": 2390625000,
+      "cpu_cycles": 95356125405
+    },
+    {
+      "elapsed_seconds": 2046.0240579,
+      "operations": 10698752,
+      "sessions": 2612,
+      "private_bytes": 8667136,
+      "working_set_bytes": 16052224,
+      "cpu_ns": 2515625000,
+      "cpu_cycles": 98008045356
+    },
+    {
+      "elapsed_seconds": 2106.3150293999997,
+      "operations": 10985472,
+      "sessions": 2682,
+      "private_bytes": 9244672,
+      "working_set_bytes": 17141760,
+      "cpu_ns": 2546875000,
+      "cpu_cycles": 100684308222
+    },
+    {
+      "elapsed_seconds": 2166.5857177,
+      "operations": 11272192,
+      "sessions": 2752,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16736256,
+      "cpu_ns": 2578125000,
+      "cpu_cycles": 103342854124
+    },
+    {
+      "elapsed_seconds": 2226.8421522999997,
+      "operations": 11558912,
+      "sessions": 2822,
+      "private_bytes": 9527296,
+      "working_set_bytes": 17408000,
+      "cpu_ns": 2671875000,
+      "cpu_cycles": 106020068331
+    },
+    {
+      "elapsed_seconds": 2287.1202486,
+      "operations": 11845632,
+      "sessions": 2892,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16691200,
+      "cpu_ns": 2796875000,
+      "cpu_cycles": 108653141588
+    },
+    {
+      "elapsed_seconds": 2347.4066506,
+      "operations": 12132352,
+      "sessions": 2962,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16994304,
+      "cpu_ns": 2859375000,
+      "cpu_cycles": 111343684452
+    },
+    {
+      "elapsed_seconds": 2407.6990741,
+      "operations": 12419072,
+      "sessions": 3032,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16977920,
+      "cpu_ns": 2890625000,
+      "cpu_cycles": 114031206935
+    },
+    {
+      "elapsed_seconds": 2467.9679204000004,
+      "operations": 12705792,
+      "sessions": 3102,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16969728,
+      "cpu_ns": 2937500000,
+      "cpu_cycles": 116706075013
+    },
+    {
+      "elapsed_seconds": 2528.2110107,
+      "operations": 12992512,
+      "sessions": 3172,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16994304,
+      "cpu_ns": 2984375000,
+      "cpu_cycles": 119365145985
+    },
+    {
+      "elapsed_seconds": 2588.4452928,
+      "operations": 13279232,
+      "sessions": 3242,
+      "private_bytes": 9531392,
+      "working_set_bytes": 17367040,
+      "cpu_ns": 3093750000,
+      "cpu_cycles": 122023178203
+    },
+    {
+      "elapsed_seconds": 2648.7242948000003,
+      "operations": 13565952,
+      "sessions": 3312,
+      "private_bytes": 9531392,
+      "working_set_bytes": 16998400,
+      "cpu_ns": 3171875000,
+      "cpu_cycles": 124704590176
+    },
+    {
+      "elapsed_seconds": 2708.9961513999997,
+      "operations": 13852672,
+      "sessions": 3382,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17559552,
+      "cpu_ns": 3203125000,
+      "cpu_cycles": 127377799248
+    },
+    {
+      "elapsed_seconds": 2769.2861936,
+      "operations": 14139392,
+      "sessions": 3452,
+      "private_bytes": 8527872,
+      "working_set_bytes": 16445440,
+      "cpu_ns": 3265625000,
+      "cpu_cycles": 130055644011
+    },
+    {
+      "elapsed_seconds": 2829.5560085999996,
+      "operations": 14426112,
+      "sessions": 3522,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17559552,
+      "cpu_ns": 3312500000,
+      "cpu_cycles": 132728651495
+    },
+    {
+      "elapsed_seconds": 2889.8406066,
+      "operations": 14712832,
+      "sessions": 3592,
+      "private_bytes": 8589312,
+      "working_set_bytes": 16269312,
+      "cpu_ns": 3343750000,
+      "cpu_cycles": 135393560574
+    },
+    {
+      "elapsed_seconds": 2950.1166593,
+      "operations": 14999552,
+      "sessions": 3662,
+      "private_bytes": 9670656,
+      "working_set_bytes": 17563648,
+      "cpu_ns": 3421875000,
+      "cpu_cycles": 138058731912
+    },
+    {
+      "elapsed_seconds": 3010.3915602999996,
+      "operations": 15286272,
+      "sessions": 3732,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17567744,
+      "cpu_ns": 3453125000,
+      "cpu_cycles": 140713626027
+    },
+    {
+      "elapsed_seconds": 3070.6399289,
+      "operations": 15572992,
+      "sessions": 3802,
+      "private_bytes": 9646080,
+      "working_set_bytes": 17387520,
+      "cpu_ns": 3578125000,
+      "cpu_cycles": 143386023310
+    },
+    {
+      "elapsed_seconds": 3130.9000042999996,
+      "operations": 15859712,
+      "sessions": 3872,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17547264,
+      "cpu_ns": 3687500000,
+      "cpu_cycles": 146012595458
+    },
+    {
+      "elapsed_seconds": 3191.1789391,
+      "operations": 16146432,
+      "sessions": 3942,
+      "private_bytes": 9650176,
+      "working_set_bytes": 17158144,
+      "cpu_ns": 3718750000,
+      "cpu_cycles": 148659587158
+    },
+    {
+      "elapsed_seconds": 3251.4553293,
+      "operations": 16433152,
+      "sessions": 4012,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17317888,
+      "cpu_ns": 3796875000,
+      "cpu_cycles": 151324084483
+    },
+    {
+      "elapsed_seconds": 3311.7669406999994,
+      "operations": 16719872,
+      "sessions": 4082,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17571840,
+      "cpu_ns": 3843750000,
+      "cpu_cycles": 154009780510
+    },
+    {
+      "elapsed_seconds": 3372.0518549,
+      "operations": 17006592,
+      "sessions": 4152,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17567744,
+      "cpu_ns": 3953125000,
+      "cpu_cycles": 156670098189
+    },
+    {
+      "elapsed_seconds": 3432.2820618999995,
+      "operations": 17293312,
+      "sessions": 4222,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17121280,
+      "cpu_ns": 4000000000,
+      "cpu_cycles": 159279389618
+    },
+    {
+      "elapsed_seconds": 3492.5520453,
+      "operations": 17580032,
+      "sessions": 4292,
+      "private_bytes": 9674752,
+      "working_set_bytes": 17182720,
+      "cpu_ns": 4046875000,
+      "cpu_cycles": 161934005860
+    },
+    {
+      "elapsed_seconds": 3552.8554156,
+      "operations": 17866752,
+      "sessions": 4362,
+      "private_bytes": 9670656,
+      "working_set_bytes": 17555456,
+      "cpu_ns": 4093750000,
+      "cpu_cycles": 164633183698
+    }
+  ],
+  "final_metrics": {
+    "private_bytes": 9670656,
+    "working_set_bytes": 17539072,
+    "cpu_ns": 4125000000,
+    "cpu_cycles": 166723085273
+  },
+  "post_warmup_private_bytes": {
+    "count": 55,
+    "p50": 8527872.0,
+    "p95": 9674752.0,
+    "p99": 9674752.0,
+    "maximum": 9674752,
+    "mean": 8661401.6
+  },
+  "memory_plateau_passed": false
+}

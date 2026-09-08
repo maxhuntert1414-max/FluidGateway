@@ -1,0 +1,32 @@
+{
+  "schema": "fluidgateway-decoded-core-profile-v1",
+  "native_sha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654",
+  "benchmark_sha256": "b91278ca14e6e414894d400982f7ebf81acd1bf56af4514bb4674852f5906bf6",
+  "warmup_sessions": 5,
+  "operations": 32768,
+  "operations_per_session": 512,
+  "writes_every": 64,
+  "python": {
+    "event_us": {
+      "count": 32768,
+      "p50": 115.8,
+      "p95": 122.9,
+      "p99": 163.89899999999943,
+      "maximum": 5833.6,
+      "mean": 119.2151092529297
+    },
+    "operations_per_second": 8070.290734892533,
+    "cpu_cycles_per_operation": 320834.2482910156,
+    "process_private_bytes": 24420352
+  },
+  "native": {
+    "operations": 32768,
+    "p50_us": 0.4,
+    "p95_us": 1.6,
+    "p99_us": 6.5,
+    "cpu_cycles_per_operation": 2555.55593872,
+    "peak_state_bytes": 151616,
+    "operations_per_second": 1012110.86024
+  },
+  "scope": "Decoded-operation handling: Python online adapter versus native state; no decode/encode/TCP/GPU. Throughput and CPU include session setup. Native PMR peak is not process private memory."
+}

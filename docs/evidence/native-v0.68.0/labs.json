@@ -1,0 +1,363 @@
+{
+  "schema": "fluidgateway-native-release-labs-v1",
+  "executable_sha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654",
+  "scope": "Selected numeric and boolean fields from owned/cooperative lab reports. Process identifiers and local paths omitted. Logical API omissions are not physical transfer savings or game performance evidence.",
+  "sources": [
+    {
+      "file": "native-fixed-workers-d3d11-invalid.json",
+      "sha256": "db7df118146c6272ab3a9aac10196c079da9d85bbfe4f93431d3d4dead44d887"
+    },
+    {
+      "file": "native-fixed-workers-d3d11-slow.json",
+      "sha256": "d160490d6a6c0f70ee21ab7995c76d557f8d310b7ca9ee79568554782199a8d1"
+    },
+    {
+      "file": "native-fixed-workers-d3d11-stall.json",
+      "sha256": "936e3421016550104ab24a8b467e728cffcad9d10199018c2083218022735909"
+    },
+    {
+      "file": "native-fixed-workers-d3d11.json",
+      "sha256": "6a13ff431360b69ea00ba0c3189365a10f1d3ccba5f36ff3ceff6d34dc215b79"
+    },
+    {
+      "file": "native-fixed-workers-d3d12-invalid.json",
+      "sha256": "3df6de3fe00a28f1d8c34b781afdd8c83a83c3c4395830f9cdd793c1ae9dc6b1"
+    },
+    {
+      "file": "native-fixed-workers-d3d12-slow.json",
+      "sha256": "9da015e57ccc1efc7d81f2fefb76aba7e5c42d1f82467d2893262ceaaa69b33a"
+    },
+    {
+      "file": "native-fixed-workers-d3d12-stall.json",
+      "sha256": "2873740fcdf4114bd08efcfe90f025bc2c8f1b0193181e8e68cbdcc4858a813f"
+    },
+    {
+      "file": "native-fixed-workers-d3d12.json",
+      "sha256": "4284fb32f58383cd6fe6d486b4f1d321429b421e0440c454f34d661591e1ea3b"
+    },
+    {
+      "file": "native-fixed-workers-intercommunication.json",
+      "sha256": "69aa53814a17e1e13a25799f4a3fdedacfe2e7eff83e2f9dc8f5cd198f1fcc6b"
+    },
+    {
+      "file": "native-fixed-workers-vulkan-invalid.json",
+      "sha256": "ec8a5c9f580e01ecdb1f34f0a0c4541272b4abf3a498f17777555dec6dab1b08"
+    },
+    {
+      "file": "native-fixed-workers-vulkan-slow.json",
+      "sha256": "1c54bd32faa775d8d343288b154bffbcdfecd9e728dda177bcb43c7fa8aa988f"
+    },
+    {
+      "file": "native-fixed-workers-vulkan-stall.json",
+      "sha256": "9f31d9d962d2429f2e869791fb95192c3f80d77971581a9180f6871f2698e7f7"
+    },
+    {
+      "file": "native-fixed-workers-vulkan-success.json",
+      "sha256": "8f45d816feb135b7c1496c38ab0ddbf9dbbd00b032cc0737b94c722325b59890"
+    }
+  ],
+  "interop": {
+    "protocol": "fluidlink-v2",
+    "contract_sha256": "0d24d96aec32d74e123f9e198e51adde74ddf190e8c40b0ac18bddf5c4108b2f",
+    "contract_verified": true,
+    "runtime_event_count": 8,
+    "round_trip_count": 11,
+    "total_frame_bytes": 1880,
+    "v1_baseline_total_frame_bytes": 3189,
+    "intercommunication_verified": true
+  },
+  "d3d11": {
+    "binding_verified": true,
+    "exact_content_gate": true,
+    "mutation_guard": true,
+    "generation_guard": true,
+    "content_equivalent": true,
+    "rollback_verified": true,
+    "native_evidence": {
+      "included_trial_pairs": 2,
+      "adapter_description": "Microsoft Basic Render Driver",
+      "redundant_update_count_per_optimized_run": 128,
+      "avoided_update_bytes_per_optimized_run": 536870912,
+      "performance_claim_allowed": false
+    },
+    "concurrency": {
+      "mode": "fluidruntime-gateway-authorization-concurrency-v0.19.0",
+      "candidate_action_count": 128,
+      "max_concurrency": 8,
+      "samples_per_level": 32,
+      "p99_budget_milliseconds": 250,
+      "target_sha256": "35d301ef6a27853d6efa4c3ad40fa953c60ed3ae6e2f65a32a2627bd6913ed09",
+      "hook_sha256": "8f2fe90886c6e3da5089ef75dfcb6e4f0db7f7fd33ba0a2d212f67f6bec474e3",
+      "protocol": "fluidlink-v2",
+      "contract_sha256": "bf8727c22ac878ceff6dd0f462d6db5e81174737e839ecdf2e263a6f55268542",
+      "advertised_server_name": "fluidgateway",
+      "advertised_server_version": "0.68.0",
+      "peer_executable_sha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654",
+      "peer_process_started_at_utc": "2026-09-07T17:40:15.5049389-03:00",
+      "total_warmup_request_count": 15,
+      "total_measured_request_count": 128,
+      "total_failure_count": 0,
+      "total_round_trip_count": 1280,
+      "total_candidate_decision_count": 16384,
+      "total_bytes_sent": 149504,
+      "total_bytes_received": 399616,
+      "exact_decisions_verified": true,
+      "contexts_unique": true,
+      "peer_identity_stable": true,
+      "reliability_gate_passed": true,
+      "shared_memory_prototype_justified": false,
+      "transport_decision": "retain-loopback-tcp-for-current-session-level-control",
+      "reliability_blockers": [],
+      "levels": [
+        {
+          "concurrency": 1,
+          "warmup_request_count": 1,
+          "measured_request_count": 32,
+          "failure_count": 0,
+          "wall_time_milliseconds": 173.216,
+          "throughput_requests_per_second": 184.74,
+          "latency_microseconds": {
+            "count": 32,
+            "minimum": 5274,
+            "p50": 5353,
+            "p95": 5685.85,
+            "p99": 5755.1,
+            "maximum": 5783,
+            "mean": 5407.094
+          },
+          "round_trip_count": 320,
+          "candidate_decision_count": 4096,
+          "bytes_sent": 37376,
+          "bytes_received": 99904,
+          "exact_decisions_verified": true,
+          "contexts_unique": true,
+          "peer_identity_stable": true,
+          "failure_counts_by_type": {},
+          "failure_counts_by_reason": {},
+          "failure_counts_by_completed_round_trips": {}
+        },
+        {
+          "concurrency": 2,
+          "warmup_request_count": 2,
+          "measured_request_count": 32,
+          "failure_count": 0,
+          "wall_time_milliseconds": 93.27,
+          "throughput_requests_per_second": 343.09,
+          "latency_microseconds": {
+            "count": 32,
+            "minimum": 5464,
+            "p50": 5682,
+            "p95": 6874.45,
+            "p99": 8019.85,
+            "maximum": 8040,
+            "mean": 5810.75
+          },
+          "round_trip_count": 320,
+          "candidate_decision_count": 4096,
+          "bytes_sent": 37376,
+          "bytes_received": 99904,
+          "exact_decisions_verified": true,
+          "contexts_unique": true,
+          "peer_identity_stable": true,
+          "failure_counts_by_type": {},
+          "failure_counts_by_reason": {},
+          "failure_counts_by_completed_round_trips": {}
+        },
+        {
+          "concurrency": 4,
+          "warmup_request_count": 4,
+          "measured_request_count": 32,
+          "failure_count": 0,
+          "wall_time_milliseconds": 50.651,
+          "throughput_requests_per_second": 631.771,
+          "latency_microseconds": {
+            "count": 32,
+            "minimum": 5475,
+            "p50": 5797,
+            "p95": 7566.9,
+            "p99": 8620.38,
+            "maximum": 8683,
+            "mean": 5991.094
+          },
+          "round_trip_count": 320,
+          "candidate_decision_count": 4096,
+          "bytes_sent": 37376,
+          "bytes_received": 99904,
+          "exact_decisions_verified": true,
+          "contexts_unique": true,
+          "peer_identity_stable": true,
+          "failure_counts_by_type": {},
+          "failure_counts_by_reason": {},
+          "failure_counts_by_completed_round_trips": {}
+        },
+        {
+          "concurrency": 8,
+          "warmup_request_count": 8,
+          "measured_request_count": 32,
+          "failure_count": 0,
+          "wall_time_milliseconds": 33.955,
+          "throughput_requests_per_second": 942.413,
+          "latency_microseconds": {
+            "count": 32,
+            "minimum": 6320,
+            "p50": 7029,
+            "p95": 10346.4,
+            "p99": 11319.54,
+            "maximum": 11650,
+            "mean": 7814.438
+          },
+          "round_trip_count": 320,
+          "candidate_decision_count": 4096,
+          "bytes_sent": 37376,
+          "bytes_received": 99904,
+          "exact_decisions_verified": true,
+          "contexts_unique": true,
+          "peer_identity_stable": true,
+          "failure_counts_by_type": {},
+          "failure_counts_by_reason": {},
+          "failure_counts_by_completed_round_trips": {}
+        }
+      ]
+    }
+  },
+  "d3d12": {
+    "peer_process_binding_verified": true,
+    "included_trial_pairs": 2,
+    "adapter_description": "Microsoft Basic Render Driver",
+    "candidate_action_count": 128,
+    "avoided_logical_bytes_per_optimized_run": 536870912,
+    "content_equivalent": true,
+    "immutable_source_guard_passed": true,
+    "automatic_invalidation_guard_passed": true,
+    "explicit_invalidation_guard_passed": true,
+    "fence_completed_in_all_runs": true,
+    "rollback_restored_in_all_runs": true,
+    "native_execution_gate_passed": false,
+    "performance_claim_allowed": false,
+    "native_execution_gate_blockers": [
+      "software-adapter-not-hardware",
+      "insufficient-paired-samples"
+    ],
+    "performance_claim_blockers": [
+      "software-adapter-not-hardware",
+      "insufficient-paired-samples"
+    ]
+  },
+  "vulkan": {
+    "native_execution_gate_passed": true,
+    "performance_claim_allowed": false,
+    "pairs": [
+      {
+        "device_name": "AMD Radeon RX 580 2048SP",
+        "forwarded_copies": 8,
+        "skipped_copies": 128,
+        "content_equivalent": true,
+        "rollback_verified": true,
+        "source_mutation_guard_verified": true,
+        "invalidation_guards_verified": true
+      },
+      {
+        "device_name": "AMD Radeon RX 580 2048SP",
+        "forwarded_copies": 8,
+        "skipped_copies": 128,
+        "content_equivalent": true,
+        "rollback_verified": true,
+        "source_mutation_guard_verified": true,
+        "invalidation_guards_verified": true
+      }
+    ]
+  },
+  "faults": [
+    {
+      "case": "invalid",
+      "d3d11": {
+        "native_policy_published": false,
+        "baseline_fallback_completed": true,
+        "forwarded_update_subresource_count": 134,
+        "skipped_update_subresource_count": 0,
+        "content_equivalent": true,
+        "rollback_restored": true
+      },
+      "d3d12": {
+        "native_policy_published": false,
+        "forwarded": 136,
+        "skipped": 0,
+        "content_equivalent": true,
+        "rollback_restored": true
+      },
+      "vulkan": {
+        "native_policy_published": false,
+        "native_evidence": {
+          "forwarded_copies": 136,
+          "skipped_copies": 0,
+          "content_equivalent": true,
+          "rollback_verified": true
+        }
+      }
+    },
+    {
+      "case": "stall",
+      "d3d11": {
+        "native_policy_published": false,
+        "baseline_fallback_completed": true,
+        "forwarded_update_subresource_count": 134,
+        "skipped_update_subresource_count": 0,
+        "content_equivalent": true,
+        "rollback_restored": true
+      },
+      "d3d12": {
+        "native_policy_published": false,
+        "forwarded": 136,
+        "skipped": 0,
+        "content_equivalent": true,
+        "rollback_restored": true
+      },
+      "vulkan": {
+        "native_policy_published": false,
+        "native_evidence": {
+          "forwarded_copies": 136,
+          "skipped_copies": 0,
+          "content_equivalent": true,
+          "rollback_verified": true
+        }
+      }
+    },
+    {
+      "case": "slow",
+      "d3d11": {
+        "native_policy_published": false,
+        "baseline_fallback_completed": true,
+        "forwarded_update_subresource_count": 134,
+        "skipped_update_subresource_count": 0,
+        "content_equivalent": true,
+        "rollback_restored": true
+      },
+      "d3d12": {
+        "native_policy_published": false,
+        "forwarded": 136,
+        "skipped": 0,
+        "content_equivalent": true,
+        "rollback_restored": true
+      },
+      "vulkan": {
+        "native_policy_published": false,
+        "native_evidence": {
+          "forwarded_copies": 136,
+          "skipped_copies": 0,
+          "content_equivalent": true,
+          "rollback_verified": true
+        }
+      }
+    }
+  ],
+  "standalone": {
+    "schema": "fluidruntime-native-gateway-standalone-v1",
+    "full_path_passed": true,
+    "executable_sha256": "33f6ca5033039d474a37915dc07a1fcb159b1458fc4bb217abe8719a276ea654",
+    "python_available_on_path": false,
+    "actual_peer_binding_verified": true,
+    "content_and_rollback_verified": true,
+    "omitted_calls_per_owned_run": 128,
+    "game_performance_claim": false
+  }
+}
