@@ -13,6 +13,15 @@ $sha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant(
 if ($sha -ne $manifest.executable_sha256 -or $manifest.python_required) {
     throw 'Package manifest identity mismatch.'
 }
+if ($manifest.PSObject.Properties.Name -contains 'library_sha256') {
+    $dll = Join-Path $package 'FluidGatewayNative.dll'
+    if ((Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant() -ne $manifest.library_sha256 -or
+        $manifest.abi_version -ne 65536 -or
+        -not (Test-Path -LiteralPath (Join-Path $package 'include/fluidgateway_native.h')) -or
+        -not (Test-Path -LiteralPath (Join-Path $package 'lib/FluidGatewayNative.lib'))) {
+        throw 'Package DLL/ABI manifest identity mismatch.'
+    }
+}
 
 function Convert-Hex([string]$Hex) {
     $bytes = New-Object byte[] ($Hex.Length / 2)

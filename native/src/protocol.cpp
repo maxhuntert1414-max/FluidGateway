@@ -224,21 +224,27 @@ Frame decode_frame(std::span<const std::uint8_t> bytes) {
 Bytes encode_frame(const Frame& f) {
     if (f.payload.size() > max_payload)
         throw Error(1, "Payload limit exceeded.");
-    Writer w;
-    w.raw(std::array<std::uint8_t, 4>{'F', 'L', 'N', 'K'});
-    w.integer(2, 1);
-    w.integer(f.kind, 1);
-    w.integer(f.opcode, 1);
-    w.integer(f.subject, 1);
-    w.integer(f.decision, 1);
-    w.integer(f.flags, 1);
-    w.integer(0, 2);
-    w.integer(f.sequence, 8);
-    w.raw(f.message);
-    w.raw(f.session);
-    w.integer(f.payload.size(), 4);
-    w.raw(f.payload);
-    return w.data;
+    Bytes result(header_size + f.payload.size());
+    encode_frame_into(f, result);
+    return result;
+}
+std::size_t encode_frame_into(const Frame& f, std::span<std::uint8_t> destination) {
+    if (f.payload.size() > max_payload)
+        throw Error(1, "Payload limit exceeded.");
+    const auto size = header_size + f.payload.size();
+    if (destination.size() < size)
+        throw Error(1, "Response buffer too small.");
+    const std::array<std::uint8_t, 12> prefix{
+        'F', 'L', 'N', 'K', 2, f.kind, f.opcode, f.subject, f.decision, f.flags, 0, 0};
+    std::copy(prefix.begin(), prefix.end(), destination.begin());
+    for (unsigned i = 0; i < 8; ++i)
+        destination[12 + i] = static_cast<std::uint8_t>(f.sequence >> (8 * i));
+    std::copy(f.message.begin(), f.message.end(), destination.begin() + 20);
+    std::copy(f.session.begin(), f.session.end(), destination.begin() + 36);
+    for (unsigned i = 0; i < 4; ++i)
+        destination[52 + i] = static_cast<std::uint8_t>(f.payload.size() >> (8 * i));
+    std::copy(f.payload.begin(), f.payload.end(), destination.begin() + header_size);
+    return size;
 }
 Frame ProtocolSession::respond(const Frame& request,
                                std::uint8_t opcode,

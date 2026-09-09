@@ -21,6 +21,7 @@ struct Error : std::runtime_error {
 class BudgetResource final : public std::pmr::memory_resource {
 public:
     std::size_t used = 0, peak = 0;
+    std::uint64_t allocation_count = 0, allocated_bytes = 0;
 
 private:
     void* do_allocate(std::size_t bytes, std::size_t alignment) override;

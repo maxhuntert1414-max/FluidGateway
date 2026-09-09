@@ -1,0 +1,8 @@
+﻿{
+    "version":  "0.69.0",
+    "abi_version":  65536,
+    "executable_sha256":  "cde3cb736a22b5aed0e9fb5f5e15ce40662cf3dd679cd24fdddd45ff2069a41b",
+    "library_sha256":  "51b877627bfd2ea0f9384d7869706f4bf5e416b0190688b3a479826973d0e220",
+    "python_required":  false,
+    "default_backend":  "server"
+}

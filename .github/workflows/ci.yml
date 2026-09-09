@@ -16,10 +16,10 @@ jobs:
       - name: Check native and validation-tool formatting
         shell: pwsh
         run: |
-          $cpp = Get-ChildItem native/include,native/src,native/tests -File | Where-Object Extension -in '.hpp','.cpp'
+          $cpp = Get-ChildItem native/include,native/src,native/tests -File | Where-Object Extension -in '.h','.c','.hpp','.cpp'
           clang-format --dry-run --Werror $cpp.FullName
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          ruff format --check tools tests/test_native_gateway.py tests/test_native_validation.py
+          ruff format --check tools tests/test_native_gateway.py tests/test_native_validation.py tests/test_native_inprocess.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
   test:
@@ -98,27 +98,20 @@ jobs:
             }
             $env:PATH = "$tools;$env:PATH"
             $env:ASAN_OPTIONS = 'halt_on_error=1:abort_on_error=1:detect_leaks=0'
+            $env:FLUIDGATEWAY_ASAN_DIRECTORY = $tools
           }
           ctest --test-dir native/build -C ${{ matrix.configuration }} --output-on-failure
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $env:FLUIDGATEWAY_NATIVE = "$PWD/native/build/${{ matrix.configuration }}/fluidgateway-native.exe"
-          python -m unittest tests.test_native_gateway -v
+          python -m unittest tests.test_native_gateway tests.test_native_inprocess -v
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Package release
         if: matrix.id == 'release'
         shell: pwsh
         run: |
-          cmake --install native/build --config Release --prefix tmp/native-release
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          Copy-Item docs/native-gateway.md tmp/native-release/README.md
-          $exe = 'tmp/native-release/fluidgateway-native.exe'
-          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          @{ version = '0.68.0'; executable_sha256 = $hash; python_required = $false } |
-            ConvertTo-Json | Set-Content tmp/native-release/manifest.json -Encoding utf8
-          ./tools/Test-NativePackage.ps1 -PackagePath tmp/native-release
-          Compress-Archive -Path tmp/native-release/* -DestinationPath tmp/fluidgateway-native-v0.68.0-win-x64.zip
+          ./tools/Build-NativePackage.ps1 -OutputDirectory tmp/native-release
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: matrix.id == 'release'
         with:
           name: fluidgateway-native-win-x64
-          path: tmp/fluidgateway-native-v0.68.0-win-x64.zip
+          path: tmp/fluidgateway-native-v0.69.0-win-x64.zip

@@ -1,5 +1,8 @@
 # Native Online Gateway
 
+The server remains the default. v0.69 also includes an explicit
+[in-process DLL backend](inprocess-gateway.md) using the same core and contracts.
+
 FluidGateway's C++20 executable handles live FluidLink decisions without loading
 Python. Python remains the offline diagnostic/reporting tool and reference test
 implementation; FluidRuntime remains the separate C# coordinator and C++ actuator.

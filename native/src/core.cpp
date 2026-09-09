@@ -7,7 +7,11 @@ namespace fluidgateway {
 void* BudgetResource::do_allocate(std::size_t bytes, std::size_t alignment) {
     if (bytes > state_limit - used)
         throw Error(11, "Session state exceeds 8 MiB; reconnect.", true);
+    if (allocation_count == UINT64_MAX || bytes > UINT64_MAX - allocated_bytes)
+        throw Error(11, "Allocation counter exhausted; reconnect.", true);
     void* p = std::pmr::new_delete_resource()->allocate(bytes, alignment);
+    ++allocation_count;
+    allocated_bytes += bytes;
     used += bytes;
     peak = std::max(used, peak);
     return p;

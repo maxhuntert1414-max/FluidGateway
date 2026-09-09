@@ -7,7 +7,7 @@
 [![CI](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/maxhuntert1414-max/FluidGateway/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.13-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![C++](https://img.shields.io/badge/online_core-C%2B%2B20-00599c)](docs/native-gateway.md)
-[![Version](https://img.shields.io/badge/version-0.68.0-ef6c35)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-0.69.0-ef6c35)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 
 FluidGateway is the diagnostic and decision layer of the Fluid project. The
@@ -24,6 +24,7 @@ physically unified memory, but it can coordinate the path with less waste.
 | FluidLink v2 | Strict positional binary IPC with numeric opcodes |
 | FluidLink operation batch | 129 logical operations in 1 bounded request/vector pair |
 | Native online server | C++20, no Python dependency, bounded state and loopback IPC |
+| In-process backend | Opt-in C ABI DLL, same C++ core, no localhost round trip |
 | Local readiness | `doctor` reports available and blocked capabilities without changing system settings |
 | Native intervention | Bounded owned D3D11, D3D12 and cooperative Vulkan paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | Application-session diagnosis | HTML/JSON import of Runtime Vulkan counters and Windows priority-lease evidence |
@@ -34,6 +35,8 @@ the offline analysis and reporting tool. Existing binary contracts and Runtime
 authority gates are preserved. The [v0.68 validation results](docs/release-v0.68.0.md)
 include a completed 60-minute soak and 30 paired Runtime authorizations.
 See [native usage, limits and verification](docs/native-gateway.md).
+The [in-process backend](docs/inprocess-gateway.md) removes socket transport when
+explicitly selected; the isolated server remains available and is still the default.
 
 Current `main` also diagnoses opt-in third-party Vulkan sessions from Runtime
 v0.23. [Application sessions](docs/application-sessions.md) collect CPU/RAM and

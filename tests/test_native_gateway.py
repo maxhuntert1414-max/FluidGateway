@@ -12,6 +12,7 @@ import time
 import unittest
 
 from fluidgateway.adapter import RuntimeAdapterSession
+from fluidgateway import __version__
 from fluidgateway import fluidlink_v2 as wire
 from tools.native_gateway_validation import Peer, ROOT, native_executable, server
 
@@ -90,7 +91,7 @@ def op(name, **overrides):
 class NativeGatewayTests(unittest.TestCase):
     def compare(self, events, batch=False):
         protocol = wire.FluidLinkV2ServerSession(
-            server_name="fluidgateway", server_version="0.68.0"
+            server_name="fluidgateway", server_version=__version__
         )
         adapter = RuntimeAdapterSession()
         hello = wire.encode_hello_payload(
