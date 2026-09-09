@@ -79,6 +79,7 @@ class NativeInProcessTests(unittest.TestCase):
             corpus.compare = self.compare
             for name in (
                 "copy_write_and_dependency",
+                "readback_source_write",
                 "alias_release_resize",
                 "frame_queue_and_unknown_write",
                 "invalid_events",

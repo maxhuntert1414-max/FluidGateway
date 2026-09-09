@@ -181,6 +181,28 @@ class NativeGatewayTests(unittest.TestCase):
             ]
         )
 
+    def test_readback_source_write_parity(self):
+        def readback(name):
+            return op(name, operation_type="copy", source="vram", target="ram")
+
+        self.compare(
+            setup_events()
+            + [
+                readback("seed-readback"),
+                readback("repeat-readback"),
+                op("gpu-write", operation_type="compute", target="vram"),
+                readback("after-gpu-write"),
+                readback("repeat-after-write"),
+                op("cpu-write", operation_type="compute", target="ram"),
+                readback("after-staging-write"),
+                event(102, id="vram", action="release"),
+                event(102, id="vram", memory="vram"),
+                readback("after-source-reuse"),
+                event(101, action="end", frame=0),
+                event(100, action="end", id=""),
+            ]
+        )
+
     def test_alias_release_resize_parity(self):
         self.compare(
             [
