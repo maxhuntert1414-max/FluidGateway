@@ -28,7 +28,7 @@ physically unified memory, but it can coordinate the path with less waste.
 | Local readiness | `doctor` reports available and blocked capabilities without changing system settings |
 | Native intervention | Bounded owned D3D11, D3D12 and cooperative Vulkan paths through [FluidRuntime](https://github.com/maxhuntert1414-max/FluidRuntime) |
 | Readback authorization | Runtime's owned GPU-to-staging path uses the same server/DLL core and existing Copy opcode |
-| Application-session diagnosis | HTML/JSON import of Runtime Vulkan counters and Windows priority-lease evidence |
+| Application-session diagnosis | HTML/JSON import of Runtime Vulkan resource hooks, memory-path counters and Windows priority-lease evidence |
 | General game optimizer, driver hooks, global scheduler | Not implemented |
 
 The native server moves continuous decisions into C++20 while Python remains

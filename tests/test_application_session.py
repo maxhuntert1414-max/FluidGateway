@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fluidgateway.application_session import COUNTERS, analyze_application_session, write_application_report
+from fluidgateway.application_session import BUFFER_COUNTERS, COUNTERS, analyze_application_session, write_application_report
 from fluidgateway.cli import main
 
 
@@ -35,6 +35,57 @@ class ApplicationSessionTests(unittest.TestCase):
         self.assertFalse(result["performance_claim_allowed"])
         self.assertEqual(4096, result["counters"]["buffer_copy_bytes"])
         self.assertTrue(all(finding["evidence"] for finding in result["findings"]))
+
+    def test_buffer_v2_categories_are_evidence_not_actuation(self):
+        report = session()
+        report["schema"] = "fluidruntime-application-session-v2"
+        counters = report["samples"][0]["vulkan"]
+        counters.update(dict.fromkeys(BUFFER_COUNTERS, 0))
+        counters.update(buffers_created=4, buffers_destroyed=4, host_to_device_copy_bytes=1024,
+                        device_to_host_copy_bytes=1024, shared_memory_copy_bytes=1024,
+                        unknown_buffer_copy_bytes=1024, same_allocation_copy_bytes=512,
+                        untracked_buffers=1, buffer_binding_failures=1, counter_overflows=1)
+        result = self.analyze(report)
+        self.assertTrue(result["buffer_tracking_available"])
+        findings = {item["id"]: item for item in result["findings"]}
+        self.assertEqual(1024, findings["buffer-memory-paths"]["evidence"]["host_to_device_copy_bytes"])
+        self.assertIn("shared-allocation-copies", findings)
+        self.assertEqual(1, findings["buffer-tracking-coverage"]["evidence"]["counter_overflows"])
+        self.assertFalse(result["native_actuation_allowed"])
+        self.assertFalse(result["performance_claim_allowed"])
+
+    def test_v1_remains_supported_without_inventing_buffer_evidence(self):
+        result = self.analyze(session())
+        self.assertFalse(result["buffer_tracking_available"])
+        self.assertNotIn("host_to_device_copy_bytes", result["counters"])
+
+    def test_v2_counter_set_cannot_be_missing_downgraded_or_extended(self):
+        report = session()
+        report["schema"] = "fluidruntime-application-session-v2"
+        with self.assertRaises(ValueError):
+            self.analyze(report)
+        report["samples"][0]["vulkan"].update(dict.fromkeys(BUFFER_COUNTERS, 0))
+        for key in BUFFER_COUNTERS:
+            changed = copy.deepcopy(report)
+            del changed["samples"][0]["vulkan"][key]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.analyze(changed)
+        report["schema"] = "fluidruntime-application-session-v1"
+        with self.assertRaises(ValueError):
+            self.analyze(report)
+
+    def test_v2_lifecycle_gauges_can_fall_but_copy_totals_cannot(self):
+        report = session()
+        report["schema"] = "fluidruntime-application-session-v2"
+        counters = report["samples"][0]["vulkan"]
+        counters.update(dict.fromkeys(BUFFER_COUNTERS, 0))
+        counters.update(live_buffers=2, host_to_device_copy_bytes=4096)
+        report["samples"].append(copy.deepcopy(report["samples"][0]))
+        report["samples"][1]["vulkan"]["live_buffers"] = 0
+        self.assertTrue(self.analyze(report)["buffer_tracking_available"])
+        report["samples"][1]["vulkan"]["host_to_device_copy_bytes"] = 1
+        with self.assertRaises(ValueError):
+            self.analyze(report)
 
     def test_rejects_mutated_identity_flags_and_counters(self):
         for key, value in (("schema", "other"), ("process_id", True), ("layer_sha256", "z" * 64),

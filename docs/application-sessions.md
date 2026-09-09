@@ -1,7 +1,8 @@
 # Application-Session Reports
 
-Current Gateway `main` imports `fluidruntime-application-session-v1` from
-FluidRuntime v0.23. This command is not present in the older v0.67.1 release tag.
+Current Gateway `main` imports `fluidruntime-application-session-v1` and `v2` from
+FluidRuntime v0.23 source. The new v2 resource-hook importer is not in the
+v0.69.0 release tag; update Gateway `main` before importing v2 captures.
 
 ```powershell
 python -m fluidgateway analyze-app `
@@ -14,7 +15,7 @@ Create sessions using Runtime's
 [opt-in application guide](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/application-sessions.md).
 
 The importer bounds input size/sample count, validates executable/layer hashes,
-32 numeric counter fields, sample order, cumulative counters, observation flags
+32 (v1) or 46 (v2) numeric counter fields, sample order, cumulative counters, observation flags
 and any Windows priority lease. It rejects evidence that claims external GPU
 actuation, performance gains, or contradictory successful priority restoration.
 This is format validation, not cryptographic attestation of an untrusted report.
@@ -24,6 +25,14 @@ tracking overflow, recorded buffer-copy volume, queue-idle waits and unconfirmed
 priority restoration. Every finding includes numeric evidence. They remain
 hypotheses: counts do not establish redundant work, actual transferred bytes,
 displayed FPS, input latency, or scheduling benefit.
+
+V2 adds buffer creation/destruction, bound-memory copy categories, copies inside
+one allocation and coverage failures. Categories describe Vulkan memory-type
+flags at command-recording time, not physical transport. Memory with both
+HOST_VISIBLE and DEVICE_LOCAL flags has a separate category. Same-allocation
+copies may be necessary and do not authorize elision. Capacity/extension gaps,
+failed bindings and saturating counter overflow are reported explicitly.
+Legacy captures remain supported with `buffer_tracking_available: false`.
 
 Requested Vulkan allocation sizes are not physical residency. Host-visible and
 device-local categories can overlap. CPU/RAM are sampled, not continuous;

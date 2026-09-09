@@ -17,7 +17,14 @@ COUNTERS = (
     "unmaps", "image_binds", "queue_waits", "fence_waits", "copy2_calls",
     "submit2_calls", "telemetry_failures",
 )
-DECREASING_COUNTERS = {"live_bytes", "active_instances", "active_devices"}
+BUFFER_COUNTERS = (
+    "buffers_created", "buffers_destroyed", "live_buffers", "untracked_buffers",
+    "host_to_device_copy_bytes", "device_to_host_copy_bytes", "device_to_device_copy_bytes",
+    "host_to_host_copy_bytes", "shared_memory_copy_bytes", "unknown_buffer_copy_bytes",
+    "same_allocation_copy_bytes", "buffer_binding_failures", "unclassified_buffer_bindings",
+    "counter_overflows",
+)
+DECREASING_COUNTERS = {"live_bytes", "active_instances", "active_devices", "live_buffers"}
 
 
 def _number(value: object, name: str) -> float:
@@ -37,8 +44,12 @@ def analyze_application_session(path: str | Path) -> dict:
     if len(text) > 16 * 1024 * 1024:
         raise ValueError("Application-session report exceeds 16 MiB.")
     report = json.loads(text.decode("utf-8-sig"))
-    if not isinstance(report, dict) or report.get("schema") != "fluidruntime-application-session-v1":
+    if not isinstance(report, dict) or report.get("schema") not in (
+        "fluidruntime-application-session-v1", "fluidruntime-application-session-v2"
+    ):
         raise ValueError("Unsupported application-session schema.")
+    buffer_tracking = report["schema"] == "fluidruntime-application-session-v2"
+    expected_counters = set(COUNTERS + BUFFER_COUNTERS if buffer_tracking else COUNTERS)
     for key in ("native_actuation_enabled", "performance_claim_allowed"):
         if report.get(key) is not False:
             raise ValueError("Observation evidence cannot authorize GPU actuation or performance claims.")
@@ -69,7 +80,7 @@ def analyze_application_session(path: str | Path) -> dict:
         for key in ("cpu_milliseconds", "working_set_bytes", "private_bytes", "thread_count"):
             _number(sample.get(key), key)
         counters = sample.get("vulkan")
-        if not isinstance(counters, dict) or set(counters) != set(COUNTERS):
+        if not isinstance(counters, dict) or set(counters) != expected_counters:
             raise ValueError("Incomplete or unknown Vulkan counter schema.")
         for key, value in counters.items():
             if type(value) is not int or not 0 <= value <= 2**63 - 1:
@@ -127,6 +138,27 @@ def analyze_application_session(path: str | Path) -> dict:
         finding("recorded-transfers", "Volume de copias de buffers registrado",
                 {"recorded_copy_bytes": counters["buffer_copy_bytes"], "copy_calls": counters["buffer_copies"]},
                 "Correlacione com uso real e reutilizacao de command buffers. Volume nao prova redundancia.")
+    if buffer_tracking:
+        classified = {key: counters[key] for key in BUFFER_COUNTERS[4:10]}
+        if any(classified.values()):
+            finding("buffer-memory-paths", "Copias por propriedades da memoria vinculada",
+                    classified,
+                    "Categorias usam HOST_VISIBLE/DEVICE_LOCAL no momento da gravacao. "
+                    "Memoria com ambas as flags fica separada; nao representa trafego PCIe medido.")
+        if counters["same_allocation_copy_bytes"]:
+            finding("shared-allocation-copies", "Copias entre buffers na mesma alocacao",
+                    {"recorded_same_allocation_bytes": counters["same_allocation_copy_bytes"]},
+                    "Regioes diferentes da mesma alocacao podem exigir a copia. "
+                    "Nao inferir redundancia, igualdade de conteudo ou permissao de omissao.")
+        coverage = {key: counters[key] for key in (
+            "untracked_buffers", "unclassified_buffer_bindings", "buffer_binding_failures",
+            "unknown_buffer_copy_bytes", "counter_overflows", "telemetry_failures"
+        )}
+        if any(coverage.values()):
+            finding("buffer-tracking-coverage", "Cobertura parcial do hook de buffers",
+                    coverage,
+                    "Confira limites, extensoes e resultados dos binds. Overflow satura contadores; "
+                    "totais afetados sao parciais. Chamadas originais continuam encaminhadas.")
     if counters["queue_waits"]:
         finding("queue-idle-waits", "Esperas por fila ociosa observadas",
                 {"queue_wait_idle_calls": counters["queue_waits"], "submit_calls": counters["submits"]},
@@ -139,12 +171,14 @@ def analyze_application_session(path: str | Path) -> dict:
             "process_id": report["process_id"], "executable": report["executable"],
             "duration_ms": duration, "sample_count": len(samples), "layer_verified": verified,
             "failure": report.get("failure"), "windows_priority": lease, "counters": counters,
+            "buffer_tracking_available": buffer_tracking,
             "working_set_peak_bytes": max(s["working_set_bytes"] for s in samples),
             "private_peak_bytes": max(s["private_bytes"] for s in samples), "findings": findings,
             "native_actuation_allowed": False, "performance_claim_allowed": False,
             "limitations": ["Diagnostico inferido, nao prova absoluta de causa interna.",
                             "Amostras atomicas independentes; cobertura de extensoes parcial.",
                             "Bytes registrados nao sao trafego fisico nem prova de copias executadas.",
+                            "Categorias de buffers usam flags de memoria, nao localizacao fisica ou equivalencia de conteudo.",
                             "Contagens de apresentacao nao medem frames exibidos nem latencia de input.",
                             "O Gateway nao aplica prioridade automaticamente; o usuario autoriza uma lease limitada."]}
 
