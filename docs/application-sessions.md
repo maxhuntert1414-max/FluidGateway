@@ -1,8 +1,8 @@
 # Application-Session Reports
 
-Current Gateway `main` imports `fluidruntime-application-session-v1` and `v2` from
-FluidRuntime v0.23 source. The new v2 resource-hook importer is not in the
-v0.69.0 release tag; update Gateway `main` before importing v2 captures.
+Current Gateway `main` imports `fluidruntime-application-session-v1`, `v2` and `v3`
+from FluidRuntime v0.23 source. Resource/command-hook importers are not in the
+v0.69.0 release tag; update Gateway `main` before importing v2/v3 captures.
 
 ```powershell
 python -m fluidgateway analyze-app `
@@ -15,7 +15,7 @@ Create sessions using Runtime's
 [opt-in application guide](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/application-sessions.md).
 
 The importer bounds input size/sample count, validates executable/layer hashes,
-32 (v1) or 46 (v2) numeric counter fields, sample order, cumulative counters, observation flags
+32 (v1), 46 (v2) or 66 (v3) numeric counter fields, sample order, cumulative counters, observation flags
 and any Windows priority lease. It rejects evidence that claims external GPU
 actuation, performance gains, or contradictory successful priority restoration.
 This is format validation, not cryptographic attestation of an untrusted report.
@@ -33,6 +33,19 @@ HOST_VISIBLE and DEVICE_LOCAL flags has a separate category. Same-allocation
 copies may be necessary and do not authorize elision. Capacity/extension gaps,
 failed bindings and saturating counter overflow are reported explicitly.
 Legacy captures remain supported with `buffer_tracking_available: false`.
+
+V3 adds command-buffer lifetime, generation-bound primary/secondary recordings,
+successful/failed submissions and replay. Reports distinguish recorded bytes
+from bytes in fully attributed successful queue calls. Replay can make the
+latter larger; this does not prove redundancy. Unknown submissions, changed
+generations and bounded-state overflow explicitly reduce coverage. No partial
+submitted total is inferred for an unresolved call. `command_tracking_available`
+is false for v1/v2, whose captures do not invent submission evidence.
+
+Queue acceptance is not GPU completion, resource/content validation or physical
+traffic. Pending state, fence/semaphore completion and cross-queue dependencies
+are outside this observation model. See Runtime's
+[command contract](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/vulkan-command-observation.md).
 
 Requested Vulkan allocation sizes are not physical residency. Host-visible and
 device-local categories can overlap. CPU/RAM are sampled, not continuous;

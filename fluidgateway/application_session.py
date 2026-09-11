@@ -24,7 +24,17 @@ BUFFER_COUNTERS = (
     "same_allocation_copy_bytes", "buffer_binding_failures", "unclassified_buffer_bindings",
     "counter_overflows",
 )
-DECREASING_COUNTERS = {"live_bytes", "active_instances", "active_devices", "live_buffers"}
+COMMAND_COUNTERS = (
+    "command_buffers_allocated", "command_buffers_freed", "live_command_buffers", "untracked_command_buffers",
+    "command_buffer_begins", "command_buffer_ends", "command_buffer_resets", "command_pool_resets",
+    "command_execute_calls", "command_tracking_failures", "successful_submit_calls", "failed_submit_calls",
+    "submitted_primary_command_buffers", "submitted_secondary_command_buffers", "resubmitted_command_buffers",
+    "submitted_buffer_copies", "submitted_buffer_copy_bytes", "unresolved_submit_calls",
+    "command_tracking_overflows", "untracked_command_pools",
+)
+DECREASING_COUNTERS = {
+    "live_bytes", "active_instances", "active_devices", "live_buffers", "live_command_buffers"
+}
 
 
 def _number(value: object, name: str) -> float:
@@ -45,11 +55,17 @@ def analyze_application_session(path: str | Path) -> dict:
         raise ValueError("Application-session report exceeds 16 MiB.")
     report = json.loads(text.decode("utf-8-sig"))
     if not isinstance(report, dict) or report.get("schema") not in (
-        "fluidruntime-application-session-v1", "fluidruntime-application-session-v2"
+        "fluidruntime-application-session-v1", "fluidruntime-application-session-v2",
+        "fluidruntime-application-session-v3",
     ):
         raise ValueError("Unsupported application-session schema.")
-    buffer_tracking = report["schema"] == "fluidruntime-application-session-v2"
-    expected_counters = set(COUNTERS + BUFFER_COUNTERS if buffer_tracking else COUNTERS)
+    command_tracking = report["schema"] == "fluidruntime-application-session-v3"
+    buffer_tracking = report["schema"] != "fluidruntime-application-session-v1"
+    expected_counters = set(COUNTERS)
+    if buffer_tracking:
+        expected_counters.update(BUFFER_COUNTERS)
+    if command_tracking:
+        expected_counters.update(COMMAND_COUNTERS)
     for key in ("native_actuation_enabled", "performance_claim_allowed"):
         if report.get(key) is not False:
             raise ValueError("Observation evidence cannot authorize GPU actuation or performance claims.")
@@ -159,6 +175,32 @@ def analyze_application_session(path: str | Path) -> dict:
                     coverage,
                     "Confira limites, extensoes e resultados dos binds. Overflow satura contadores; "
                     "totais afetados sao parciais. Chamadas originais continuam encaminhadas.")
+    if command_tracking:
+        submissions = {key: counters[key] for key in (
+            "successful_submit_calls", "failed_submit_calls", "submitted_primary_command_buffers",
+            "submitted_secondary_command_buffers", "submitted_buffer_copies", "submitted_buffer_copy_bytes",
+        )}
+        if any(submissions.values()):
+            finding("submission-provenance", "Copias vinculadas a submissoes aceitas",
+                    submissions,
+                    "Totais incluem apenas chamadas bem-sucedidas com gravacoes totalmente rastreadas. "
+                    "Aceite da fila nao prova conclusao na GPU, validade de recursos ou trafego fisico.")
+        if counters["resubmitted_command_buffers"]:
+            finding("command-buffer-replay", "Gravacoes de command buffers reutilizadas",
+                    {"resubmitted_command_buffers": counters["resubmitted_command_buffers"],
+                     "recorded_copy_bytes": counters["buffer_copy_bytes"],
+                     "submitted_copy_bytes": counters["submitted_buffer_copy_bytes"]},
+                    "Replay e contado por ocorrencia, incluindo secundarios, entre submissoes atribuidas. "
+                    "Reutilizar comandos nao prova que seus resultados sejam redundantes.")
+        coverage = {key: counters[key] for key in (
+            "untracked_command_buffers", "untracked_command_pools", "command_tracking_failures",
+            "unresolved_submit_calls", "command_tracking_overflows",
+        )}
+        if any(coverage.values()):
+            finding("command-tracking-coverage", "Cobertura parcial das submissoes",
+                    coverage,
+                    "Extensoes nao modeladas, geracoes invalidadas ou limites excluem a chamada inteira "
+                    "dos totais atribuidos. Nao interprete ausencia de evidencia como ausencia de trabalho.")
     if counters["queue_waits"]:
         finding("queue-idle-waits", "Esperas por fila ociosa observadas",
                 {"queue_wait_idle_calls": counters["queue_waits"], "submit_calls": counters["submits"]},
@@ -172,12 +214,14 @@ def analyze_application_session(path: str | Path) -> dict:
             "duration_ms": duration, "sample_count": len(samples), "layer_verified": verified,
             "failure": report.get("failure"), "windows_priority": lease, "counters": counters,
             "buffer_tracking_available": buffer_tracking,
+            "command_tracking_available": command_tracking,
             "working_set_peak_bytes": max(s["working_set_bytes"] for s in samples),
             "private_peak_bytes": max(s["private_bytes"] for s in samples), "findings": findings,
             "native_actuation_allowed": False, "performance_claim_allowed": False,
             "limitations": ["Diagnostico inferido, nao prova absoluta de causa interna.",
                             "Amostras atomicas independentes; cobertura de extensoes parcial.",
                             "Bytes registrados nao sao trafego fisico nem prova de copias executadas.",
+                            "Bytes submetidos cobrem chamadas aceitas e atribuidas, nao conclusao GPU, validacao de recursos ou sincronizacao.",
                             "Categorias de buffers usam flags de memoria, nao localizacao fisica ou equivalencia de conteudo.",
                             "Contagens de apresentacao nao medem frames exibidos nem latencia de input.",
                             "O Gateway nao aplica prioridade automaticamente; o usuario autoriza uma lease limitada."]}

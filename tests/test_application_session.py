@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fluidgateway.application_session import BUFFER_COUNTERS, COUNTERS, analyze_application_session, write_application_report
+from fluidgateway.application_session import (
+    BUFFER_COUNTERS, COMMAND_COUNTERS, COUNTERS, analyze_application_session, write_application_report,
+)
 from fluidgateway.cli import main
 
 
@@ -20,6 +22,17 @@ def session():
             "samples": [{"elapsed_milliseconds": 999, "cpu_milliseconds": 100,
                          "working_set_bytes": 1024, "private_bytes": 1024, "thread_count": 2,
                          "vulkan": counters}], "windows_priority": None}
+
+
+def command_session():
+    report = session()
+    report["schema"] = "fluidruntime-application-session-v3"
+    counters = report["samples"][0]["vulkan"]
+    counters.update(dict.fromkeys(BUFFER_COUNTERS + COMMAND_COUNTERS, 0))
+    counters.update(successful_submit_calls=2, submitted_primary_command_buffers=2,
+                    submitted_secondary_command_buffers=2, resubmitted_command_buffers=2,
+                    submitted_buffer_copies=2, submitted_buffer_copy_bytes=8192)
+    return report
 
 
 class ApplicationSessionTests(unittest.TestCase):
@@ -58,6 +71,57 @@ class ApplicationSessionTests(unittest.TestCase):
         result = self.analyze(session())
         self.assertFalse(result["buffer_tracking_available"])
         self.assertNotIn("host_to_device_copy_bytes", result["counters"])
+        self.assertFalse(result["command_tracking_available"])
+
+    def test_v3_replay_can_exceed_recording_without_claiming_gpu_completion(self):
+        result = self.analyze(command_session())
+        self.assertTrue(result["buffer_tracking_available"])
+        self.assertTrue(result["command_tracking_available"])
+        findings = {item["id"]: item for item in result["findings"]}
+        self.assertEqual(8192, findings["submission-provenance"]["evidence"]["submitted_buffer_copy_bytes"])
+        self.assertEqual(2, findings["command-buffer-replay"]["evidence"]["resubmitted_command_buffers"])
+        self.assertFalse(result["native_actuation_allowed"])
+        self.assertFalse(result["performance_claim_allowed"])
+
+    def test_v3_failed_and_unresolved_submits_report_partial_coverage(self):
+        report = command_session()
+        counters = report["samples"][0]["vulkan"]
+        counters.update(failed_submit_calls=1, unresolved_submit_calls=1, command_tracking_failures=2,
+                        command_tracking_overflows=1, untracked_command_buffers=1, untracked_command_pools=1)
+        findings = {item["id"]: item for item in self.analyze(report)["findings"]}
+        self.assertEqual(1, findings["submission-provenance"]["evidence"]["failed_submit_calls"])
+        self.assertEqual(1, findings["command-tracking-coverage"]["evidence"]["unresolved_submit_calls"])
+
+    def test_v3_schema_is_exact_and_cannot_be_downgraded(self):
+        report = command_session()
+        for key in COMMAND_COUNTERS:
+            changed = copy.deepcopy(report)
+            del changed["samples"][0]["vulkan"][key]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.analyze(changed)
+        for schema in ("fluidruntime-application-session-v1", "fluidruntime-application-session-v2"):
+            changed = copy.deepcopy(report)
+            changed["schema"] = schema
+            with self.subTest(schema=schema), self.assertRaises(ValueError):
+                self.analyze(changed)
+
+    def test_v3_command_gauge_may_fall_but_submitted_totals_must_not(self):
+        report = command_session()
+        report["samples"][0]["vulkan"]["live_command_buffers"] = 2
+        report["samples"].append(copy.deepcopy(report["samples"][0]))
+        report["samples"][1]["vulkan"]["live_command_buffers"] = 0
+        self.assertTrue(self.analyze(report)["command_tracking_available"])
+        report["samples"][1]["vulkan"]["submitted_buffer_copy_bytes"] = 1
+        with self.assertRaises(ValueError):
+            self.analyze(report)
+
+    def test_v2_does_not_invent_submission_evidence(self):
+        report = session()
+        report["schema"] = "fluidruntime-application-session-v2"
+        report["samples"][0]["vulkan"].update(dict.fromkeys(BUFFER_COUNTERS, 0))
+        result = self.analyze(report)
+        self.assertFalse(result["command_tracking_available"])
+        self.assertNotIn("submitted_buffer_copy_bytes", result["counters"])
 
     def test_v2_counter_set_cannot_be_missing_downgraded_or_extended(self):
         report = session()
