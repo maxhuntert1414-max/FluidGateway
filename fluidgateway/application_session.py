@@ -32,8 +32,15 @@ COMMAND_COUNTERS = (
     "submitted_buffer_copies", "submitted_buffer_copy_bytes", "unresolved_submit_calls",
     "command_tracking_overflows", "untracked_command_pools",
 )
+COMPLETION_COUNTERS = (
+    "fences_created", "fences_destroyed", "live_fences", "untracked_fences", "fence_resets",
+    "fence_status_queries", "device_waits", "ambiguous_fence_waits", "completion_tracking_failures",
+    "completed_submit_calls", "completed_buffer_copies", "completed_buffer_copy_bytes",
+    "pending_tracked_submits", "abandoned_tracked_submits",
+)
 DECREASING_COUNTERS = {
-    "live_bytes", "active_instances", "active_devices", "live_buffers", "live_command_buffers"
+    "live_bytes", "active_instances", "active_devices", "live_buffers", "live_command_buffers",
+    "live_fences", "pending_tracked_submits",
 }
 
 
@@ -56,16 +63,19 @@ def analyze_application_session(path: str | Path) -> dict:
     report = json.loads(text.decode("utf-8-sig"))
     if not isinstance(report, dict) or report.get("schema") not in (
         "fluidruntime-application-session-v1", "fluidruntime-application-session-v2",
-        "fluidruntime-application-session-v3",
+        "fluidruntime-application-session-v3", "fluidruntime-application-session-v4",
     ):
         raise ValueError("Unsupported application-session schema.")
-    command_tracking = report["schema"] == "fluidruntime-application-session-v3"
+    completion_tracking = report["schema"] == "fluidruntime-application-session-v4"
+    command_tracking = completion_tracking or report["schema"] == "fluidruntime-application-session-v3"
     buffer_tracking = report["schema"] != "fluidruntime-application-session-v1"
     expected_counters = set(COUNTERS)
     if buffer_tracking:
         expected_counters.update(BUFFER_COUNTERS)
     if command_tracking:
         expected_counters.update(COMMAND_COUNTERS)
+    if completion_tracking:
+        expected_counters.update(COMPLETION_COUNTERS)
     for key in ("native_actuation_enabled", "performance_claim_allowed"):
         if report.get(key) is not False:
             raise ValueError("Observation evidence cannot authorize GPU actuation or performance claims.")
@@ -201,6 +211,24 @@ def analyze_application_session(path: str | Path) -> dict:
                     coverage,
                     "Extensoes nao modeladas, geracoes invalidadas ou limites excluem a chamada inteira "
                     "dos totais atribuidos. Nao interprete ausencia de evidencia como ausencia de trabalho.")
+    if completion_tracking:
+        completed = {key: counters[key] for key in (
+            "completed_submit_calls", "completed_buffer_copies", "completed_buffer_copy_bytes",
+        )}
+        if any(completed.values()):
+            finding("queue-completion", "Conclusao de submissoes reportada pelo driver",
+                    completed,
+                    "Fences e esperas existentes confirmam prefixos de fila, sem duplicar contagens. "
+                    "Nao provam conteudo correto, execucao bem-sucedida apos device loss ou economia de bytes.")
+        coverage = {key: counters[key] for key in (
+            "untracked_fences", "ambiguous_fence_waits", "completion_tracking_failures",
+            "pending_tracked_submits", "abandoned_tracked_submits",
+        )}
+        if any(coverage.values()):
+            finding("completion-coverage", "Conclusao parcialmente observada",
+                    coverage,
+                    "Pendencias significam falta de confirmacao observada, nao GPU travada. "
+                    "Wait-any, payloads externos e limites nao autorizam inferir conclusao nem remover esperas.")
     if counters["queue_waits"]:
         finding("queue-idle-waits", "Esperas por fila ociosa observadas",
                 {"queue_wait_idle_calls": counters["queue_waits"], "submit_calls": counters["submits"]},
@@ -215,6 +243,7 @@ def analyze_application_session(path: str | Path) -> dict:
             "failure": report.get("failure"), "windows_priority": lease, "counters": counters,
             "buffer_tracking_available": buffer_tracking,
             "command_tracking_available": command_tracking,
+            "completion_tracking_available": completion_tracking,
             "working_set_peak_bytes": max(s["working_set_bytes"] for s in samples),
             "private_peak_bytes": max(s["private_bytes"] for s in samples), "findings": findings,
             "native_actuation_allowed": False, "performance_claim_allowed": False,
@@ -222,6 +251,7 @@ def analyze_application_session(path: str | Path) -> dict:
                             "Amostras atomicas independentes; cobertura de extensoes parcial.",
                             "Bytes registrados nao sao trafego fisico nem prova de copias executadas.",
                             "Bytes submetidos cobrem chamadas aceitas e atribuidas, nao conclusao GPU, validacao de recursos ou sincronizacao.",
+                            "Conclusao reportada pelo driver nao valida conteudo, visibilidade de memoria ou execucao correta apos device loss.",
                             "Categorias de buffers usam flags de memoria, nao localizacao fisica ou equivalencia de conteudo.",
                             "Contagens de apresentacao nao medem frames exibidos nem latencia de input.",
                             "O Gateway nao aplica prioridade automaticamente; o usuario autoriza uma lease limitada."]}

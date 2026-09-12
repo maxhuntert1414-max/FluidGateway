@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 from fluidgateway.application_session import (
-    BUFFER_COUNTERS, COMMAND_COUNTERS, COUNTERS, analyze_application_session, write_application_report,
+    BUFFER_COUNTERS, COMMAND_COUNTERS, COMPLETION_COUNTERS, COUNTERS,
+    analyze_application_session, write_application_report,
 )
 from fluidgateway.cli import main
 
@@ -48,6 +49,52 @@ class ApplicationSessionTests(unittest.TestCase):
         self.assertFalse(result["performance_claim_allowed"])
         self.assertEqual(4096, result["counters"]["buffer_copy_bytes"])
         self.assertTrue(all(finding["evidence"] for finding in result["findings"]))
+
+    def test_v4_completion_is_evidence_without_actuation_authority(self):
+        report = command_session()
+        report["schema"] = "fluidruntime-application-session-v4"
+        counters = report["samples"][0]["vulkan"]
+        counters.update(dict.fromkeys(COMPLETION_COUNTERS, 0))
+        counters.update(completed_submit_calls=1, completed_buffer_copies=1,
+                        completed_buffer_copy_bytes=4096, pending_tracked_submits=1)
+        result = self.analyze(report)
+        self.assertTrue(result["completion_tracking_available"])
+        findings = {item["id"]: item for item in result["findings"]}
+        self.assertEqual(4096, findings["queue-completion"]["evidence"]["completed_buffer_copy_bytes"])
+        self.assertEqual(1, findings["completion-coverage"]["evidence"]["pending_tracked_submits"])
+        self.assertFalse(result["native_actuation_allowed"])
+        self.assertFalse(result["performance_claim_allowed"])
+        for key in COMPLETION_COUNTERS:
+            changed = copy.deepcopy(report)
+            del changed["samples"][0]["vulkan"][key]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.analyze(changed)
+        report["schema"] = "fluidruntime-application-session-v3"
+        with self.assertRaises(ValueError):
+            self.analyze(report)
+
+    def test_v4_gauges_can_fall_without_erasing_completion_gaps(self):
+        report = command_session()
+        report["schema"] = "fluidruntime-application-session-v4"
+        counters = report["samples"][0]["vulkan"]
+        counters.update(dict.fromkeys(COMPLETION_COUNTERS, 0))
+        counters.update(live_fences=2, pending_tracked_submits=2, ambiguous_fence_waits=1,
+                        untracked_fences=1, completion_tracking_failures=1)
+        report["samples"].append(copy.deepcopy(report["samples"][0]))
+        report["samples"][1]["vulkan"].update(live_fences=0, pending_tracked_submits=0,
+                                              abandoned_tracked_submits=2)
+        findings = {item["id"]: item for item in self.analyze(report)["findings"]}
+        self.assertEqual(2, findings["completion-coverage"]["evidence"]["abandoned_tracked_submits"])
+        self.assertNotIn("queue-completion", findings)
+        report["samples"][1]["vulkan"]["ambiguous_fence_waits"] = 0
+        with self.assertRaises(ValueError):
+            self.analyze(report)
+
+    def test_legacy_sessions_do_not_invent_completion(self):
+        for report in (session(), command_session()):
+            result = self.analyze(report)
+            self.assertFalse(result["completion_tracking_available"])
+            self.assertNotIn("completed_buffer_copy_bytes", result["counters"])
 
     def test_buffer_v2_categories_are_evidence_not_actuation(self):
         report = session()

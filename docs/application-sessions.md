@@ -1,8 +1,8 @@
 # Application-Session Reports
 
-Current Gateway `main` imports `fluidruntime-application-session-v1`, `v2` and `v3`
-from FluidRuntime v0.23 source. Resource/command-hook importers are not in the
-v0.69.0 release tag; update Gateway `main` before importing v2/v3 captures.
+Current Gateway `main` imports `fluidruntime-application-session-v1`, `v2`, `v3` and `v4`
+from FluidRuntime v0.23 source. Resource/command/completion importers are not in the
+v0.69.0 release tag; update Gateway `main` before importing v2/v3/v4 captures.
 
 ```powershell
 python -m fluidgateway analyze-app `
@@ -15,7 +15,7 @@ Create sessions using Runtime's
 [opt-in application guide](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/application-sessions.md).
 
 The importer bounds input size/sample count, validates executable/layer hashes,
-32 (v1), 46 (v2) or 66 (v3) numeric counter fields, sample order, cumulative counters, observation flags
+32 (v1), 46 (v2), 66 (v3) or 80 (v4) numeric counter fields, sample order, cumulative counters, observation flags
 and any Windows priority lease. It rejects evidence that claims external GPU
 actuation, performance gains, or contradictory successful priority restoration.
 This is format validation, not cryptographic attestation of an untrusted report.
@@ -43,9 +43,18 @@ submitted total is inferred for an unresolved call. `command_tracking_available`
 is false for v1/v2, whose captures do not invent submission evidence.
 
 Queue acceptance is not GPU completion, resource/content validation or physical
-traffic. Pending state, fence/semaphore completion and cross-queue dependencies
+traffic. Per-recording pending-state validity and cross-queue dependencies
 are outside this observation model. See Runtime's
 [command contract](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/vulkan-command-observation.md).
+
+V4 adds driver-reported queue-prefix completion through the application's own
+fence/status/idle calls. Repeated confirmations do not duplicate counts. Reports
+separate completed work from unconfirmed/abandoned observations, untracked fences,
+wait-any ambiguity and capacity exclusions. Pending does not mean stalled or
+unfinished GPU work. `completion_tracking_available` is false for v1/v2/v3.
+No extra waits/polls are inserted. Completion does not prove content correctness,
+memory visibility or successful computation after device loss, and never grants
+copy-elision authority. See the [completion contract](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/vulkan-completion-observation.md).
 
 Requested Vulkan allocation sizes are not physical residency. Host-visible and
 device-local categories can overlap. CPU/RAM are sampled, not continuous;
