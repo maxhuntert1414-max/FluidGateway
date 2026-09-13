@@ -49,6 +49,11 @@ lower power, physical RAM/VRAM placement, or reduced PCIe traffic.
 
 ## Quick Start
 
+For live CPU/RAM/GPU monitoring without Python, use Runtime's
+[daily terminal workflow](https://github.com/maxhuntert1414-max/FluidRuntime/blob/main/docs/daily-use.md):
+`fluidruntime processes`, then `fluidruntime monitor --pid 1234`.
+This read-only mode is separate from Gateway decisions and experimental hooks.
+
 Offline diagnostics require Python 3.10 or newer. The CLI has no third-party runtime
 dependencies.
 
