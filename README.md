@@ -104,6 +104,7 @@ expected server PID and executable hash. Run it only in a trusted user session.
 - [Native C++20 gateway](docs/native-gateway.md)
 - [Technical reference](docs/technical-reference.md)
 - [Application-session reports](docs/application-sessions.md)
+- [Shared-memory direction and current boundary](docs/shared-memory.md)
 - [v0.68.0 release and measured results](docs/release-v0.68.0.md)
 - [FluidLink v2 base protocol](docs/fluidlink-v2.md)
 - [FluidLink v2 operation-batch profile](docs/fluidlink-v2-batch.md)
